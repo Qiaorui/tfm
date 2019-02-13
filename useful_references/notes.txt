@@ -1,0 +1,61 @@
+FFBSS
+
+Historical data + Realtime data
+
+Battery problem
+
+Goal:
+	Determine which positions we gonna drop the moto.
+	Determine how many we gonna drop.
+	Determine which motos we have to move.
+
+Assumptions:
+	Demand >> supply
+
+Relocation:
+	Inter zone
+	Intra zone
+
+Variables:
+	Elevation effect
+	Datetime -> higher dimensions
+	Time depended
+	Whether reports
+	Social event
+
+Machine Learning:
+	Reinforcement Learning
+
+Spatio-Temporal Clustering
+Markov Chain
+
+Demand prediction time steps < 24 h
+No capacity limit
+
+Test ? -> Simulation
+
+
+*************************************************
+https://cloud.tencent.com/developer/article/1063748
+
+XGBoost * Light GBM
+
+*************************************************
+https://blog.csdn.net/zw0Pi8G5C1x/article/details/78758149
+
+
+*************************************************
+https://www.pingwest.com/a/111099
+
+Analysis
+
+*************************************************
+https://www.zhihu.com/question/59158132
+
+RNN + SoftMax
+
+Dataset -> Voronoi distribution
+
+Reinforcement learning
+
+*************************************************

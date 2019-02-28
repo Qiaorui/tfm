@@ -13,7 +13,7 @@ if (length(args) == 0) {
 
 RAW_WEATHER_DATA_PATH <- args[1]
 CLEANED_DATA_PATH <- args[2]
-COL_NAMES <- c("DateTime", "Condition", "Temperature", "Wind", "Humidity", "Visibility")
+COL_NAMES <- c("Datetime", "Condition", "Temperature", "Wind", "Humidity", "Visibility")
 
 data <- read.csv(file=RAW_WEATHER_DATA_PATH, header=FALSE, sep=",", col.names = COL_NAMES, na.strings=c("","NA"))
 

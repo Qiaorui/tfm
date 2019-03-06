@@ -1,18 +1,33 @@
 from scripts import preprocess
 from scripts import utils
-from scripts import  statistics
+from scripts import statistics
+import pandas as pd
+import argparse
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-rw", default="raw_data/weather.csv", help="input raw weather data path")
+    parser.add_argument("-cw", default="cleaned_data/weather.csv", help="input cleaned weather data path")
+    parser.add_argument("-rt", default="raw_data/JC*tripdata.csv", help="input raw trip data path")
+    parser.add_argument("-ct", default="cleaned_data/JC_trip_data.csv", help="input cleaned trip data path")
 
-    weather_data_path = "cleaned_data/weather.csv"
-    trip_data_path = "cleaned_data/JC_trip_data.csv"
-    raw_weather_data_path = "raw_data/weather.csv"
-    raw_trip_data_path = "raw_data/JC*tripdata.csv"
+    parser.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
+    parser.add_argument("-s", action="store_true", default=True, help="print statistical report")
+
+    args = parser.parse_args()
+
+    weather_data_path = args.cw
+    trip_data_path = args.ct
+    raw_weather_data_path = args.rw
+    raw_trip_data_path = args.rt
+
+    pd.set_option('display.precision', 2)
+    pd.set_option('display.max_columns', 500)
 
     # Read raw data and clean it
     # First check if cleaned data exists, if not, read from raw and save the cleaned version of it
-    print("{0:*^60}".format(" Preprocess "))
+    print("{0:*^75}".format(" Preprocess "))
 
     weather_data = utils.read_data(weather_data_path)
     if weather_data is None:
@@ -28,22 +43,23 @@ def main():
         trip_data = utils.read_data(trip_data_path)
         assert trip_data is not None
 
-    # Statistical analysis
-    print("{0:*^60}".format(" Statistic Analysis "))
-    statistics.analyse_weather(weather_data, 2017)
+    if args.s:
+        # Statistical analysis
+        print("{0:*^75}".format(" Statistic Analysis "))
 
-    print("{0:-^60}".format(" Weather Analysis "))
-    statistics.analyse_trip(trip_data)
+        print("{0:-^75}".format(" Weather Analysis "))
+        #statistics.analyse_weather(weather_data, 2017)
 
-    print("{0:-^60}".format(" Trip Analysis "))
+        print("{0:-^75}".format(" Trip Analysis "))
+        statistics.analyse_trip(trip_data)
 
     # Training modules, train data by different techniques
-    print("{0:*^60}".format(" Training "))
+    print("{0:*^75}".format(" Training "))
 
         # Save model per each techniques
 
     # Evaluate the prediction
-    print("{0:*^60}".format(" Evaluation "))
+    print("{0:*^75}".format(" Evaluation "))
 
 
 if __name__ == '__main__':

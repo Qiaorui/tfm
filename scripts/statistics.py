@@ -6,6 +6,8 @@ from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
 
+DPI = 300
+
 def analyse_weather(df, start_year=None):
     df['Datetime'] = pd.to_datetime(df['Datetime'])
     if start_year is not None:
@@ -81,6 +83,17 @@ def analyse_weather(df, start_year=None):
     """
 
 
-def analyse_trip(df):
+def analyse_trip(df, start_year=None):
+    df['Start_Time'] = pd.to_datetime(df['Start_Time'])
+    df['Stop_Time'] = pd.to_datetime(df['Stop_Time'])
+    if start_year is not None:
+        df = df.loc[df['Start_Time'].dt.year >= start_year]
 
-    return None
+    print(df.describe())
+    print(df.info())
+
+    plt.figure(dpi=DPI)
+    plt.hist(df.loc[:, 'Trip_Duration'])
+    plt.title('Distribution of Trip Durations')
+    plt.xlabel('Duration (m)')
+    plt.show()

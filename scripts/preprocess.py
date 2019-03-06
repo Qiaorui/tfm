@@ -9,8 +9,6 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 
 def preprocess_trips(raw_path, dest_path):
     df = utils.read_raw_trip_data(raw_path)
-    pd.set_option('display.precision', 2)
-    pd.set_option('display.max_columns', 500)
 
     print(df.describe())
     print(df.isnull().sum())
@@ -46,9 +44,13 @@ def preprocess_trips(raw_path, dest_path):
     holidays = cal.holidays(start=df['Start_Time'].min(), end=df['Start_Time'].max())
     print('From {} until {}'.format(df['Start_Time'].min(), df['Start_Time'].max()))
 
-    df['Holiday'] = df['Start_Time'].dt.normalize().isin(holidays) | (df['Start_Weekday'] == 7)
+    df['Start_Holiday'] = df['Start_Time'].dt.normalize().isin(holidays) #| (df['Start_Weekday'] == 7)
+    df['Stop_Holiday'] = df['Stop_Time'].dt.normalize().isin(holidays)
 
-    print(len(df[df['Holiday'] == True]), 'trips done during holidays')
+    print(len(df[df['Start_Holiday'] == True]), 'trips done during holidays')
+
+    print("Dropping columns :", ["Bike_ID", "Birth_Year", "User_Type", "Gender", "Start_Station_Name", "End_Station_Name"])
+    df.drop(["Bike_ID", "Birth_Year", "User_Type", "Gender", "Start_Station_Name", "End_Station_Name"], 1, inplace=True)
 
     print(df.describe())
 

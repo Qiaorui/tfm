@@ -70,3 +70,9 @@ def preprocess_weathers(raw_path, dest_path):
 def calculate_distance(row):
     return distance.distance((row['Start_Latitude'], row['Start_Longitude']),
                              (row['End_Latitude'], row['End_Longitude'])).km
+
+
+def remove_trip_outlier(df, th):
+    # delete all rows with column 'Trip_Duration' has value more than defined threshold
+    indexNames = df[df['Trip_Duration'] >= th].index
+    df.drop(indexNames, inplace=True)

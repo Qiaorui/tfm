@@ -92,8 +92,53 @@ def analyse_trip(df, start_year=None):
     print(df.describe())
     print(df.info())
 
+    # Plot Distribution of trip duration
+    f = df['Trip_Duration'].value_counts()
+    f.sort_index(inplace=True)
     plt.figure(dpi=DPI)
     plt.hist(df.loc[:, 'Trip_Duration'])
     plt.title('Distribution of Trip Durations')
     plt.xlabel('Duration (m)')
     plt.show()
+
+    # Boxplot of trip duration
+    plt.figure(dpi=DPI)
+    plt.boxplot(list(df.loc[:, 'Trip_Duration']), 0, 'gD')
+    plt.title('Boxplot')
+    plt.show()
+
+    # Boxplot without outlier of trip duration
+    plt.figure(dpi=DPI)
+    plt.boxplot(list(df.loc[:, 'Trip_Duration']), 0, '')
+    plt.title('Boxplot without outlier')
+    plt.show()
+
+    # Plot of trip duration distribution for the trips within 60 minutes
+    plt.figure(dpi=DPI)
+    plt.title('Trip duration distribution within 60 minutes')
+    plt.plot(f.index, f)
+    plt.xlim(0, 60)
+    plt.xlabel("Minute")
+    plt.show()
+
+    # Plot of trip duration distribution for same station pick-up and drop-off
+    tmp = df[(df['Start_Station_ID']) == (df['End_Station_ID'])]
+    f2 = tmp['Trip_Duration'].value_counts().sort_index()
+    plt.figure(dpi=DPI)
+    plt.title('Trip duration distribution which same station drop-off')
+    plt.plot(f2.index, f2)
+    plt.xlim(0, 60)
+    plt.ylabel("Count")
+    plt.xlabel("Minute")
+    plt.show()
+
+    # Plot of average distance between stations by trip duration
+    avg_time = df.groupby('Trip_Duration')['Distance'].mean()
+    plt.figure(dpi=DPI)
+    plt.title('Average distance between station by trip duration')
+    plt.plot(avg_time.index, avg_time)
+    plt.xlim(0, 180)
+    plt.xlabel("Duration (minute)")
+    plt.ylabel("Distance (km)")
+    plt.show()
+

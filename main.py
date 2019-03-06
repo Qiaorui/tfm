@@ -12,8 +12,10 @@ def main():
     parser.add_argument("-rt", default="raw_data/JC*tripdata.csv", help="input raw trip data path")
     parser.add_argument("-ct", default="cleaned_data/JC_trip_data.csv", help="input cleaned trip data path")
 
+    parser.add_argument("-ot", type=int, help="Outlier threshold")
+
     parser.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
-    parser.add_argument("-s", action="store_true", default=True, help="print statistical report")
+    parser.add_argument("-s", action="store_true", help="print statistical report")
 
     args = parser.parse_args()
 
@@ -27,7 +29,7 @@ def main():
 
     # Read raw data and clean it
     # First check if cleaned data exists, if not, read from raw and save the cleaned version of it
-    print("{0:*^75}".format(" Preprocess "))
+    print("{0:*^80}".format(" Preprocess "))
 
     weather_data = utils.read_data(weather_data_path)
     if weather_data is None:
@@ -43,23 +45,27 @@ def main():
         trip_data = utils.read_data(trip_data_path)
         assert trip_data is not None
 
+    if args.ot is not None:
+        print("Removing outlier with threshold", args.ot)
+        preprocess.remove_trip_outlier(trip_data, args.ot)
+
     if args.s:
         # Statistical analysis
-        print("{0:*^75}".format(" Statistic Analysis "))
+        print("{0:*^80}".format(" Statistic Analysis "))
 
-        print("{0:-^75}".format(" Weather Analysis "))
+        print("{0:-^80}".format(" Weather Analysis "))
         #statistics.analyse_weather(weather_data, 2017)
 
-        print("{0:-^75}".format(" Trip Analysis "))
+        print("{0:-^80}".format(" Trip Analysis "))
         statistics.analyse_trip(trip_data)
 
     # Training modules, train data by different techniques
-    print("{0:*^75}".format(" Training "))
+    print("{0:*^80}".format(" Training "))
 
         # Save model per each techniques
 
     # Evaluate the prediction
-    print("{0:*^75}".format(" Evaluation "))
+    print("{0:*^80}".format(" Evaluation "))
 
 
 if __name__ == '__main__':

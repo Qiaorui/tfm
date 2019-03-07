@@ -13,6 +13,7 @@ def main():
     parser.add_argument("-ct", default="cleaned_data/JC_trip_data.csv", help="input cleaned trip data path")
 
     parser.add_argument("-ot", type=int, help="Outlier threshold")
+    parser.add_argument("-ts", type=int, default=30, help="Time slot for the aggregation, units in minute")
 
     parser.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
     parser.add_argument("-s", action="store_true", help="print statistical report")
@@ -49,6 +50,13 @@ def main():
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)
 
+    print("Breaking trip data to pick-up data and drop-off data")
+    pick_ups, drop_offs = utils.break_up(trip_data)
+    print("PICK UPS:")
+    print(pick_ups.head(5))
+    print("DROP OFF")
+    print(drop_offs.head(5))
+
     if args.s:
         # Statistical analysis
         print("{0:*^80}".format(" Statistic Analysis "))
@@ -57,7 +65,11 @@ def main():
         #statistics.analyse_weather(weather_data, 2017)
 
         print("{0:-^80}".format(" Trip Analysis "))
-        statistics.analyse_trip(trip_data)
+        #statistics.analyse_trip_duration(trip_data)
+
+        print("{0:-^80}".format(" Time Analysis "))
+        statistics.analyse_date_pattern(trip_data)
+
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))

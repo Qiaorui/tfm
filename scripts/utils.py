@@ -55,3 +55,12 @@ def read_data(path):
     print("Columns:", list(df))
 
     return df
+
+
+def break_up(df):
+    pickups = df.loc[:, ['Start_Holiday', 'Start_Hour', 'Start_Latitude', 'Start_Longitude', 'Start_Month',
+                         'Start_Season', 'Start_Station_ID', 'Start_Time', 'Start_Weekday', 'Start_Year']]
+    dropoffs = df.loc[:, ['End_Latitude', 'End_Longitude', 'End_Station_ID', 'Stop_Holiday', 'Stop_Hour', 'Stop_Month',
+                          'Stop_Season', 'Stop_Time', 'Stop_Weekday', 'Stop_Year']]
+
+    return pickups, dropoffs

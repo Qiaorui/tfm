@@ -83,7 +83,7 @@ def analyse_weather(df, start_year=None):
     """
 
 
-def analyse_trip(df, start_year=None):
+def analyse_trip_duration(df, start_year=None):
     df['Start_Time'] = pd.to_datetime(df['Start_Time'])
     df['Stop_Time'] = pd.to_datetime(df['Stop_Time'])
     if start_year is not None:
@@ -140,5 +140,112 @@ def analyse_trip(df, start_year=None):
     plt.xlim(0, 180)
     plt.xlabel("Duration (minute)")
     plt.ylabel("Distance (km)")
+    plt.show()
+
+
+def analyse_date_pattern(df):
+    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    # Seasonly distribution
+    bins = list(range(1, 5, 1))
+
+    plt.bar(bins, df['Start_Season'].value_counts().sort_index())
+    plt.xticks(bins, ['Spring', 'Summer', 'Autumn', 'Winter'])
+    plt.xlabel('Seasons of the Year')
+    plt.ylabel('Trip count')
+    plt.title('Ridership by Season for NYC', fontsize=15)
+    plt.show()
+
+    # Monthly distribution
+
+    bins = list(range(1, 13, 1))
+    trip_duration = df.groupby('Start_Month')['Trip_Duration'].sum()
+
+    fig, ax1 = plt.subplots(figsize=(15, 7))
+
+    color = 'tab:blue'
+    ax1.set_xlabel('Month of the Year')
+    ax1.set_ylabel('Trip time (hours)', color=color)
+    ax1.bar(bins, trip_duration / 60, color=color)
+    ax1.tick_params(axis='y', labelcolor=color)
+    plt.setp(ax1, xticks=bins,
+             xticklabels=['Jan', 'Feb', 'Mar', 'Apr', 'may', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+    ax1.set_title("Ridership by Month for NYC", fontsize=15)
+
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+    color = 'tab:red'
+    ax2.set_ylabel('Trip count', color=color)  # we already handled the x-label with ax1
+    ax2.plot(bins, df['Start_Month'].value_counts().sort_index(), color=color, linewidth=3)
+    ax2.set_ylim([0, max(df['Start_Month'].value_counts()) * 1.1])
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    plt.show()
+
+    # Weekly distribution
+
+    bins = list(range(1, 8, 1))
+    trip_duration = df.groupby('Start_Weekday')['Trip_Duration'].sum()
+
+    fig, ax1 = plt.subplots(figsize=(15, 7))
+
+    color = 'tab:blue'
+    ax1.set_xlabel('Week days')
+    ax1.set_ylabel('Trip time (hours)', color=color)
+    ax1.bar(bins, trip_duration / 60, color=color)
+    ax1.tick_params(axis='y', labelcolor=color)
+    plt.setp(ax1, xticks=bins, xticklabels=weekdays)
+    ax1.set_title("Ridership by Weekday for NYC", fontsize=15)
+
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+    color = 'tab:red'
+    ax2.set_ylabel('Trip count', color=color)  # we already handled the x-label with ax1
+    ax2.set_ylim([0, max(df['Start_Weekday'].value_counts()) * 1.1])
+    ax2.plot(bins, df['Start_Weekday'].value_counts().sort_index(), color=color, linewidth=3)
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    plt.show()
+
+    # Hourly distribution
+
+    bins = list(range(24))
+    trip_duration = df.groupby('Start_Hour')['Trip_Duration'].sum()
+
+    fig, ax1 = plt.subplots(figsize=(15, 7))
+
+    color = 'tab:blue'
+    ax1.set_xlabel('Hours')
+    ax1.set_ylabel('Trip time (hours)', color=color)
+    ax1.bar(bins, trip_duration / 60, color=color)
+    ax1.tick_params(axis='y', labelcolor=color)
+    plt.setp(ax1, xticks=bins)
+    ax1.set_title("Ridership by Hour for NYC", fontsize=15)
+
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+    color = 'tab:red'
+    ax2.set_ylabel('Trip count', color=color)  # we already handled the x-label with ax1
+    ax2.plot(bins, df['Start_Hour'].value_counts().sort_index(), color=color, linewidth=3)
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    plt.show()
+
+    # Weekday x Hour distribution
+
+    tmp = df.groupby(['Start_Weekday', 'Start_Hour'], sort=True).size().reset_index(name='counts')
+
+    bins = list(range(24))
+    plt.figure(figsize=(15, 7))
+    plt.xlabel('Hourly distribution by weekday')
+    plt.ylabel('Trip count')
+    plt.title('Ridership by hour and weekday for NYC', fontsize=15)
+    plt.xticks(bins)
+    for i in range(1, 8, 1):
+        plt.plot(bins, tmp[tmp['Start_Weekday'] == i]['counts'], linestyle='-', marker='o', label=weekdays[i - 1])
+    plt.legend()
     plt.show()
 

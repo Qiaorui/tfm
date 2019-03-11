@@ -1,12 +1,18 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import itertools
+import folium
+from folium.plugins import HeatMap, HeatMapWithTime
+import branca.colormap as cm
+import math
+import webbrowser
+import os
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
 
 DPI = 300
+
 
 def analyse_weather(df, start_year=None):
     df['Datetime'] = pd.to_datetime(df['Datetime'])
@@ -146,14 +152,20 @@ def analyse_trip_duration(df, start_year=None):
 def analyse_date_pattern(df):
     weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-    # Seasonly distribution
-    bins = list(range(1, 5, 1))
+    # Yearly and seasonally distribution
+    men_means = df.groupby("Start_Year").get_group(2017)['Start_Season'].value_counts().sort_index()
+    women_means = df.groupby("Start_Year").get_group(2018)['Start_Season'].value_counts().sort_index()
+    bins = np.array((range(1, 5, 1)))
 
-    plt.bar(bins, df['Start_Season'].value_counts().sort_index())
-    plt.xticks(bins, ['Spring', 'Summer', 'Autumn', 'Winter'])
-    plt.xlabel('Seasons of the Year')
+    width = 0.35  # the width of the bars
+    plt.bar(bins - width/2, men_means, width, color='SkyBlue', label='2017')
+    plt.bar(bins + width/2, women_means, width, color='IndianRed', label='2018')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
     plt.ylabel('Trip count')
-    plt.title('Ridership by Season for NYC', fontsize=15)
+    plt.title('Ridership by Season and Year')
+    plt.xticks(bins, ['Spring', 'Summer', 'Autumn', 'Winter'])
+    plt.legend()
     plt.show()
 
     # Monthly distribution
@@ -249,3 +261,97 @@ def analyse_date_pattern(df):
     plt.legend()
     plt.show()
 
+
+def analyse_geo_pattern(df):
+    lat, lng = df["Start_Latitude"].mean(), df["Start_Longitude"].mean()
+    m = generate_dual_map([lat, lng], 14)
+
+    day_count = (pd.to_datetime(df["Start_Time"]).max() - pd.to_datetime(df["Start_Time"]).min())/np.timedelta64(1, 'D')
+    tmp = df.copy()
+    tmp["Count"] = 1
+    drop_offs = tmp[['End_Latitude', 'End_Longitude', 'Count']].groupby(
+        ['End_Latitude', 'End_Longitude']).sum().reset_index()
+    tmp = df.copy()
+    tmp["Count"] = 1
+    pick_ups = tmp[['Start_Latitude', 'Start_Longitude', 'Count']].groupby(
+        ['Start_Latitude', 'Start_Longitude']).sum().reset_index()
+    pick_ups["Count"] = np.ceil(pick_ups["Count"]/day_count)
+    drop_offs["Count"] = np.ceil(drop_offs["Count"]/day_count)
+    print(pick_ups)
+    print(drop_offs)
+
+    print(len(pick_ups), "stations plotting...")
+    colormap = cm.linear.YlOrBr_05.scale(0, max(pick_ups['Count'].max(), drop_offs['Count'].max()))
+    colormap.caption = 'Daily Pick up Distribution'
+
+    for i in range(len(pick_ups)):
+        folium.Circle(
+            location=[pick_ups.iloc[i]['Start_Latitude'], pick_ups.iloc[i]['Start_Longitude']],
+            radius= 70,
+            color= "black",
+            weight=2,
+            #dash_array= '5,5',
+            fill_opacity=1,
+            popup= str(pick_ups.iloc[i]['Count']),
+            fill_color= colormap(pick_ups.iloc[i]['Count'])
+        ).add_to(m.m1)
+
+    for i in range(len(drop_offs)):
+        folium.Circle(
+            location=[drop_offs.iloc[i]['End_Latitude'], drop_offs.iloc[i]['End_Longitude']],
+            radius= 70,
+            color= "black",
+            weight=2,
+            #dash_array= '5,5',
+            fill_opacity=1,
+            popup=str(drop_offs.iloc[i]['Count']),
+            fill_color= colormap(drop_offs.iloc[i]['Count'])
+        ).add_to(m.m2)
+
+    #m.add_child(colormap)
+    #m.m2.add_child(colormap)
+
+
+    """
+    lat, lng = df["Start_Latitude"].mean(), df["Start_Longitude"].mean()
+    m = generate_base_map([lat, lng], 14)
+
+    day_count = (pd.to_datetime(df["Start_Time"]).max() - pd.to_datetime(df["Start_Time"]).min()) /np.timedelta64(1,'D')
+
+    pick_ups = df.copy()
+    pick_ups["Count"] = 1
+    pick_ups = pick_ups[['Start_Latitude', 'Start_Longitude', 'Count']].groupby(
+        ['Start_Latitude', 'Start_Longitude']).sum().reset_index()
+    pick_ups["Count"] = np.ceil(pick_ups["Count"]/day_count)
+    print(pick_ups)
+
+    print(len(pick_ups), "stations plotting...")
+    colormap = cm.linear.YlOrBr_05.scale(0, pick_ups['Count'].max())
+    colormap.caption = 'Daily Pick up Distribution'
+
+    for i in range(len(pick_ups)):
+        folium.Circle(
+            location=[pick_ups.iloc[i]['Start_Latitude'], pick_ups.iloc[i]['Start_Longitude']],
+            radius= 70,
+            color= "black",
+            weight=2,
+            #dash_array= '5,5',
+            fill_opacity=1,
+            fill_color= colormap(pick_ups.iloc[i]['Count'])
+        ).add_to(m)
+
+    m.add_child(colormap)
+    """
+
+    #folium.LayerControl(collapsed=False).add_to(m)
+    m.save("map.html")
+    webbrowser.open("file://" + os.path.realpath("map.html"))
+
+
+def generate_base_map(location=[40.693943, -73.985880], zoom_start=12):
+    base_map = folium.Map(location=location, control_scale=True, zoom_start=zoom_start)
+    return base_map
+
+def generate_dual_map(location=[40.693943, -73.985880], zoom_start=12):
+    base_map = folium.plugins.DualMap(location=location, control_scale=True, zoom_start=zoom_start)
+    return base_map

@@ -68,8 +68,10 @@ def main():
         #statistics.analyse_trip_duration(trip_data)
 
         print("{0:-^80}".format(" Time Analysis "))
-        statistics.analyse_date_pattern(trip_data)
+        #statistics.analyse_date_pattern(trip_data)
 
+        print("{0:-^80}".format(" Geographic Analysis "))
+        statistics.analyse_geo_pattern(trip_data)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))

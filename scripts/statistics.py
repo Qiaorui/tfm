@@ -352,6 +352,7 @@ def generate_base_map(location=[40.693943, -73.985880], zoom_start=12):
     base_map = folium.Map(location=location, control_scale=True, zoom_start=zoom_start)
     return base_map
 
+
 def generate_dual_map(location=[40.693943, -73.985880], zoom_start=12):
     base_map = folium.plugins.DualMap(location=location, control_scale=True, zoom_start=zoom_start)
     return base_map

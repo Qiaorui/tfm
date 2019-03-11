@@ -1,5 +1,47 @@
 import glob
 import pandas as pd
+import os
+from tqdm import tqdm
+import requests
+import math
+
+
+BASE_URL = "https://s3.amazonaws.com/tripdata/"
+BASE_PATTERN_NYC ="{}-citibike-tripdata.csv.zip"
+BASE_PATTERN_JC = "JC-{}-citibike-tripdata.csv.zip"
+
+DATE_RANGE = [y * 100 + m + 1 for y in range(2017, 2019) for m in range(12)]
+
+
+def download_trip_data(dest_path):
+    save_path = "raw_data"
+    if os.path.isdir(os.path.dirname(dest_path)):
+        save_path = dest_path
+
+    for date in DATE_RANGE:
+        file_path = save_path + BASE_PATTERN_JC.format(date)
+        print(file_path, end="")
+        if os.path.isfile(file_path.split(".zip")[0]):
+            print(" : FOUND")
+        else:
+            download(BASE_URL+BASE_PATTERN_JC.format(date), save_path=file_path)
+
+
+def download(url, save_path):
+    # Streaming, so we can iterate over the response.
+    r = requests.get(url, stream=True)
+
+    # Total size in bytes.
+    total_size = int(r.headers.get('content-length', 0))
+    block_size = 1024
+    wrote = 0
+    with open(save_path, 'wb') as f:
+        for data in tqdm(r.iter_content(block_size), total=math.ceil(total_size // block_size), unit='KB',
+                         unit_scale=True):
+            wrote = wrote + len(data)
+            f.write(data)
+    if total_size != 0 and wrote != total_size:
+        print("ERROR, something went wrong")
 
 
 def read_raw_trip_data(path):

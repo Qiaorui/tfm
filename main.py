@@ -42,7 +42,11 @@ def main():
     trip_data = utils.read_data(trip_data_path)
     if trip_data is None:
         print("No trip data found. Building from the raw data set...")
-        preprocess.preprocess_trips(raw_trip_data_path, trip_data_path)
+        if not preprocess.preprocess_trips(raw_trip_data_path, trip_data_path):
+            print("No raw data found in the path, beginning downloading...")
+            utils.download_trip_data(raw_trip_data_path)
+            preprocess.preprocess_trips(raw_trip_data_path, trip_data_path)
+
         trip_data = utils.read_data(trip_data_path)
         assert trip_data is not None
 

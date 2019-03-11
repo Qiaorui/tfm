@@ -10,6 +10,9 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 def preprocess_trips(raw_path, dest_path):
     df = utils.read_raw_trip_data(raw_path)
 
+    if df is None:
+        return False
+
     print(df.describe())
     print(df.isnull().sum())
     print('Contains ', sum(df.isnull().sum()), ' NULL values.')
@@ -55,6 +58,8 @@ def preprocess_trips(raw_path, dest_path):
     print(df.describe())
 
     df.to_csv(dest_path, index=False)
+
+    return True
 
 
 def preprocess_weathers(raw_path, dest_path):

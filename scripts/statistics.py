@@ -277,8 +277,6 @@ def analyse_geo_pattern(df):
         ['Start_Latitude', 'Start_Longitude']).sum().reset_index()
     pick_ups["Count"] = np.ceil(pick_ups["Count"]/day_count)
     drop_offs["Count"] = np.ceil(drop_offs["Count"]/day_count)
-    print(pick_ups)
-    print(drop_offs)
 
     print(len(pick_ups), "stations plotting...")
     colormap = cm.linear.YlOrBr_05.scale(0, max(pick_ups['Count'].max(), drop_offs['Count'].max()))

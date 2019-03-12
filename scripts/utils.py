@@ -67,7 +67,7 @@ def unzip(zip_path):
 def read_raw_trip_data(path):
     all_files = glob.glob(path)
     frame_list = []
-    for f in all_files:
+    for f in tqdm(all_files, leave=False, unit="file", desc="Loading data"):
         df = pd.read_csv(f, index_col=None, header=0)
         df.columns = ["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID", "Start_Station_Name",
                       "Start_Latitude", "Start_Longitude", "End_Station_ID", "End_Station_Name",
@@ -106,7 +106,7 @@ def read_raw_weather_data(path):
 def read_data(path):
     all_files = glob.glob(path)
     frame_list = []
-    for f in all_files:
+    for f in tqdm(all_files, leave=False, unit="file", desc="Loading data"):
         df = pd.read_csv(f, index_col=None, header=0)
         frame_list.append(df)
     if not frame_list:

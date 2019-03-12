@@ -25,7 +25,7 @@ def main():
     raw_weather_data_path = args.rw
     raw_trip_data_path = args.rt
 
-    pd.set_option('display.precision', 2)
+    pd.set_option('display.precision', 3)
     pd.set_option('display.max_columns', 500)
 
     # Read raw data and clean it
@@ -56,10 +56,6 @@ def main():
 
     print("Breaking trip data to pick-up data and drop-off data")
     pick_ups, drop_offs = utils.break_up(trip_data)
-    print("PICK UPS:")
-    print(pick_ups.head(5))
-    print("DROP OFF")
-    print(drop_offs.head(5))
 
     if args.s:
         # Statistical analysis

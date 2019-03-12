@@ -25,6 +25,7 @@ def download_trip_data(dest_path):
         if os.path.isfile(file_path.split(".zip")[0]):
             print(" : FOUND")
         else:
+            print()
             download(BASE_URL+BASE_PATTERN_JC.format(date), save_path=file_path)
             unzip(file_path)
             os.remove(file_path)
@@ -35,7 +36,7 @@ def download_trip_data(dest_path):
         if os.path.isfile(file_path.split(".zip")[0]):
             print(" : FOUND")
         else:
-            download(BASE_URL+BASE_PATTERN_JC.format(date), save_path=file_path)
+            download(BASE_URL+BASE_PATTERN_NYC.format(date), save_path=file_path)
             unzip(file_path)
             os.remove(file_path)
 
@@ -58,7 +59,6 @@ def download(url, save_path):
 
 
 def unzip(zip_path):
-    print("Unzipping", zip_path)
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(os.path.dirname(zip_path))
 

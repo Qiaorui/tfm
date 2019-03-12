@@ -4,6 +4,7 @@ import os
 from tqdm import tqdm
 import requests
 import math
+import zipfile
 
 
 BASE_URL = "https://s3.amazonaws.com/tripdata/"
@@ -14,17 +15,29 @@ DATE_RANGE = [y * 100 + m + 1 for y in range(2017, 2019) for m in range(12)]
 
 
 def download_trip_data(dest_path):
-    save_path = "raw_data"
+    save_path = "raw_data/"
     if os.path.isdir(os.path.dirname(dest_path)):
-        save_path = dest_path
+        save_path = os.path.dirname(dest_path) + "/"
 
     for date in DATE_RANGE:
         file_path = save_path + BASE_PATTERN_JC.format(date)
-        print(file_path, end="")
+        print(file_path.split(".zip")[0], end="")
         if os.path.isfile(file_path.split(".zip")[0]):
             print(" : FOUND")
         else:
             download(BASE_URL+BASE_PATTERN_JC.format(date), save_path=file_path)
+            unzip(file_path)
+            os.remove(file_path)
+
+    for date in DATE_RANGE:
+        file_path = save_path + BASE_PATTERN_NYC.format(date)
+        print(file_path.split(".zip")[0], end="")
+        if os.path.isfile(file_path.split(".zip")[0]):
+            print(" : FOUND")
+        else:
+            download(BASE_URL+BASE_PATTERN_JC.format(date), save_path=file_path)
+            unzip(file_path)
+            os.remove(file_path)
 
 
 def download(url, save_path):
@@ -42,6 +55,12 @@ def download(url, save_path):
             f.write(data)
     if total_size != 0 and wrote != total_size:
         print("ERROR, something went wrong")
+
+
+def unzip(zip_path):
+    print("Unzipping", zip_path)
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(os.path.dirname(zip_path))
 
 
 def read_raw_trip_data(path):

@@ -36,6 +36,7 @@ def download_trip_data(dest_path):
         if os.path.isfile(file_path.split(".zip")[0]):
             print(" : FOUND")
         else:
+            print()
             download(BASE_URL+BASE_PATTERN_NYC.format(date), save_path=file_path)
             unzip(file_path)
             os.remove(file_path)

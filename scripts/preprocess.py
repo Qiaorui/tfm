@@ -28,24 +28,23 @@ def preprocess_trips(raw_path, dest_path):
 
     stations = get_station_list(df)
     complete_station(df, stations)
-
     df.dropna(inplace=True)
 
     print("Removed", complete_size - len(df.index), "rows")
 
-    df.loc[:, 'Trip_Duration'] = (df.loc[:, 'Trip_Duration'] / 60).apply(np.ceil)
+    df.loc[:, 'Trip_Duration'] = ((df.loc[:, 'Trip_Duration'] / 60).apply(np.ceil)).astype(np.int32)
 
-    df['Start_Hour'] = df['Start_Time'].dt.hour
-    df['Start_Weekday'] = df['Start_Time'].dt.weekday + 1
-    df['Start_Month'] = df['Start_Time'].dt.month
-    df['Start_Season'] = df['Start_Time'].dt.quarter
-    df['Start_Year'] = df['Start_Time'].dt.year
+    df['Start_Hour'] = df['Start_Time'].dt.hour.astype(np.int8)
+    df['Start_Weekday'] = (df['Start_Time'].dt.weekday + 1).astype(np.int8)
+    df['Start_Month'] = df['Start_Time'].dt.month.astype(np.int8)
+    df['Start_Season'] = df['Start_Time'].dt.quarter.astype(np.int8)
+    df['Start_Year'] = df['Start_Time'].dt.year.astype(np.int16)
 
-    df['Stop_Hour'] = df['Stop_Time'].dt.hour
-    df['Stop_Weekday'] = df['Stop_Time'].dt.weekday + 1
-    df['Stop_Month'] = df['Stop_Time'].dt.month
-    df['Stop_Season'] = df['Stop_Time'].dt.quarter
-    df['Stop_Year'] = df['Stop_Time'].dt.year
+    df['Stop_Hour'] = df['Stop_Time'].dt.hour.astype(np.int8)
+    df['Stop_Weekday'] = (df['Stop_Time'].dt.weekday + 1).astype(np.int8)
+    df['Stop_Month'] = df['Stop_Time'].dt.month.astype(np.int8)
+    df['Stop_Season'] = df['Stop_Time'].dt.quarter.astype(np.int8)
+    df['Stop_Year'] = df['Stop_Time'].dt.year.astype(np.int16)
 
     #df['Distance'] = df.apply(calculate_distance, axis=1)
 
@@ -57,8 +56,6 @@ def preprocess_trips(raw_path, dest_path):
     df['Stop_Holiday'] = df['Stop_Time'].dt.normalize().isin(holidays)
 
     print(len(df[df['Start_Holiday'] == True]), 'trips done during holidays')
-
-    print(df.describe())
 
     df.to_csv(dest_path, index=False)
 
@@ -110,7 +107,7 @@ def complete_station(df, stations):
 
     complete_cases = stations[stations.Station_ID.isin(stations[stations.isnull().any(1)]["Station_ID"])].dropna()
     for _, row in complete_cases.iterrows():
-        id, lat, lng = row["Station_ID"], row["Latitude"], row["Longitude"]
+        id, lat, lng = np.int16(row["Station_ID"]), row["Latitude"], row["Longitude"]
         df.loc[df['Start_Station_ID'] == id, "Start_Latitude"] = lat
         df.loc[df['Start_Station_ID'] == id, "Start_Longitude"] = lng
 

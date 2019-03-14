@@ -32,14 +32,15 @@ def main():
     # First check if cleaned data exists, if not, read from raw and save the cleaned version of it
     print("{0:*^80}".format(" Preprocess "))
 
-    weather_data = utils.read_data(weather_data_path)
+    weather_data = utils.read_cleaned_weather_data(weather_data_path)
     if weather_data is None:
         print("No weather data found. Building from the raw data set...")
         preprocess.preprocess_weathers(raw_weather_data_path, weather_data_path)
-        weather_data = utils.read_data(weather_data_path)
+        weather_data = utils.read_cleaned_weather_data(weather_data_path)
         assert weather_data is not None
 
-    trip_data = utils.read_data(trip_data_path)
+    trip_data = utils.read_cleaned_trip_data(trip_data_path)
+
     if trip_data is None:
         print("No trip data found. Building from the raw data set...")
         if not preprocess.preprocess_trips(raw_trip_data_path, trip_data_path):
@@ -47,28 +48,30 @@ def main():
             utils.download_trip_data(raw_trip_data_path)
             preprocess.preprocess_trips(raw_trip_data_path, trip_data_path)
 
-        trip_data = utils.read_data(trip_data_path)
+        trip_data = utils.read_cleaned_trip_data(trip_data_path)
         assert trip_data is not None
 
     if args.ot is not None:
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)
 
+    print("Cleaned size:", trip_data.info(memory_usage='deep'))
+
     print("Breaking trip data to pick-up data and drop-off data")
-    pick_ups, drop_offs = utils.break_up(trip_data)
+    #pick_ups, drop_offs = utils.break_up(trip_data)
 
     if args.s:
         # Statistical analysis
         print("{0:*^80}".format(" Statistic Analysis "))
 
         print("{0:-^80}".format(" Weather Analysis "))
-        #statistics.analyse_weather(weather_data, 2017)
+        statistics.analyse_weather(weather_data, 2017)
 
         print("{0:-^80}".format(" Trip Analysis "))
-        #statistics.analyse_trip_duration(trip_data)
+        statistics.analyse_trip_duration(trip_data)
 
         print("{0:-^80}".format(" Time Analysis "))
-        #statistics.analyse_date_pattern(trip_data)
+        statistics.analyse_date_pattern(trip_data)
 
         print("{0:-^80}".format(" Geographic Analysis "))
         statistics.analyse_geo_pattern(trip_data)

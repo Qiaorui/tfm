@@ -12,15 +12,10 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 def preprocess_trips(raw_path, dest_path):
     df = utils.read_raw_trip_data(raw_path)
 
+    print("Raw size:", df.info(memory_usage='deep'))
+
     if df is None:
         return False
-
-    print("Dropping columns :", ["Bike_ID", "Birth_Year", "User_Type", "Gender", "Start_Station_Name", "End_Station_Name"])
-    df.drop(["Bike_ID", "Birth_Year", "User_Type", "Gender", "Start_Station_Name", "End_Station_Name"], 1, inplace=True)
-    df["Start_Longitude"] = df.Start_Longitude.replace({0 : np.nan})
-    df["Start_Latitude"] = df.Start_Latitude.replace({0: np.nan})
-    df["End_Longitude"] = df.End_Longitude.replace({0: np.nan})
-    df["End_Latitude"] = df.End_Latitude.replace({0: np.nan})
 
     print(df.describe())
     print(df.isnull().sum())
@@ -40,9 +35,6 @@ def preprocess_trips(raw_path, dest_path):
 
     df.loc[:, 'Trip_Duration'] = (df.loc[:, 'Trip_Duration'] / 60).apply(np.ceil)
 
-    df['Start_Time'] = pd.to_datetime(df['Start_Time'])
-    df['Stop_Time'] = pd.to_datetime(df['Stop_Time'])
-
     df['Start_Hour'] = df['Start_Time'].dt.hour
     df['Start_Weekday'] = df['Start_Time'].dt.weekday + 1
     df['Start_Month'] = df['Start_Time'].dt.month
@@ -55,8 +47,7 @@ def preprocess_trips(raw_path, dest_path):
     df['Stop_Season'] = df['Stop_Time'].dt.quarter
     df['Stop_Year'] = df['Stop_Time'].dt.year
 
-    tqdm.pandas(desc="calculating distances")
-    df['Distance'] = df.apply(calculate_distance, axis=1)
+    #df['Distance'] = df.apply(calculate_distance, axis=1)
 
     cal = USFederalHolidayCalendar()
     holidays = cal.holidays(start=df['Start_Time'].min(), end=df['Start_Time'].max())

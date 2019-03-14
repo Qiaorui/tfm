@@ -5,6 +5,7 @@ from tqdm import tqdm
 import requests
 import math
 import zipfile
+import numpy as np
 
 
 BASE_URL = "https://s3.amazonaws.com/tripdata/"
@@ -68,10 +69,20 @@ def read_raw_trip_data(path):
     all_files = glob.glob(path)
     frame_list = []
     for f in tqdm(all_files, leave=False, unit="file", desc="Loading data"):
-        df = pd.read_csv(f, index_col=None, header=0)
-        df.columns = ["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID", "Start_Station_Name",
+        df = pd.read_csv(f,
+                         index_col=None,
+                         header=0,
+                         names=["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID", "Start_Station_Name",
                       "Start_Latitude", "Start_Longitude", "End_Station_ID", "End_Station_Name",
-                      "End_Latitude", "End_Longitude", "Bike_ID", "User_Type", "Birth_Year", "Gender"]
+                      "End_Latitude", "End_Longitude", "Bike_ID", "User_Type", "Birth_Year", "Gender"],
+                         usecols=["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID","Start_Latitude",
+                                  "Start_Longitude", "End_Station_ID", "End_Latitude", "End_Longitude"],
+                         na_values={"Start_Latitude":0,"Start_Longitude":0, "End_Latitude":0,"End_Longitude":0},
+                         dtype={'End_Latitude': np.float32, 'End_Longitude': np.float32, 'End_Station_ID': np.int16,
+                                'Start_Latitude': np.float32, 'Start_Longitude': np.float32,
+                                'Start_Station_ID': np.int32, 'Trip_Duration': np.int32},
+                         parse_dates=["Start_Time", "Stop_Time"]
+                         )
         frame_list.append(df)
     if not frame_list:
         return None
@@ -86,13 +97,13 @@ def read_raw_weather_data(path):
     all_files = glob.glob(path)
     frame_list = []
     for f in all_files:
-        df = pd.read_csv(f, index_col=None, header=None)
+        df = pd.read_csv(f, index_col=None, header=None,
+                         names=["Datetime", "Condition", "Temperature", "Wind", "Humidity", "Visibility"])
         # Weather condition in String
         # Temperature in C
         # Wind Speed in kph
         # Humidity in %
         # Visibility in km
-        df.columns = ["Datetime", "Condition", "Temperature", "Wind", "Humidity", "Visibility"]
         frame_list.append(df)
     if not frame_list:
         return None
@@ -103,11 +114,39 @@ def read_raw_weather_data(path):
     return df
 
 
-def read_data(path):
+def read_cleaned_trip_data(path):
     all_files = glob.glob(path)
     frame_list = []
-    for f in tqdm(all_files, leave=False, unit="file", desc="Loading data"):
-        df = pd.read_csv(f, index_col=None, header=0)
+    for f in tqdm(all_files, leave=False, unit="file", desc="Loading trip data"):
+        df = pd.read_csv(f, index_col=None, header=0,
+                         dtype={'End_Latitude': np.float32, 'End_Longitude': np.float32, 'End_Station_ID': np.int16,
+                                'Start_Holiday': bool, 'Start_Hour': np.int8, 'Start_Latitude': np.float32,
+                                'Start_Longitude': np.float32, 'Start_Month': np.int8, 'Start_Season': np.int8,
+                                'Start_Station_ID': np.int16, 'Start_Weekday': np.int8, 'Start_Year': np.int16,
+                                'Stop_Holiday': bool, 'Stop_Hour': np.int8, 'Stop_Month': np.int8, 'Stop_Season': np.int8,
+                                'Stop_Weekday': np.int8, 'Stop_Year': np.int16, 'Trip_Duration': np.int32},
+                         parse_dates=["Start_Time", "Stop_Time"]
+                         )
+        frame_list.append(df)
+    if not frame_list:
+        return None
+    df = pd.concat(frame_list, sort=True)
+
+    print(len(df), "rows from", path, "have been read")
+    print("Columns:", list(df))
+
+    return df
+
+
+def read_cleaned_weather_data(path):
+    all_files = glob.glob(path)
+    frame_list = []
+    for f in tqdm(all_files, leave=False, unit="file", desc="Loading weather data"):
+        df = pd.read_csv(f, index_col=None, header=0,
+                         dtype={"Condition": str, "Temperature": np.float32, "Wind": np.float32, "Humidity": np.int8,
+                                "Visibility": np.float32},
+                         parse_dates=["Datetime"]
+                         )
         frame_list.append(df)
     if not frame_list:
         return None

@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import folium
-from folium.plugins import HeatMap, HeatMapWithTime
+from folium.plugins import HeatMap
 import branca.colormap as cm
-import math
 import webbrowser
 import os
 from pandas.plotting import register_matplotlib_converters
@@ -15,7 +14,6 @@ DPI = 300
 
 
 def analyse_weather(df, start_year=None):
-    df['Datetime'] = pd.to_datetime(df['Datetime'])
     if start_year is not None:
         df = df.loc[df['Datetime'].dt.year >= start_year]
 
@@ -138,6 +136,7 @@ def analyse_trip_duration(df, start_year=None):
     plt.xlabel("Minute")
     plt.show()
 
+    """
     # Plot of average distance between stations by trip duration
     avg_time = df.groupby('Trip_Duration')['Distance'].mean()
     plt.figure(dpi=DPI)
@@ -147,6 +146,7 @@ def analyse_trip_duration(df, start_year=None):
     plt.xlabel("Duration (minute)")
     plt.ylabel("Distance (km)")
     plt.show()
+    """
 
 
 def analyse_date_pattern(df):

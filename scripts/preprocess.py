@@ -60,6 +60,7 @@ def preprocess_trips(raw_path, dest_path):
     print(len(df[df['Start_Holiday'] == True]), 'trips done during holidays')
 
     df.to_csv(dest_path, index=False)
+    print(dest_path, "created")
 
     return True
 

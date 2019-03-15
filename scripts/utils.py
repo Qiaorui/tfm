@@ -78,9 +78,9 @@ def read_raw_trip_data(path):
                          usecols=["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID","Start_Latitude",
                                   "Start_Longitude", "End_Station_ID", "End_Latitude", "End_Longitude"],
                          na_values={"Start_Latitude":0,"Start_Longitude":0, "End_Latitude":0,"End_Longitude":0},
-                         dtype={'End_Latitude': np.float32, 'End_Longitude': np.float32, 'End_Station_ID': np.int16,
+                         dtype={'End_Latitude': np.float32, 'End_Longitude': np.float32, 'End_Station_ID': np.float32,
                                 'Start_Latitude': np.float32, 'Start_Longitude': np.float32,
-                                'Start_Station_ID': np.int32, 'Trip_Duration': np.int32},
+                                'Start_Station_ID': np.float32, 'Trip_Duration': np.int32},
                          parse_dates=["Start_Time", "Stop_Time"]
                          )
         frame_list.append(df)

@@ -29,6 +29,8 @@ def preprocess_trips(raw_path, dest_path):
     stations = get_station_list(df)
     complete_station(df, stations)
     df.dropna(inplace=True)
+    df['Start_Station_ID'] = df['Start_Station_ID'].astype(np.int16)
+    df['End_Station_ID'] = df['End_Station_ID'].astype(np.int16)
 
     print("Removed", complete_size - len(df.index), "rows")
 
@@ -104,10 +106,10 @@ def get_station_list(df):
 
 
 def complete_station(df, stations):
-
     complete_cases = stations[stations.Station_ID.isin(stations[stations.isnull().any(1)]["Station_ID"])].dropna()
+
     for _, row in complete_cases.iterrows():
-        id, lat, lng = np.int16(row["Station_ID"]), row["Latitude"], row["Longitude"]
+        id, lat, lng = row["Station_ID"], row["Latitude"], row["Longitude"]
         df.loc[df['Start_Station_ID'] == id, "Start_Latitude"] = lat
         df.loc[df['Start_Station_ID'] == id, "Start_Longitude"] = lng
 

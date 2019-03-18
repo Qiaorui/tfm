@@ -63,16 +63,17 @@ def main():
         print("{0:*^80}".format(" Statistic Analysis "))
 
         print("{0:-^80}".format(" Weather Analysis "))
-        statistics.analyse_weather(weather_data, 2017)
+        #statistics.analyse_weather(weather_data, 2017)
 
         print("{0:-^80}".format(" Trip Analysis "))
-        statistics.analyse_trip_duration(trip_data)
+        #statistics.analyse_trip_duration(trip_data)
 
         print("{0:-^80}".format(" Time Analysis "))
-        statistics.analyse_date_pattern(trip_data)
+        #statistics.analyse_date_pattern(trip_data)
 
         print("{0:-^80}".format(" Geographic Analysis "))
-        statistics.analyse_geo_pattern(trip_data)
+        #statistics.analyse_geo_pattern(trip_data)
+        statistics.plot_unbalance_network(trip_data)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))

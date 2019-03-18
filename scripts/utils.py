@@ -165,3 +165,34 @@ def break_up(df):
                           'Stop_Season', 'Stop_Time', 'Stop_Weekday', 'Stop_Year']]
 
     return pickups, dropoffs
+
+
+def get_station_list(df):
+    stations = df[["Start_Station_ID", "Start_Latitude", "Start_Longitude"]].copy()
+    stations.rename(
+        columns={'Start_Station_ID': 'Station_ID', "Start_Latitude": "Latitude", "Start_Longitude": "Longitude"},
+        inplace=True
+    )
+    df2 = df[["End_Station_ID", "End_Latitude", "End_Longitude"]].copy()
+    df2.rename(
+        columns={'End_Station_ID': 'Station_ID', "End_Latitude": "Latitude", "End_Longitude": "Longitude"},
+        inplace=True
+    )
+
+    df2.drop_duplicates(inplace=True)
+
+    stations = pd.concat([stations, df2], ignore_index=True)
+    stations.drop_duplicates(inplace=True)
+    stations.reset_index(inplace=True, drop=True)
+    return stations
+
+
+def get_start_station_dict(df):
+    stations = df[["Start_Station_ID", "Start_Latitude", "Start_Longitude"]].copy()
+    stations.rename(
+        columns={'Start_Station_ID': 'Station_ID', "Start_Latitude": "Latitude", "Start_Longitude": "Longitude"},
+        inplace=True
+    )
+    stations.drop_duplicates(inplace=True)
+    stations.reset_index(inplace=True, drop=True)
+    return stations.set_index('Station_ID').T.to_dict('list')

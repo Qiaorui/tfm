@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from . import utils
 import folium
 from folium.plugins import HeatMap
 import branca.colormap as cm
 import webbrowser
+import networkx as nx
 import os
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
@@ -344,6 +346,61 @@ def analyse_geo_pattern(df):
     #folium.LayerControl(collapsed=False).add_to(m)
     m.save("map.html")
     webbrowser.open("file://" + os.path.realpath("map.html"))
+
+
+def plot_unbalance_network(df):
+    day_count = (pd.to_datetime(df["Start_Time"]).max() - pd.to_datetime(df["Start_Time"]).min()) / np.timedelta64(1,'D')
+    stations = utils.get_start_station_dict(df)
+
+    # Get difference between two stations
+    df_agg = df[["Start_Station_ID", "End_Station_ID"]].copy()
+    df_agg = df_agg.loc[df_agg['End_Station_ID'].isin(list(stations.keys()))]
+
+    df_agg = df_agg.groupby(["Start_Station_ID", "End_Station_ID"]).size().reset_index(name='Counts')
+
+    # Find sum for each station
+    out_list = df_agg.groupby('Start_Station_ID')['Counts'].sum().to_dict()
+    in_list = df_agg.groupby('End_Station_ID')['Counts'].sum().to_dict()
+    balance_list = dict()
+    for s in stations.keys():
+        balance_list[s] = (in_list.get(s, 0) - out_list.get(s, 0)) / day_count
+
+    for i, row in df_agg.iterrows():
+        from_id, to_id, out_count = row["Start_Station_ID"], row['End_Station_ID'], row["Counts"]
+        in_count_series = df_agg.loc[(df_agg['Start_Station_ID'] == to_id) & (df_agg['End_Station_ID'] == from_id), "Counts"]
+        in_count = 0 if in_count_series.empty else in_count_series.values[0]
+        row["Counts"] = in_count - out_count
+
+    # Aggregate them to only positive edge
+    df_agg = df_agg.loc[df_agg["Counts"] > 0]
+    df_agg["Counts"] = df_agg["Counts"]/day_count
+
+
+    print(df_agg)
+
+    print(balance_list)
+
+    # Plot the network
+    g = nx.DiGraph()
+
+    for _, row in df_agg.iterrows():
+        from_id, to_id, count = row["Start_Station_ID"], row['End_Station_ID'], row["Counts"]
+        g.add_edge(from_id, to_id, weight=count)
+    edge_labels = dict([((u, v,), d['weight']) for u, v, d in g.edges(data=True)])
+
+    options = {
+        'node_color': 'blue',
+        'node_size': 50,
+        'width': 3,
+        'arrowstyle': '-|>',
+        'arrowsize': 6,
+    }
+    plt.figure(figsize=(20, 20))
+    plt.gca().invert_yaxis()
+    plt.gca().invert_xaxis()
+    nx.draw_networkx(g, pos=stations, with_labels=False, arrows=True, **options)
+    plt.show()
+
 
 
 def generate_base_map(location=[40.693943, -73.985880], zoom_start=12):

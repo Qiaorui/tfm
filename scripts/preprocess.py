@@ -27,7 +27,7 @@ def preprocess_trips(raw_path, dest_path):
     df.dropna(how='all', subset=["Start_Station_ID", "Start_Latitude", "Start_Longitude"], inplace=True)
     df.dropna(how='all', subset=["End_Station_ID", "End_Latitude", "End_Longitude"], inplace=True)
 
-    stations = get_station_list(df)
+    stations = utils.get_station_list(df)
     complete_station(df, stations)
     df.dropna(inplace=True)
     df['Start_Station_ID'] = df['Start_Station_ID'].astype(np.int16)
@@ -85,26 +85,6 @@ def remove_trip_outlier(df, th):
     # delete all rows with column 'Trip_Duration' has value more than defined threshold
     indexNames = df[df['Trip_Duration'] >= th].index
     df.drop(indexNames, inplace=True)
-
-
-def get_station_list(df):
-    stations = df[["Start_Station_ID", "Start_Latitude", "Start_Longitude"]].copy()
-    stations.rename(
-        columns={'Start_Station_ID': 'Station_ID', "Start_Latitude": "Latitude", "Start_Longitude": "Longitude"},
-        inplace=True
-    )
-    df2 = df[["End_Station_ID", "End_Latitude", "End_Longitude"]].copy()
-    df2.rename(
-        columns={'End_Station_ID': 'Station_ID', "End_Latitude": "Latitude", "End_Longitude": "Longitude"},
-        inplace=True
-    )
-
-    df2.drop_duplicates(inplace=True)
-
-    stations = pd.concat([stations, df2], ignore_index=True)
-    stations.drop_duplicates(inplace=True)
-    stations.reset_index(inplace=True, drop=True)
-    return stations
 
 
 def complete_station(df, stations):

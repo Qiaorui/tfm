@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from geopy import distance
 from tqdm import tqdm
+import math
 
 from pandas.tseries.holiday import USFederalHolidayCalendar
 
@@ -59,7 +60,7 @@ def preprocess_trips(raw_path, dest_path):
 
     print(len(df[df['Start_Holiday'] == True]), 'trips done during holidays')
 
-    df.to_csv(dest_path, index=False)
+    df.to_csv(dest_path, index=False, chunksize=math.ceil(len(df.index) / 20))
     print(dest_path, "created")
 
     return True

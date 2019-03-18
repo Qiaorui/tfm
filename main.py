@@ -55,8 +55,6 @@ def main():
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)
 
-    print("Cleaned size:", trip_data.info(memory_usage='deep'))
-
     print("Breaking trip data to pick-up data and drop-off data")
     #pick_ups, drop_offs = utils.break_up(trip_data)
 

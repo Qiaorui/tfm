@@ -18,7 +18,7 @@ def analyse_weather(df, start_year=None):
         df = df.loc[df['Datetime'].dt.year >= start_year]
 
     print(df.describe())
-    print(df.info())
+    print(df.info(memory_usage='deep'))
 
     plt.figure(figsize=(20, 10))
     plt.title("Temperature")

@@ -1,10 +1,13 @@
 import numpy as np
 import pandas as pd
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from . import utils
 import folium
 from folium.plugins import HeatMap
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 import branca.colormap as cm
+import math
 import webbrowser
 import networkx as nx
 import os
@@ -375,11 +378,6 @@ def plot_unbalance_network(df):
     df_agg = df_agg.loc[df_agg["Counts"] > 0]
     df_agg["Counts"] = df_agg["Counts"]/day_count
 
-
-    print(df_agg)
-
-    print(balance_list)
-
     # Plot the network
     g = nx.DiGraph()
 
@@ -388,17 +386,57 @@ def plot_unbalance_network(df):
         g.add_edge(from_id, to_id, weight=count)
     edge_labels = dict([((u, v,), d['weight']) for u, v, d in g.edges(data=True)])
 
-    options = {
-        'node_color': 'blue',
-        'node_size': 50,
-        'width': 3,
-        'arrowstyle': '-|>',
-        'arrowsize': 6,
-    }
-    plt.figure(figsize=(20, 20))
+    # Sort edge by weight
+    edges, weights = zip(*nx.get_edge_attributes(g, 'weight').items())
+    tmp = list(map(list, zip(*sorted(list(zip(weights, edges))))))
+    edges, weights = tmp[1], tmp[0]
+
+    # Normalize node value
+    values = list(balance_list.values())
+    vmin = min(values)
+    vmax = max(values)
+    shift = max(abs(vmax), abs(vmin))
+    # Normalize by log
+    values = [math.log(x+1) if x >= 0 else -math.log(-x+1) for x in values]
+    nvmin = min(values)
+    nvmax = max(values)
+    nshift = max(abs(nvmax), abs(nvmin))
+
+    # Shift all values
+    values = [x + nshift for x in values]
+
+    plt.figure(figsize=(20, 15))
     plt.gca().invert_yaxis()
     plt.gca().invert_xaxis()
-    nx.draw_networkx(g, pos=stations, with_labels=False, arrows=True, **options)
+
+    nodes = nx.draw_networkx_nodes(g, stations, node_size=50, width=3, nodelist=list(balance_list.keys()),
+                                   node_color=values, cmap=plt.get_cmap("PiYG"),
+                                   vmin=0, vmax=nshift*2)
+    edges = nx.draw_networkx_edges(g, stations, node_size=50, arrowstyle='-|>',
+                                   arrowsize=6, edge_color=weights, edgelist=edges,
+                                   edge_cmap=plt.cm.Blues, width=2)
+
+
+
+
+
+    ax = plt.gca()
+
+    divider = make_axes_locatable(ax)
+    pc = mpl.collections.PatchCollection(edges, cmap=plt.cm.Blues)
+    pc.set_array(weights)
+    cax = divider.append_axes("right", size="5%", pad=0.3)
+    cba = plt.colorbar(pc, cax=cax)
+
+    sm = plt.cm.ScalarMappable(cmap=plt.get_cmap("PiYG"), norm=plt.Normalize(vmin=-shift, vmax=shift))
+    sm._A = []
+    cax = divider.append_axes("right", size="5%", pad=1.0)
+    cbb = plt.colorbar(sm, cax=cax)
+
+    cba.set_label('Route flow between stations')
+    cbb.set_label('Average station balance')
+
+    ax.set_axis_off()
     plt.show()
 
 

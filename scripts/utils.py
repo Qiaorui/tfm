@@ -184,6 +184,9 @@ def get_station_list(df):
     stations = pd.concat([stations, df2], ignore_index=True)
     stations.drop_duplicates(inplace=True)
     stations.reset_index(inplace=True, drop=True)
+
+    print(stations[stations.duplicated(subset='Station_ID', keep=False)])
+    exit(8)
     return stations
 
 

@@ -415,10 +415,7 @@ def plot_unbalance_network(df):
     edges = nx.draw_networkx_edges(g, stations, node_size=50, arrowstyle='-|>',
                                    arrowsize=6, edge_color=weights, edgelist=edges,
                                    edge_cmap=plt.cm.Blues, width=2)
-
-
-
-
+    #nx.draw_networkx_labels(g, stations)
 
     ax = plt.gca()
 

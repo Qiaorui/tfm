@@ -55,9 +55,6 @@ def main():
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)
 
-    print("Breaking trip data to pick-up data and drop-off data")
-    #pick_ups, drop_offs = utils.break_up(trip_data)
-
     if args.s:
         # Statistical analysis
         print("{0:*^80}".format(" Statistic Analysis "))
@@ -74,6 +71,10 @@ def main():
         print("{0:-^80}".format(" Geographic Analysis "))
         #statistics.analyse_geo_pattern(trip_data)
         statistics.plot_unbalance_network(trip_data)
+
+    print("Breaking trip data to pick-up data and drop-off data")
+    #pick_ups, drop_offs = utils.break_up(trip_data)
+
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))

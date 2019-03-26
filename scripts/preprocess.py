@@ -76,6 +76,24 @@ def preprocess_weathers(raw_path, dest_path):
     subprocess.call(["Rscript", target_script, raw_path, dest_path], shell=False)
 
 
+def preprocess_locations(raw_path, dest_path):
+    df = utils.read_raw_location_data(raw_path)
+
+    print(df.isnull().sum())
+    df.rename(columns={'Start_Latitude': 'Latitude', 'Start_Longitude': 'Longitude', "Start_Station_ID": "Station_ID",
+                       "Start_Station_Name": "Station_Name", }, inplace=True)
+    df = df.groupby(["Station_ID", "Station_Name", "Latitude", "Longitude"], as_index=False).agg({"Start_Time": [np.min, np.max]})
+    df.reset_index()
+    cols = [x if not y else y for (x,y) in df.columns.values.tolist()]
+
+    df.columns = cols
+    df.rename(columns={'amin': "First_Time", 'amax': "Last_Time"}, inplace=True)
+
+    df.to_csv(dest_path, index=False)
+    print(dest_path, "created")
+    return True
+
+
 def calculate_distance(row):
     return distance.distance((row['Start_Latitude'], row['Start_Longitude']),
                              (row['End_Latitude'], row['End_Longitude'])).km
@@ -88,8 +106,21 @@ def remove_trip_outlier(df, th):
 
 
 def complete_station(df, stations):
-    complete_cases = stations[stations.Station_ID.isin(stations[stations.isnull().any(1)]["Station_ID"])].dropna()
+    dup = stations[stations.duplicated(subset='Station_ID', keep=False)]
+    dup = dup.dropna()
+    mask = dup["Station_ID"].isin(dup.drop_duplicates('Station_ID', keep=False)["Station_ID"])
+    dup = dup[[not x for x in mask]]
+    print(dup)
+    dup.drop_duplicates("Station_ID", inplace=True)
+    for _, row in dup.iterrows():
+        id, lat, lng = row["Station_ID"], row["Latitude"], row["Longitude"]
+        df.loc[df['Start_Station_ID'] == id, "Start_Latitude"] = lat
+        df.loc[df['Start_Station_ID'] == id, "Start_Longitude"] = lng
 
+        df.loc[df['End_Station_ID'] == id, "End_Latitude"] = lat
+        df.loc[df['End_Station_ID'] == id, "End_Longitude"] = lng
+
+    complete_cases = stations[stations.Station_ID.isin(stations[stations.isnull().any(1)]["Station_ID"])].dropna()
     for _, row in complete_cases.iterrows():
         id, lat, lng = row["Station_ID"], row["Latitude"], row["Longitude"]
         df.loc[df['Start_Station_ID'] == id, "Start_Latitude"] = lat

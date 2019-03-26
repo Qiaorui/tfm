@@ -114,6 +114,50 @@ def read_raw_weather_data(path):
     return df
 
 
+def read_raw_location_data(path):
+    all_files = glob.glob(path)
+    frame_list = []
+    for f in tqdm(all_files, leave=False, unit="file", desc="Loading data"):
+        df = pd.read_csv(f,
+                         index_col=None,
+                         header=0,
+                         names=["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID", "Start_Station_Name",
+                                "Start_Latitude", "Start_Longitude", "End_Station_ID", "End_Station_Name",
+                                "End_Latitude", "End_Longitude", "Bike_ID", "User_Type", "Birth_Year", "Gender"],
+                         usecols=["Start_Time", "Start_Station_ID","Start_Latitude", "Start_Station_Name",
+                                  "Start_Longitude"],
+                         na_values={"Start_Latitude":0,"Start_Longitude":0},
+                         dtype={'Start_Latitude': np.float32, 'Start_Longitude': np.float32,
+                                'Start_Station_ID': np.float32},
+                         parse_dates=["Start_Time"]
+                         )
+        frame_list.append(df)
+    if not frame_list:
+        return None
+    df = pd.concat(frame_list, sort=True)
+    print(len(df), "rows from trip data have been read")
+    return df
+
+
+def read_cleaned_location_data(path):
+    all_files = glob.glob(path)
+    frame_list = []
+    for f in tqdm(all_files, leave=False, unit="file", desc="Loading data"):
+        df = pd.read_csv(f,
+                         index_col=None,
+                         header=0,
+                         #names=["Station_ID", "Station_Name", "Latitude", "Longitude", "First_Time", "Last_Time"],
+                         dtype={'Latitude': np.float32, 'Longitude': np.float32, 'Station_ID': np.int16,},
+                         parse_dates=["First_Time", "Last_Time"]
+                         )
+        frame_list.append(df)
+    if not frame_list:
+        return None
+    df = pd.concat(frame_list, sort=True)
+    print(len(df), "rows from trip data have been read")
+    return df
+
+
 def read_cleaned_trip_data(path):
     all_files = glob.glob(path)
     frame_list = []
@@ -185,8 +229,6 @@ def get_station_list(df):
     stations.drop_duplicates(inplace=True)
     stations.reset_index(inplace=True, drop=True)
 
-    print(stations[stations.duplicated(subset='Station_ID', keep=False)])
-    exit(8)
     return stations
 
 

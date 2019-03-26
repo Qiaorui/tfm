@@ -11,6 +11,7 @@ def main():
     parser.add_argument("-cw", default="cleaned_data/weather.csv", help="input cleaned weather data path")
     parser.add_argument("-rt", default="raw_data/JC*tripdata.csv", help="input raw trip data path")
     parser.add_argument("-ct", default="cleaned_data/JC_trip_data.csv", help="input cleaned trip data path")
+    parser.add_argument("-cs", default="cleaned_data/JC_station_data.csv", help="input cleaned trip data path")
 
     parser.add_argument("-ot", type=int, help="Outlier threshold")
     parser.add_argument("-ts", type=int, default=30, help="Time slot for the aggregation, units in minute")
@@ -20,6 +21,7 @@ def main():
 
     args = parser.parse_args()
 
+    location_data_path = args.cs
     weather_data_path = args.cw
     trip_data_path = args.ct
     raw_weather_data_path = args.rw
@@ -34,15 +36,23 @@ def main():
 
     weather_data = utils.read_cleaned_weather_data(weather_data_path)
     if weather_data is None:
-        print("No weather data found. Building from the raw data set...")
+        print("No weather data found. Building from  raw data set...")
         preprocess.preprocess_weathers(raw_weather_data_path, weather_data_path)
         weather_data = utils.read_cleaned_weather_data(weather_data_path)
         assert weather_data is not None
 
-    trip_data = utils.read_cleaned_trip_data(trip_data_path)
+    location_data = utils.read_cleaned_location_data(location_data_path)
+    if location_data is None:
+        print("No location data found. Building from raw data set...")
+        if not preprocess.preprocess_locations(raw_trip_data_path, location_data_path):
+            print("No raw data found in the path, beginning downloading...")
+            utils.download_trip_data(raw_trip_data_path)
+            preprocess.preprocess_locations(raw_trip_data_path, location_data_path)
+            assert location_data is not None
 
+    trip_data = utils.read_cleaned_trip_data(trip_data_path)
     if trip_data is None:
-        print("No trip data found. Building from the raw data set...")
+        print("No trip data found. Building from raw data set...")
         if not preprocess.preprocess_trips(raw_trip_data_path, trip_data_path):
             print("No raw data found in the path, beginning downloading...")
             utils.download_trip_data(raw_trip_data_path)
@@ -70,7 +80,7 @@ def main():
 
         print("{0:-^80}".format(" Geographic Analysis "))
         #statistics.analyse_geo_pattern(trip_data)
-        statistics.plot_unbalance_network(trip_data)
+        #statistics.plot_unbalance_network(trip_data)
 
     print("Breaking trip data to pick-up data and drop-off data")
     #pick_ups, drop_offs = utils.break_up(trip_data)

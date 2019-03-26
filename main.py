@@ -2,6 +2,7 @@ from scripts import preprocess
 from scripts import utils
 from scripts import statistics
 import pandas as pd
+import gc
 import argparse
 
 
@@ -82,8 +83,20 @@ def main():
         #statistics.analyse_geo_pattern(trip_data)
         #statistics.plot_unbalance_network(trip_data)
 
+    print("{0:*^80}".format(" Prepare training data "))
+    # Remove trips which contains sink station
+    start_stations_ids = list(utils.get_start_station_dict(trip_data).keys())
+    trip_data = trip_data[trip_data.End_Station_ID.isin(start_stations_ids)]
+
     print("Breaking trip data to pick-up data and drop-off data")
-    #pick_ups, drop_offs = utils.break_up(trip_data)
+    pick_ups, drop_offs = utils.break_up(trip_data)
+
+    del trip_data
+    del weather_data
+    del location_data
+    gc.collect()
+
+    # PCA
 
 
     # Training modules, train data by different techniques

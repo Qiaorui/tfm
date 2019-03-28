@@ -31,7 +31,6 @@ def main():
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)
 
-
     print("{0:*^80}".format(" Prepare training data "))
     # Remove trips which contains sink station
     start_stations_ids = list(utils.get_start_station_dict(trip_data).keys())
@@ -40,14 +39,15 @@ def main():
     print("Breaking trip data to pick-up data and drop-off data")
     # pick_ups, drop_offs = utils.break_up(trip_data)
 
-    pick_ups = utils.get_pickups(trip_data)
+    pick_ups = trip_data['Start_Station_ID', 'Start_Time'].copy()
+    drop_offs = trip_data['End_Station_ID', 'Stop_Time'].copy()
+
     del trip_data
+    gc.collect()
+
     pick_ups = utils.aggregate_by_time_slot(pick_ups, args.ts)
     pick_ups = utils.fill_weather_data(pick_ups, weather_data)
 
-    del trip_data
-    del weather_data
-    gc.collect()
 
     # PCA
 

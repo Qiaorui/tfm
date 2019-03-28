@@ -21,7 +21,6 @@ def main():
     pd.set_option('display.precision', 3)
     pd.set_option('display.max_columns', 500)
 
-
     weather_data = utils.read_cleaned_weather_data(weather_data_path)
     assert weather_data is not None
 

@@ -2,7 +2,6 @@ from scripts import preprocess
 from scripts import utils
 from scripts import statistics
 import pandas as pd
-import gc
 import argparse
 
 
@@ -15,9 +14,7 @@ def main():
     parser.add_argument("-cs", default="cleaned_data/JC_station_data.csv", help="input cleaned trip data path")
 
     parser.add_argument("-ot", type=int, help="Outlier threshold")
-    parser.add_argument("-ts", type=int, default=30, help="Time slot for the aggregation, units in minute")
 
-    parser.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
     parser.add_argument("-s", action="store_true", help="print statistical report")
 
     args = parser.parse_args()

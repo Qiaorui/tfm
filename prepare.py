@@ -71,41 +71,17 @@ def main():
         print("{0:*^80}".format(" Statistic Analysis "))
 
         print("{0:-^80}".format(" Weather Analysis "))
-        #statistics.analyse_weather(weather_data, 2017)
+        statistics.analyse_weather(weather_data, 2017)
 
         print("{0:-^80}".format(" Trip Analysis "))
-        #statistics.analyse_trip_duration(trip_data)
+        statistics.analyse_trip_duration(trip_data)
 
         print("{0:-^80}".format(" Time Analysis "))
-        #statistics.analyse_date_pattern(trip_data)
+        statistics.analyse_date_pattern(trip_data)
 
         print("{0:-^80}".format(" Geographic Analysis "))
-        #statistics.analyse_geo_pattern(trip_data)
-        #statistics.plot_unbalance_network(trip_data)
-
-    print("{0:*^80}".format(" Prepare training data "))
-    # Remove trips which contains sink station
-    start_stations_ids = list(utils.get_start_station_dict(trip_data).keys())
-    trip_data = trip_data[trip_data.End_Station_ID.isin(start_stations_ids)]
-
-    print("Breaking trip data to pick-up data and drop-off data")
-    pick_ups, drop_offs = utils.break_up(trip_data)
-
-    del trip_data
-    del weather_data
-    del location_data
-    gc.collect()
-
-    # PCA
-
-
-    # Training modules, train data by different techniques
-    print("{0:*^80}".format(" Training "))
-
-        # Save model per each techniques
-
-    # Evaluate the prediction
-    print("{0:*^80}".format(" Evaluation "))
+        statistics.analyse_geo_pattern(trip_data)
+        statistics.plot_unbalance_network(trip_data)
 
 
 if __name__ == '__main__':

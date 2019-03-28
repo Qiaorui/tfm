@@ -211,6 +211,28 @@ def break_up(df):
     return pickups, dropoffs
 
 
+def get_pickups(df):
+    return df.loc[:, ['Start_Holiday', 'Start_Hour', 'Start_Latitude', 'Start_Longitude', 'Start_Month',
+                         'Start_Season', 'Start_Station_ID', 'Start_Time', 'Start_Weekday', 'Start_Year']]
+
+
+def get_dropoffs(df):
+    return df.loc[:, ['End_Latitude', 'End_Longitude', 'End_Station_ID', 'Stop_Holiday', 'Stop_Hour', 'Stop_Month',
+                          'Stop_Season', 'Stop_Time', 'Stop_Weekday', 'Stop_Year']]
+
+
+def aggregate_by_time_slot(df, ts):
+    print(df)
+
+    print(ts)
+    return None
+
+
+def fill_weather_data(df, weather_df):
+
+    return None
+
+
 def get_station_list(df):
     stations = df[["Start_Station_ID", "Start_Latitude", "Start_Longitude"]].copy()
     stations.rename(

@@ -314,41 +314,32 @@ def analyse_geo_pattern(df):
     #m.add_child(colormap)
     #m.m2.add_child(colormap)
 
-
-    """
-    lat, lng = df["Start_Latitude"].mean(), df["Start_Longitude"].mean()
-    m = generate_base_map([lat, lng], 14)
-
-    day_count = (pd.to_datetime(df["Start_Time"]).max() - pd.to_datetime(df["Start_Time"]).min()) /np.timedelta64(1,'D')
-
-    pick_ups = df.copy()
-    pick_ups["Count"] = 1
-    pick_ups = pick_ups[['Start_Latitude', 'Start_Longitude', 'Count']].groupby(
-        ['Start_Latitude', 'Start_Longitude']).sum().reset_index()
-    pick_ups["Count"] = np.ceil(pick_ups["Count"]/day_count)
-    print(pick_ups)
-
-    print(len(pick_ups), "stations plotting...")
-    colormap = cm.linear.YlOrBr_05.scale(0, pick_ups['Count'].max())
-    colormap.caption = 'Daily Pick up Distribution'
-
-    for i in range(len(pick_ups)):
-        folium.Circle(
-            location=[pick_ups.iloc[i]['Start_Latitude'], pick_ups.iloc[i]['Start_Longitude']],
-            radius= 70,
-            color= "black",
-            weight=2,
-            #dash_array= '5,5',
-            fill_opacity=1,
-            fill_color= colormap(pick_ups.iloc[i]['Count'])
-        ).add_to(m)
-
-    m.add_child(colormap)
-    """
-
     #folium.LayerControl(collapsed=False).add_to(m)
     m.save("map.html")
     webbrowser.open("file://" + os.path.realpath("map.html"))
+
+
+def plot_stations(df, title="Map"):
+    lat, lng = df["Latitude"].mean(), df["Longitude"].mean()
+    m = generate_base_map([lat, lng], 12)
+
+    for _, row in df.iterrows():
+        folium.Circle(
+            location=[row['Latitude'], row['Longitude']],
+            radius= 40,
+            #color= "black",
+            #weight=2,
+            #dash_array= '5,5',
+            color= "red",
+            fill_color= "red",
+            fill_opacity=1,
+            popup= str(row["Station_ID"]),
+            #fill_color= colormap(pick_ups.iloc[i]['Count'])
+        ).add_to(m)
+
+    m.save(title + ".html")
+    webbrowser.open("file://" + os.path.realpath(title + ".html"))
+
 
 
 def plot_unbalance_network(df):
@@ -438,11 +429,11 @@ def plot_unbalance_network(df):
 
 
 
-def generate_base_map(location=[40.693943, -73.985880], zoom_start=12):
-    base_map = folium.Map(location=location, control_scale=True, zoom_start=zoom_start)
+def generate_base_map(location=[40.693943, -73.985880], zoom_start=12, tiles="Cartodb Positron"):
+    base_map = folium.Map(location=location, control_scale=True, zoom_start=zoom_start, tiles=tiles)
     return base_map
 
 
-def generate_dual_map(location=[40.693943, -73.985880], zoom_start=12):
-    base_map = folium.plugins.DualMap(location=location, control_scale=True, zoom_start=zoom_start)
+def generate_dual_map(location=[40.693943, -73.985880], zoom_start=12, tiles="Cartodb Positron"):
+    base_map = folium.plugins.DualMap(location=location, control_scale=True, zoom_start=zoom_start, tiles=tiles)
     return base_map

@@ -39,11 +39,14 @@ def main():
     print("Breaking trip data to pick-up data and drop-off data")
     # pick_ups, drop_offs = utils.break_up(trip_data)
 
-    pick_ups = trip_data['Start_Station_ID', 'Start_Time'].copy()
-    drop_offs = trip_data['End_Station_ID', 'Stop_Time'].copy()
+    pick_ups = trip_data[['Start_Station_ID', 'Start_Time']].copy()
+    drop_offs = trip_data[['End_Station_ID', 'Stop_Time']].copy()
 
     del trip_data
     gc.collect()
+
+    pick_ups.rename(columns={"Start_Station_ID": "Station_ID", "Start_Time": "Timestamp"}, inplace=True)
+    drop_offs.rename(columns={"Stop_Station_ID": "Station_ID", "Stop_Time": "Timestamp"}, inplace=True)
 
     pick_ups = utils.aggregate_by_time_slot(pick_ups, args.ts)
     pick_ups = utils.fill_weather_data(pick_ups, weather_data)

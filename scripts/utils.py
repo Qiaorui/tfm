@@ -6,13 +6,38 @@ import requests
 import math
 import zipfile
 import numpy as np
+import urllib.request
+import json
+import csv
+import certifi
 
 
 BASE_URL = "https://s3.amazonaws.com/tripdata/"
 BASE_PATTERN_NYC ="{}-citibike-tripdata.csv.zip"
 BASE_PATTERN_JC = "JC-{}-citibike-tripdata.csv.zip"
+STATION_URL = "https://feeds.citibikenyc.com/stations/stations.json"
 
 DATE_RANGE = [y * 100 + m + 1 for y in range(2017, 2019) for m in range(12)]
+
+
+def download_station_data(dest_path):
+    with urllib.request.urlopen(STATION_URL, cafile=certifi.where()) as url:
+        data = json.loads(url.read().decode())
+        df = pd.DataFrame(data.get("stationBeanList"))
+        df = df.replace('',np.nan)
+        df.dropna(axis='columns', inplace=True)
+        df.drop(
+            df.columns.difference(['id', 'latitude', 'longitude', 'stationName', 'totalDocks']),
+            axis=1,
+            inplace=True
+        )
+        df.rename(
+            columns={'id': 'Station_ID', "latitude": "Latitude", "longitude": "Longitude",
+                     "stationName": "Station_Name", "totalDocks": "Docks"},
+            inplace=True
+        )
+        df.to_csv(dest_path, index=False)
+        print(dest_path, "created")
 
 
 def download_trip_data(dest_path):
@@ -142,19 +167,18 @@ def read_raw_location_data(path):
 def read_cleaned_location_data(path):
     all_files = glob.glob(path)
     frame_list = []
-    for f in tqdm(all_files, leave=False, unit="file", desc="Loading data"):
+    for f in all_files:
         df = pd.read_csv(f,
                          index_col=None,
                          header=0,
-                         #names=["Station_ID", "Station_Name", "Latitude", "Longitude", "First_Time", "Last_Time"],
-                         dtype={'Latitude': np.float32, 'Longitude': np.float32, 'Station_ID': np.int16,},
-                         parse_dates=["First_Time", "Last_Time"]
+                         dtype={'Latitude': np.float32, 'Longitude': np.float32, 'Station_ID': np.int16, 'Docks': np.int8}
                          )
         frame_list.append(df)
     if not frame_list:
         return None
     df = pd.concat(frame_list, sort=True)
-    print(len(df), "rows from trip data have been read")
+    print(len(df), "rows from station data have been read")
+    print("Columns:", list(df))
     return df
 
 
@@ -185,7 +209,7 @@ def read_cleaned_trip_data(path):
 def read_cleaned_weather_data(path):
     all_files = glob.glob(path)
     frame_list = []
-    for f in tqdm(all_files, leave=False, unit="file", desc="Loading weather data"):
+    for f in all_files:
         df = pd.read_csv(f, index_col=None, header=0,
                          dtype={"Condition": str, "Temperature": np.float32, "Wind": np.float32, "Humidity": np.int8,
                                 "Visibility": np.float32},
@@ -222,9 +246,8 @@ def get_dropoffs(df):
 
 
 def aggregate_by_time_slot(df, ts):
-    print(df)
+    df.groupby()
 
-    print(ts)
     return None
 
 

@@ -11,7 +11,7 @@ def main():
     parser.add_argument("-cw", default="cleaned_data/weather.csv", help="input cleaned weather data path")
     parser.add_argument("-rt", default="raw_data/JC*tripdata.csv", help="input raw trip data path")
     parser.add_argument("-ct", default="cleaned_data/JC_trip_data.csv", help="input cleaned trip data path")
-    parser.add_argument("-cs", default="cleaned_data/JC_station_data.csv", help="input cleaned trip data path")
+    parser.add_argument("-cs", default="cleaned_data/station_data.csv", help="input cleaned trip data path")
 
     parser.add_argument("-ot", type=int, help="Outlier threshold")
 
@@ -41,12 +41,12 @@ def main():
 
     location_data = utils.read_cleaned_location_data(location_data_path)
     if location_data is None:
-        print("No location data found. Building from raw data set...")
-        if not preprocess.preprocess_locations(raw_trip_data_path, location_data_path):
-            print("No raw data found in the path, beginning downloading...")
-            utils.download_trip_data(raw_trip_data_path)
-            preprocess.preprocess_locations(raw_trip_data_path, location_data_path)
-            assert location_data is not None
+        print("No location data found. Beginning downloading...")
+        utils.download_station_data(location_data_path)
+        location_data = utils.read_cleaned_location_data(location_data_path)
+        assert location_data is not None
+
+    statistics.plot_stations(location_data)
 
     trip_data = utils.read_cleaned_trip_data(trip_data_path)
     if trip_data is None:
@@ -59,6 +59,7 @@ def main():
         trip_data = utils.read_cleaned_trip_data(trip_data_path)
         assert trip_data is not None
 
+    exit(1)
     if args.ot is not None:
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)

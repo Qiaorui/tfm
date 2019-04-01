@@ -3,6 +3,7 @@ from scripts import utils
 from scripts import statistics
 import pandas as pd
 import argparse
+import numpy as np
 
 
 def main():
@@ -39,14 +40,14 @@ def main():
         weather_data = utils.read_cleaned_weather_data(weather_data_path)
         assert weather_data is not None
 
-    location_data = utils.read_cleaned_location_data(location_data_path)
-    if location_data is None:
+    station_data = utils.read_station_data(location_data_path)
+    if station_data is None:
         print("No location data found. Beginning downloading...")
         utils.download_station_data(location_data_path)
-        location_data = utils.read_cleaned_location_data(location_data_path)
-        assert location_data is not None
+        station_data = utils.read_station_data(location_data_path)
+        assert station_data is not None
 
-    statistics.plot_stations(location_data)
+    statistics.plot_stations(station_data)
 
     trip_data = utils.read_cleaned_trip_data(trip_data_path)
     if trip_data is None:
@@ -67,6 +68,17 @@ def main():
     if args.s:
         # Statistical analysis
         print("{0:*^80}".format(" Statistic Analysis "))
+        location_raw_data = utils.read_raw_location_data(raw_trip_data_path)
+        location_raw_data.rename(
+            columns={'Start_Station_ID': 'Station_ID', "Start_Latitude": "Latitude", "Start_Longitude": "Longitude"},
+            inplace=True
+        )
+        location_raw_data.dropna(subset=['Latitude', 'Longitude'], inplace=True)
+        location_raw_data.fillna(0, inplace=True)
+        location_raw_data['Station_ID'] = location_raw_data['Station_ID'].astype(np.int16)
+        location_raw_data.drop_duplicates(inplace=True)
+        location_raw_data.reset_index(inplace=True, drop=True)
+        statistics.plot_diff_stations(location_raw_data, station_data)
 
         print("{0:-^80}".format(" Weather Analysis "))
         statistics.analyse_weather(weather_data, 2017)

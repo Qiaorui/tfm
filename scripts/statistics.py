@@ -319,7 +319,9 @@ def analyse_geo_pattern(df):
     webbrowser.open("file://" + os.path.realpath("map.html"))
 
 
-def plot_stations(df, title="Map"):
+def plot_stations(df, title="map"):
+    print(len(df.index), "stations plotting...")
+
     lat, lng = df["Latitude"].mean(), df["Longitude"].mean()
     m = generate_base_map([lat, lng], 12)
 
@@ -327,19 +329,46 @@ def plot_stations(df, title="Map"):
         folium.Circle(
             location=[row['Latitude'], row['Longitude']],
             radius= 40,
-            #color= "black",
-            #weight=2,
-            #dash_array= '5,5',
-            color= "red",
-            fill_color= "red",
+            color= "green",
+            fill_color= "green",
             fill_opacity=1,
             popup= str(row["Station_ID"]),
-            #fill_color= colormap(pick_ups.iloc[i]['Count'])
         ).add_to(m)
 
     m.save(title + ".html")
     webbrowser.open("file://" + os.path.realpath(title + ".html"))
 
+
+def plot_diff_stations(df, df2, title="map"):
+    print(len(df.index), "stations plotting...")
+
+    lat, lng = df["Latitude"].mean(), df["Longitude"].mean()
+    m = generate_base_map([lat, lng], 12)
+
+    for _, row in df.iterrows():
+        color = "red"
+        id = row["Station_ID"]
+        lat = row['Latitude']
+        lng = row['Longitude']
+
+        if ((df2['Station_ID'] == id) & np.isclose(df2['Latitude'], lat) & np.isclose(df2['Longitude'], lng)).any():
+            color = "green"
+        elif ((df2['Station_ID'] == id) & ~np.isclose(df2['Latitude'], lat) & ~np.isclose(df2['Longitude'], lng)).any():
+            color = "blue"
+        elif ((df2['Station_ID'] != id) & np.isclose(df2['Latitude'], lat) & np.isclose(df2['Longitude'], lng)).any():
+            color = "blue"
+
+        folium.Circle(
+            location=[lat, lng],
+            radius= 40,
+            color= color,
+            fill_color= color,
+            fill_opacity=1,
+            popup= str(id)
+        ).add_to(m)
+
+    m.save(title + ".html")
+    webbrowser.open("file://" + os.path.realpath(title + ".html"))
 
 
 def plot_unbalance_network(df):

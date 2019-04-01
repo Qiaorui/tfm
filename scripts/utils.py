@@ -149,12 +149,9 @@ def read_raw_location_data(path):
                          names=["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID", "Start_Station_Name",
                                 "Start_Latitude", "Start_Longitude", "End_Station_ID", "End_Station_Name",
                                 "End_Latitude", "End_Longitude", "Bike_ID", "User_Type", "Birth_Year", "Gender"],
-                         usecols=["Start_Time", "Start_Station_ID","Start_Latitude", "Start_Station_Name",
-                                  "Start_Longitude"],
-                         na_values={"Start_Latitude":0,"Start_Longitude":0},
-                         dtype={'Start_Latitude': np.float32, 'Start_Longitude': np.float32,
-                                'Start_Station_ID': np.float32},
-                         parse_dates=["Start_Time"]
+                         usecols=["Start_Station_ID", "Start_Latitude", "Start_Station_Name", "Start_Longitude"],
+                         na_values={"Start_Latitude": 0, "Start_Longitude": 0},
+                         dtype={'Start_Latitude': np.float32, 'Start_Longitude': np.float32, 'Start_Station_ID': np.float32}
                          )
         frame_list.append(df)
     if not frame_list:
@@ -164,7 +161,7 @@ def read_raw_location_data(path):
     return df
 
 
-def read_cleaned_location_data(path):
+def read_station_data(path):
     all_files = glob.glob(path)
     frame_list = []
     for f in all_files:

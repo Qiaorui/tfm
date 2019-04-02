@@ -283,3 +283,20 @@ def get_start_station_dict(df):
     stations.drop_duplicates(inplace=True)
     stations.reset_index(inplace=True, drop=True)
     return stations.set_index('Station_ID').T.to_dict('list')
+
+
+def distance(lat1, lon1, lat2, lon2):
+    p = 0.017453292519943295
+    a = 0.5 - math.cos((lat2-lat1)*p)/2 + math.cos(lat1*p)*math.cos(lat2*p) * (1-math.cos((lon2-lon1)*p)) / 2
+    return 12742 * math.asin(math.sqrt(a))
+
+
+def closest(v, data):
+    if np.isnan(v['Latitude']):
+        res = next((item for item in data if item["Station_ID"] == v["Station_ID"]), {"Station_ID": np.nan})
+        v["Distance"] = np.nan
+    else:
+        res = min(data, key=lambda p: distance(v['Latitude'], v['Longitude'], p['Latitude'], p['Longitude']))
+        v["Distance"] = distance(res["Latitude"], res["Longitude"], v['Latitude'], v['Longitude'])
+    v["Closest_Station_ID"] = res["Station_ID"]
+    return v

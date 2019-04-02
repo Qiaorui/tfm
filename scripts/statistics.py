@@ -353,8 +353,8 @@ def plot_diff_stations(df, df2, title="map"):
 
         if ((df2['Station_ID'] == id) & np.isclose(df2['Latitude'], lat) & np.isclose(df2['Longitude'], lng)).any():
             color = "green"
-        elif ((df2['Station_ID'] == id) & ~np.isclose(df2['Latitude'], lat) & ~np.isclose(df2['Longitude'], lng)).any():
-            color = "blue"
+        elif (df2['Station_ID'] == id).any() and (~np.isclose(df2['Latitude'], lat) & ~np.isclose(df2['Longitude'], lng)).all():
+            color = "yellow"
         elif ((df2['Station_ID'] != id) & np.isclose(df2['Latitude'], lat) & np.isclose(df2['Longitude'], lng)).any():
             color = "blue"
 

@@ -26,7 +26,7 @@ def main():
     raw_weather_data_path = args.rw
     raw_trip_data_path = args.rt
 
-    pd.set_option('display.precision', 3)
+    pd.set_option('display.precision', 4)
     pd.set_option('display.max_columns', 500)
 
     # Read raw data and clean it
@@ -52,15 +52,14 @@ def main():
     trip_data = utils.read_cleaned_trip_data(trip_data_path)
     if trip_data is None:
         print("No trip data found. Building from raw data set...")
-        if not preprocess.preprocess_trips(raw_trip_data_path, trip_data_path):
+        if not preprocess.preprocess_trips(raw_trip_data_path, trip_data_path, station_data):
             print("No raw data found in the path, beginning downloading...")
             utils.download_trip_data(raw_trip_data_path)
-            preprocess.preprocess_trips(raw_trip_data_path, trip_data_path)
+            preprocess.preprocess_trips(raw_trip_data_path, trip_data_path, station_data)
 
         trip_data = utils.read_cleaned_trip_data(trip_data_path)
         assert trip_data is not None
 
-    exit(1)
     if args.ot is not None:
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)
@@ -78,6 +77,7 @@ def main():
         location_raw_data['Station_ID'] = location_raw_data['Station_ID'].astype(np.int16)
         location_raw_data.drop_duplicates(inplace=True)
         location_raw_data.reset_index(inplace=True, drop=True)
+        statistics.plot_stations(location_raw_data)
         statistics.plot_diff_stations(location_raw_data, station_data)
 
         print("{0:-^80}".format(" Weather Analysis "))

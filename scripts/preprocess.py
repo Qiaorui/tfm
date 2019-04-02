@@ -10,7 +10,7 @@ import math
 from pandas.tseries.holiday import USFederalHolidayCalendar
 
 
-def preprocess_trips(raw_path, dest_path):
+def preprocess_trips(raw_path, dest_path, stations):
     df = utils.read_raw_trip_data(raw_path)
 
     print("Raw size:", df.info(memory_usage='deep'))
@@ -27,9 +27,8 @@ def preprocess_trips(raw_path, dest_path):
     df.dropna(how='all', subset=["Start_Station_ID", "Start_Latitude", "Start_Longitude"], inplace=True)
     df.dropna(how='all', subset=["End_Station_ID", "End_Latitude", "End_Longitude"], inplace=True)
 
-    stations = utils.get_station_list(df)
     complete_station(df, stations)
-    df.dropna(inplace=True)
+
     df['Start_Station_ID'] = df['Start_Station_ID'].astype(np.int16)
     df['End_Station_ID'] = df['End_Station_ID'].astype(np.int16)
 
@@ -106,28 +105,60 @@ def remove_trip_outlier(df, th):
 
 
 def complete_station(df, stations):
-    dup = stations[stations.duplicated(subset='Station_ID', keep=False)]
-    dup = dup.dropna()
-    mask = dup["Station_ID"].isin(dup.drop_duplicates('Station_ID', keep=False)["Station_ID"])
-    dup = dup[[not x for x in mask]]
-    print(dup)
-    dup.drop_duplicates("Station_ID", inplace=True)
-    for _, row in dup.iterrows():
-        id, lat, lng = row["Station_ID"], row["Latitude"], row["Longitude"]
-        df.loc[df['Start_Station_ID'] == id, "Start_Latitude"] = lat
-        df.loc[df['Start_Station_ID'] == id, "Start_Longitude"] = lng
+    print("Repairing station data...")
+    thresh = 1 # 1km as threshold
 
-        df.loc[df['End_Station_ID'] == id, "End_Latitude"] = lat
-        df.loc[df['End_Station_ID'] == id, "End_Longitude"] = lng
+    # Get Start station list
+    ss = utils.get_station_list(df)
+    ss.dropna(how="all", inplace=True)
 
-    complete_cases = stations[stations.Station_ID.isin(stations[stations.isnull().any(1)]["Station_ID"])].dropna()
+    stations_list = stations.to_dict('records')
+    stations.set_index("Station_ID", inplace=True, drop=False, verify_integrity=True)
+    print("total", len(ss.index), " stations")
+
+
+    closeness = ss.apply(lambda x: utils.closest(x, data=stations_list), axis=1, result_type="expand")
+    complete_cases = closeness[closeness.Station_ID.isin(closeness[closeness.isnull().any(1)]["Station_ID"])].dropna()
     for _, row in complete_cases.iterrows():
+        id, cid = row["Station_ID"], row["Closest_Station_ID"]
+        closeness.loc[(closeness["Station_ID"] == id) & np.isnan(closeness["Latitude"]),
+                      ["Closest_Station_ID"]] = cid
+
+    print(closeness.sort_values("Distance", ascending=False))
+
+    # To remove
+    print("Remove following rows")
+    remove_list = closeness[(closeness["Distance"] >= thresh) | (np.isnan(closeness["Closest_Station_ID"]))]
+    print(remove_list)
+    for _, row in remove_list.dropna().iterrows():
         id, lat, lng = row["Station_ID"], row["Latitude"], row["Longitude"]
-        df.loc[df['Start_Station_ID'] == id, "Start_Latitude"] = lat
-        df.loc[df['Start_Station_ID'] == id, "Start_Longitude"] = lng
+        df.drop(df.loc[((df['Start_Station_ID'] == id) & (df['Start_Latitude'] == lat) & (df['Start_Longitude'] == lng))
+                       | ((df['End_Station_ID'] == id) & (df['End_Latitude'] == lat) &
+                          (df['End_Longitude'] == lng))].index, inplace=True)
 
-        df.loc[df['End_Station_ID'] == id, "End_Latitude"] = lat
-        df.loc[df['End_Station_ID'] == id, "End_Longitude"] = lng
+    closeness = closeness[~((closeness["Distance"] >= thresh) | (np.isnan(closeness["Closest_Station_ID"])))]
+    # To displace
+    print("Displace incomplete station info")
+    for _, row in closeness[closeness.isnull().any(1)].iterrows():
+        id, cid = row["Station_ID"], row["Closest_Station_ID"]
+        info = get_station_info(stations, cid)
+        df.loc[(df["Start_Station_ID"] == id) & np.isnan(df["Start_Latitude"]),
+               ["Start_Station_ID", "Start_Latitude", "Start_Longitude"]] = info
+        df.loc[(df["End_Station_ID"] == id) & np.isnan(df["End_Latitude"]),
+               ["End_Station_ID", "End_Latitude", "End_Longitude"]] = info
 
-        df.loc[(df['Start_Latitude'] == lat) & (df['Start_Longitude'] == lng), "Start_Station_ID"] = id
-        df.loc[(df['End_Latitude'] == lat) & (df['End_Longitude'] == lng), "End_Station_ID"] = id
+    for _, row in closeness.dropna().iterrows():
+        id, lat, lng = row["Station_ID"], row["Latitude"], row["Longitude"]
+        cid = row["Closest_Station_ID"]
+        info = get_station_info(stations, cid)
+        df.loc[(df["Start_Station_ID"] == id) & (df["Start_Latitude"] == lat) & (df["Start_Longitude"] == lng),
+               ["Start_Station_ID", "Start_Latitude", "Start_Longitude"]] = info
+        df.loc[(df["End_Station_ID"] == id) & (df["End_Latitude"] == lat) & (df["End_Longitude"] == lng),
+               ["End_Station_ID", "End_Latitude", "End_Longitude"]] = info
+
+    df.drop(df.loc[~df['End_Station_ID'].isin(df["Start_Station_ID"].tolist())].index, inplace=True)
+    df.dropna(inplace=True)
+
+
+def get_station_info(df, id):
+    return df.loc[id, ["Station_ID", "Latitude", "Longitude"]].tolist()

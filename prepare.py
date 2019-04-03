@@ -3,7 +3,6 @@ from scripts import utils
 from scripts import statistics
 import pandas as pd
 import argparse
-import numpy as np
 
 
 def main():
@@ -47,8 +46,6 @@ def main():
         station_data = utils.read_station_data(location_data_path)
         assert station_data is not None
 
-    statistics.plot_stations(station_data)
-
     trip_data = utils.read_cleaned_trip_data(trip_data_path)
     if trip_data is None:
         print("No trip data found. Building from raw data set...")
@@ -68,6 +65,9 @@ def main():
         # Statistical analysis
         print("{0:*^80}".format(" Statistic Analysis "))
 
+        print("{0:-^80}".format(" User Analysis "))
+        #statistics.analyse_user_pattern(raw_trip_data_path)
+
         print("{0:-^80}".format(" Weather Analysis "))
         statistics.analyse_weather(weather_data, 2017)
 
@@ -78,6 +78,7 @@ def main():
         statistics.analyse_date_pattern(trip_data)
 
         print("{0:-^80}".format(" Geographic Analysis "))
+        statistics.plot_stations(station_data)
         statistics.show_station_change(raw_trip_data_path, station_data, trip_data)
         statistics.analyse_geo_pattern(trip_data)
         statistics.plot_unbalance_network(trip_data)

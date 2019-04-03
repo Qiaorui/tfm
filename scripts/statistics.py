@@ -101,10 +101,20 @@ def analyse_trip_duration(df, start_year=None):
     print(df.describe())
     print(df.info())
 
-    # Plot Distribution of trip duration
+
     f = df['Trip_Duration'].value_counts()
     f.sort_index(inplace=True)
+
+    # Plot Distribution of trip duration
     plt.figure(dpi=DPI)
+    plt.hist(df.loc[:, 'Trip_Duration'])
+    plt.title('Distribution of Trip Durations')
+    plt.xlabel('Duration (m)')
+    plt.show()
+
+    # Plot Distribution of trip duration in log scale
+    plt.figure(dpi=DPI)
+    plt.yscale('log')
     plt.hist(df.loc[:, 'Trip_Duration'])
     plt.title('Distribution of Trip Durations')
     plt.xlabel('Duration (m)')
@@ -141,30 +151,18 @@ def analyse_trip_duration(df, start_year=None):
     plt.xlabel("Minute")
     plt.show()
 
-    """
-    # Plot of average distance between stations by trip duration
-    avg_time = df.groupby('Trip_Duration')['Distance'].mean()
-    plt.figure(dpi=DPI)
-    plt.title('Average distance between station by trip duration')
-    plt.plot(avg_time.index, avg_time)
-    plt.xlim(0, 180)
-    plt.xlabel("Duration (minute)")
-    plt.ylabel("Distance (km)")
-    plt.show()
-    """
-
 
 def analyse_date_pattern(df):
     weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
     # Yearly and seasonally distribution
-    men_means = df.groupby("Start_Year").get_group(2017)['Start_Season'].value_counts().sort_index()
-    women_means = df.groupby("Start_Year").get_group(2018)['Start_Season'].value_counts().sort_index()
+    t17 = df.groupby("Start_Year").get_group(2017)['Start_Season'].value_counts().sort_index()
+    t18 = df.groupby("Start_Year").get_group(2018)['Start_Season'].value_counts().sort_index()
     bins = np.array((range(1, 5, 1)))
 
     width = 0.35  # the width of the bars
-    plt.bar(bins - width/2, men_means, width, color='SkyBlue', label='2017')
-    plt.bar(bins + width/2, women_means, width, color='IndianRed', label='2018')
+    plt.bar(bins - width/2, t17, width, color='SkyBlue', label='2017')
+    plt.bar(bins + width/2, t18, width, color='IndianRed', label='2018')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     plt.ylabel('Trip count')
@@ -176,76 +174,80 @@ def analyse_date_pattern(df):
     # Monthly distribution
 
     bins = list(range(1, 13, 1))
-    trip_duration = df.groupby('Start_Month')['Trip_Duration'].sum()
+    trip_duration = df.groupby('Start_Month')['Trip_Duration'].mean()
 
     fig, ax1 = plt.subplots(figsize=(15, 7))
 
     color = 'tab:blue'
     ax1.set_xlabel('Month of the Year')
-    ax1.set_ylabel('Trip time (hours)', color=color)
-    ax1.bar(bins, trip_duration / 60, color=color)
+    ax1.set_ylabel('Average Trip Time by Trip (minutes)', color=color)
+    ax1.bar(bins, trip_duration, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
     plt.setp(ax1, xticks=bins,
              xticklabels=['Jan', 'Feb', 'Mar', 'Apr', 'may', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
     ax1.set_title("Ridership by Month for NYC", fontsize=15)
 
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-
+    average_month_trip_count = df.groupby(['Start_Month', 'Start_Year'], as_index=False).size().groupby('Start_Month').mean().sort_index()
     color = 'tab:red'
-    ax2.set_ylabel('Trip count', color=color)  # we already handled the x-label with ax1
-    ax2.plot(bins, df['Start_Month'].value_counts().sort_index(), color=color, linewidth=3)
-    ax2.set_ylim([0, max(df['Start_Month'].value_counts()) * 1.1])
+    ax2.set_ylabel('Average Trip Count by Month', color=color)  # we already handled the x-label with ax1
+    ax2.plot(bins, average_month_trip_count, color=color, linewidth=3)
+    ax2.set_ylim([0, max(average_month_trip_count) * 1.1])
     ax2.tick_params(axis='y', labelcolor=color)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     plt.show()
 
     # Weekly distribution
-
     bins = list(range(1, 8, 1))
-    trip_duration = df.groupby('Start_Weekday')['Trip_Duration'].sum()
+    trip_duration = df.groupby('Start_Weekday')['Trip_Duration'].mean()
 
     fig, ax1 = plt.subplots(figsize=(15, 7))
 
     color = 'tab:blue'
     ax1.set_xlabel('Week days')
-    ax1.set_ylabel('Trip time (hours)', color=color)
-    ax1.bar(bins, trip_duration / 60, color=color)
+    ax1.set_ylabel('Average Trip Time by Trip (minutes)', color=color)
+    ax1.bar(bins, trip_duration, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
     plt.setp(ax1, xticks=bins, xticklabels=weekdays)
     ax1.set_title("Ridership by Weekday for NYC", fontsize=15)
 
-    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+    tmp = df[["Start_Time", "Start_Weekday", "Start_Year"]].copy()
+    tmp["Start_Weekday_Year"] = tmp["Start_Time"].dt.weekofyear
+    avg_weekday_trip_count = tmp.groupby(['Start_Weekday', "Start_Year", "Start_Weekday_Year"]).size().groupby("Start_Weekday").mean()
 
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'tab:red'
-    ax2.set_ylabel('Trip count', color=color)  # we already handled the x-label with ax1
-    ax2.set_ylim([0, max(df['Start_Weekday'].value_counts()) * 1.1])
-    ax2.plot(bins, df['Start_Weekday'].value_counts().sort_index(), color=color, linewidth=3)
+    ax2.set_ylabel('Average Trip Count by Weekday', color=color)  # we already handled the x-label with ax1
+    ax2.set_ylim([0, max(avg_weekday_trip_count) * 1.1])
+    ax2.plot(bins, avg_weekday_trip_count.sort_index(), color=color, linewidth=3)
     ax2.tick_params(axis='y', labelcolor=color)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     plt.show()
 
     # Hourly distribution
-
     bins = list(range(24))
-    trip_duration = df.groupby('Start_Hour')['Trip_Duration'].sum()
+    trip_duration = df.groupby('Start_Hour')['Trip_Duration'].mean()
 
     fig, ax1 = plt.subplots(figsize=(15, 7))
 
     color = 'tab:blue'
     ax1.set_xlabel('Hours')
-    ax1.set_ylabel('Trip time (hours)', color=color)
-    ax1.bar(bins, trip_duration / 60, color=color)
+    ax1.set_ylabel('Average Trip Time by Trip (minutes)', color=color)
+    ax1.bar(bins, trip_duration, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
     plt.setp(ax1, xticks=bins)
     ax1.set_title("Ridership by Hour for NYC", fontsize=15)
 
-    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+    tmp = df[["Start_Time", "Start_Year", "Start_Hour"]].copy()
+    tmp["Start_Day_Year"] = tmp["Start_Time"].dt.dayofyear
+    avg_hour_trip_count = tmp.groupby(['Start_Hour', "Start_Year", "Start_Day_Year"]).size().groupby("Start_Hour").mean()
 
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'tab:red'
-    ax2.set_ylabel('Trip count', color=color)  # we already handled the x-label with ax1
-    ax2.plot(bins, df['Start_Hour'].value_counts().sort_index(), color=color, linewidth=3)
+    ax2.set_ylabel('Average Trip count by Hour of day', color=color)  # we already handled the x-label with ax1
+    ax2.plot(bins, avg_hour_trip_count.sort_index(), color=color, linewidth=3)
     ax2.tick_params(axis='y', labelcolor=color)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
@@ -253,12 +255,14 @@ def analyse_date_pattern(df):
 
     # Weekday x Hour distribution
 
-    tmp = df.groupby(['Start_Weekday', 'Start_Hour'], sort=True).size().reset_index(name='counts')
+    tmp = df[["Start_Time", "Start_Hour", "Start_Weekday", "Start_Year"]].copy()
+    tmp["Start_Weekday_Year"] = tmp["Start_Time"].dt.weekofyear
+    tmp = tmp.groupby(['Start_Weekday', "Start_Hour", "Start_Year", "Start_Weekday_Year"]).size().groupby(["Start_Weekday", "Start_Hour"]).mean().reset_index(name='counts')
 
     bins = list(range(24))
     plt.figure(figsize=(15, 7))
     plt.xlabel('Hourly distribution by weekday')
-    plt.ylabel('Trip count')
+    plt.ylabel('Average Trip count by Hour of Weekday')
     plt.title('Ridership by hour and weekday for NYC', fontsize=15)
     plt.xticks(bins)
     for i in range(1, 8, 1):
@@ -421,7 +425,6 @@ def plot_unbalance_network(df):
     for _, row in df_agg.iterrows():
         from_id, to_id, count = row["Start_Station_ID"], row['End_Station_ID'], row["Counts"]
         g.add_edge(from_id, to_id, weight=count)
-    edge_labels = dict([((u, v,), d['weight']) for u, v, d in g.edges(data=True)])
 
     # Sort edge by weight
     edges, weights = zip(*nx.get_edge_attributes(g, 'weight').items())
@@ -474,7 +477,6 @@ def plot_unbalance_network(df):
     plt.show()
 
 
-
 def generate_base_map(location=[40.693943, -73.985880], zoom_start=12, tiles="Cartodb Positron"):
     base_map = folium.Map(location=location, control_scale=True, zoom_start=zoom_start, tiles=tiles)
     return base_map
@@ -483,3 +485,7 @@ def generate_base_map(location=[40.693943, -73.985880], zoom_start=12, tiles="Ca
 def generate_dual_map(location=[40.693943, -73.985880], zoom_start=12, tiles="Cartodb Positron"):
     base_map = folium.plugins.DualMap(location=location, control_scale=True, zoom_start=zoom_start, tiles=tiles)
     return base_map
+
+
+def analyse_user_pattern(raw_data_path):
+    return None

@@ -48,8 +48,6 @@ def preprocess_trips(raw_path, dest_path, stations):
     df['Stop_Season'] = df['Stop_Time'].dt.quarter.astype(np.int8)
     df['Stop_Year'] = df['Stop_Time'].dt.year.astype(np.int16)
 
-    #df['Distance'] = df.apply(calculate_distance, axis=1)
-
     cal = USFederalHolidayCalendar()
     holidays = cal.holidays(start=df['Start_Time'].min(), end=df['Start_Time'].max())
     print('From {} until {}'.format(df['Start_Time'].min(), df['Start_Time'].max()))
@@ -91,11 +89,6 @@ def preprocess_locations(raw_path, dest_path):
     df.to_csv(dest_path, index=False)
     print(dest_path, "created")
     return True
-
-
-def calculate_distance(row):
-    return distance.distance((row['Start_Latitude'], row['Start_Longitude']),
-                             (row['End_Latitude'], row['End_Longitude'])).km
 
 
 def remove_trip_outlier(df, th):

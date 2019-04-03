@@ -67,18 +67,6 @@ def main():
     if args.s:
         # Statistical analysis
         print("{0:*^80}".format(" Statistic Analysis "))
-        location_raw_data = utils.read_raw_location_data(raw_trip_data_path)
-        location_raw_data.rename(
-            columns={'Start_Station_ID': 'Station_ID', "Start_Latitude": "Latitude", "Start_Longitude": "Longitude"},
-            inplace=True
-        )
-        location_raw_data.dropna(subset=['Latitude', 'Longitude'], inplace=True)
-        location_raw_data.fillna(0, inplace=True)
-        location_raw_data['Station_ID'] = location_raw_data['Station_ID'].astype(np.int16)
-        location_raw_data.drop_duplicates(inplace=True)
-        location_raw_data.reset_index(inplace=True, drop=True)
-        statistics.plot_stations(location_raw_data)
-        statistics.plot_diff_stations(location_raw_data, station_data)
 
         print("{0:-^80}".format(" Weather Analysis "))
         statistics.analyse_weather(weather_data, 2017)
@@ -90,6 +78,7 @@ def main():
         statistics.analyse_date_pattern(trip_data)
 
         print("{0:-^80}".format(" Geographic Analysis "))
+        statistics.show_station_change(raw_trip_data_path, station_data, trip_data)
         statistics.analyse_geo_pattern(trip_data)
         statistics.plot_unbalance_network(trip_data)
 

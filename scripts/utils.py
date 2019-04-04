@@ -8,12 +8,10 @@ import zipfile
 import numpy as np
 import urllib.request
 import json
-import csv
 import certifi
 
-
 BASE_URL = "https://s3.amazonaws.com/tripdata/"
-BASE_PATTERN_NYC ="{}-citibike-tripdata.csv.zip"
+BASE_PATTERN_NYC = "{}-citibike-tripdata.csv.zip"
 BASE_PATTERN_JC = "JC-{}-citibike-tripdata.csv.zip"
 STATION_URL = "https://feeds.citibikenyc.com/stations/stations.json"
 
@@ -24,7 +22,7 @@ def download_station_data(dest_path):
     with urllib.request.urlopen(STATION_URL, cafile=certifi.where()) as url:
         data = json.loads(url.read().decode())
         df = pd.DataFrame(data.get("stationBeanList"))
-        df = df.replace('',np.nan)
+        df = df.replace('', np.nan)
         df.dropna(axis='columns', inplace=True)
         df.drop(
             df.columns.difference(['id', 'latitude', 'longitude', 'stationName', 'totalDocks']),
@@ -52,7 +50,7 @@ def download_trip_data(dest_path):
             print(" : FOUND")
         else:
             print()
-            download(BASE_URL+BASE_PATTERN_JC.format(date), save_path=file_path)
+            download(BASE_URL + BASE_PATTERN_JC.format(date), save_path=file_path)
             unzip(file_path)
             os.remove(file_path)
 
@@ -63,7 +61,7 @@ def download_trip_data(dest_path):
             print(" : FOUND")
         else:
             print()
-            download(BASE_URL+BASE_PATTERN_NYC.format(date), save_path=file_path)
+            download(BASE_URL + BASE_PATTERN_NYC.format(date), save_path=file_path)
             unzip(file_path)
             os.remove(file_path)
 
@@ -98,11 +96,11 @@ def read_raw_trip_data(path):
                          index_col=None,
                          header=0,
                          names=["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID", "Start_Station_Name",
-                      "Start_Latitude", "Start_Longitude", "End_Station_ID", "End_Station_Name",
-                      "End_Latitude", "End_Longitude", "Bike_ID", "User_Type", "Birth_Year", "Gender"],
-                         usecols=["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID","Start_Latitude",
+                                "Start_Latitude", "Start_Longitude", "End_Station_ID", "End_Station_Name",
+                                "End_Latitude", "End_Longitude", "Bike_ID", "User_Type", "Birth_Year", "Gender"],
+                         usecols=["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID", "Start_Latitude",
                                   "Start_Longitude", "End_Station_ID", "End_Latitude", "End_Longitude"],
-                         na_values={"Start_Latitude":0,"Start_Longitude":0, "End_Latitude":0,"End_Longitude":0},
+                         na_values={"Start_Latitude": 0, "Start_Longitude": 0, "End_Latitude": 0, "End_Longitude": 0},
                          dtype={'End_Latitude': np.float32, 'End_Longitude': np.float32, 'End_Station_ID': np.float32,
                                 'Start_Latitude': np.float32, 'Start_Longitude': np.float32,
                                 'Start_Station_ID': np.float32, 'Trip_Duration': np.int32},
@@ -151,7 +149,8 @@ def read_raw_location_data(path):
                                 "End_Latitude", "End_Longitude", "Bike_ID", "User_Type", "Birth_Year", "Gender"],
                          usecols=["Start_Station_ID", "Start_Latitude", "Start_Station_Name", "Start_Longitude"],
                          na_values={"Start_Latitude": 0, "Start_Longitude": 0},
-                         dtype={'Start_Latitude': np.float32, 'Start_Longitude': np.float32, 'Start_Station_ID': np.float32}
+                         dtype={'Start_Latitude': np.float32, 'Start_Longitude': np.float32,
+                                'Start_Station_ID': np.float32}
                          )
         frame_list.append(df)
     if not frame_list:
@@ -169,10 +168,10 @@ def read_raw_demographic_data(path):
                          index_col=None,
                          header=0,
                          names=["Trip_Duration", "Start_Time", "Stop_Time", "Start_Station_ID", "Start_Station_Name",
-                      "Start_Latitude", "Start_Longitude", "End_Station_ID", "End_Station_Name",
-                      "End_Latitude", "End_Longitude", "Bike_ID", "User_Type", "Birth_Year", "Gender"],
+                                "Start_Latitude", "Start_Longitude", "End_Station_ID", "End_Station_Name",
+                                "End_Latitude", "End_Longitude", "Bike_ID", "User_Type", "Birth_Year", "Gender"],
                          usecols=["Start_Time", "Trip_Duration", "User_Type", "Birth_Year", "Gender"],
-                         na_values={"Gender":0},
+                         na_values={"Gender": 0},
                          parse_dates=["Start_Time"]
                          )
         frame_list.append(df)
@@ -192,7 +191,8 @@ def read_station_data(path):
         df = pd.read_csv(f,
                          index_col=None,
                          header=0,
-                         dtype={'Latitude': np.float32, 'Longitude': np.float32, 'Station_ID': np.int16, 'Docks': np.int8}
+                         dtype={'Latitude': np.float32, 'Longitude': np.float32, 'Station_ID': np.int16,
+                                'Docks': np.int8}
                          )
         frame_list.append(df)
     if not frame_list:
@@ -212,7 +212,8 @@ def read_cleaned_trip_data(path):
                                 'Start_Holiday': bool, 'Start_Hour': np.int8, 'Start_Latitude': np.float32,
                                 'Start_Longitude': np.float32, 'Start_Month': np.int8, 'Start_Season': np.int8,
                                 'Start_Station_ID': np.int16, 'Start_Weekday': np.int8, 'Start_Year': np.int16,
-                                'Stop_Holiday': bool, 'Stop_Hour': np.int8, 'Stop_Month': np.int8, 'Stop_Season': np.int8,
+                                'Stop_Holiday': bool, 'Stop_Hour': np.int8, 'Stop_Month': np.int8,
+                                'Stop_Season': np.int8,
                                 'Stop_Weekday': np.int8, 'Stop_Year': np.int16, 'Trip_Duration': np.int32},
                          parse_dates=["Start_Time", "Stop_Time"]
                          )
@@ -258,12 +259,12 @@ def break_up(df):
 
 def get_pickups(df):
     return df.loc[:, ['Start_Holiday', 'Start_Hour', 'Start_Latitude', 'Start_Longitude', 'Start_Month',
-                         'Start_Season', 'Start_Station_ID', 'Start_Time', 'Start_Weekday', 'Start_Year']]
+                      'Start_Season', 'Start_Station_ID', 'Start_Time', 'Start_Weekday', 'Start_Year']]
 
 
 def get_dropoffs(df):
     return df.loc[:, ['End_Latitude', 'End_Longitude', 'End_Station_ID', 'Stop_Holiday', 'Stop_Hour', 'Stop_Month',
-                          'Stop_Season', 'Stop_Time', 'Stop_Weekday', 'Stop_Year']]
+                      'Stop_Season', 'Stop_Time', 'Stop_Weekday', 'Stop_Year']]
 
 
 def aggregate_by_time_slot(df, ts):
@@ -273,7 +274,6 @@ def aggregate_by_time_slot(df, ts):
 
 
 def fill_weather_data(df, weather_df):
-
     return None
 
 
@@ -311,7 +311,8 @@ def get_start_station_dict(df):
 
 def distance(lat1, lon1, lat2, lon2):
     p = 0.017453292519943295
-    a = 0.5 - math.cos((lat2-lat1)*p)/2 + math.cos(lat1*p)*math.cos(lat2*p) * (1-math.cos((lon2-lon1)*p)) / 2
+    a = 0.5 - math.cos((lat2 - lat1) * p) / 2 + math.cos(lat1 * p) * math.cos(lat2 * p) * (
+                1 - math.cos((lon2 - lon1) * p)) / 2
     return 12742 * math.asin(math.sqrt(a))
 
 

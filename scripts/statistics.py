@@ -13,8 +13,8 @@ import webbrowser
 import networkx as nx
 import os
 from pandas.plotting import register_matplotlib_converters
-register_matplotlib_converters()
 
+register_matplotlib_converters()
 
 DPI = 300
 
@@ -79,20 +79,22 @@ def analyse_weather(df, start_year=None):
     inner_colors = []
     cmap = plt.get_cmap("Greens")
     outer_colors.append(cmap(188))
-    inner_colors.extend(cmap(np.arange(0, 256, 256//(len(cloudy_conds)+1))[1:]))
+    inner_colors.extend(cmap(np.arange(0, 256, 256 // (len(cloudy_conds) + 1))[1:]))
 
     cmap = plt.get_cmap("Reds")
     outer_colors.append(cmap(188))
-    #inner_colors.extend(cmap(np.arange(0, 256, 256 // (len(foggy_conds)))[1:]))
+    # inner_colors.extend(cmap(np.arange(0, 256, 256 // (len(foggy_conds)))[1:]))
 
     cmap = plt.get_cmap("Blues")
     outer_colors.append(cmap(188))
-    inner_colors.extend(cmap(np.arange(0, 256, 256//(len(rainy_conds)+3))[1:]))
+    inner_colors.extend(cmap(np.arange(0, 256, 256 // (len(rainy_conds) + 3))[1:]))
 
-    ax.pie([sum(x) for x in vals], radius=1, colors=outer_colors, labels=["Cloudy", "Foggy", "Rainy"], autopct='%1.1f%%',
+    ax.pie([sum(x) for x in vals], radius=1, colors=outer_colors, labels=["Cloudy", "Foggy", "Rainy"],
+           autopct='%1.1f%%',
            wedgeprops=dict(width=size, edgecolor='w'), textprops={'fontsize': 24})
 
-    ax.pie(list(itertools.chain(*vals)), radius=1 - size, colors=inner_colors, labels=cloudy_conds+foggy_conds+rainy_conds,
+    ax.pie(list(itertools.chain(*vals)), radius=1 - size, colors=inner_colors,
+           labels=cloudy_conds + foggy_conds + rainy_conds,
            labeldistance=0.6, rotatelabels=True, wedgeprops=dict(width=size, edgecolor='w'))
     fig.suptitle('Weather Classification', fontsize=24)
     ax.set(aspect="equal")
@@ -107,7 +109,6 @@ def analyse_trip_duration(df, start_year=None):
 
     print(df.describe())
     print(df.info())
-
 
     f = df['Trip_Duration'].value_counts()
     f.sort_index(inplace=True)
@@ -168,8 +169,8 @@ def analyse_date_pattern(df):
     bins = np.array((range(1, 5, 1)))
 
     width = 0.35  # the width of the bars
-    plt.bar(bins - width/2, t17, width, color='SkyBlue', label='2017')
-    plt.bar(bins + width/2, t18, width, color='IndianRed', label='2018')
+    plt.bar(bins - width / 2, t17, width, color='SkyBlue', label='2017')
+    plt.bar(bins + width / 2, t18, width, color='IndianRed', label='2018')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     plt.ylabel('Trip count')
@@ -195,7 +196,8 @@ def analyse_date_pattern(df):
     ax1.set_title("Ridership by Month for NYC", fontsize=15)
 
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-    average_month_trip_count = df.groupby(['Start_Month', 'Start_Year'], as_index=False).size().groupby('Start_Month').mean().sort_index()
+    average_month_trip_count = df.groupby(['Start_Month', 'Start_Year'], as_index=False).size().groupby(
+        'Start_Month').mean().sort_index()
     color = 'tab:red'
     ax2.set_ylabel('Average Monthly Trip Count', color=color)  # we already handled the x-label with ax1
     ax2.plot(bins, average_month_trip_count, color=color, linewidth=3)
@@ -221,7 +223,8 @@ def analyse_date_pattern(df):
 
     tmp = df[["Start_Time", "Start_Weekday", "Start_Year"]].copy()
     tmp["Start_Weekday_Year"] = tmp["Start_Time"].dt.weekofyear
-    avg_weekday_trip_count = tmp.groupby(['Start_Weekday', "Start_Year", "Start_Weekday_Year"]).size().groupby("Start_Weekday").mean()
+    avg_weekday_trip_count = tmp.groupby(['Start_Weekday', "Start_Year", "Start_Weekday_Year"]).size().groupby(
+        "Start_Weekday").mean()
 
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'tab:red'
@@ -249,7 +252,8 @@ def analyse_date_pattern(df):
 
     tmp = df[["Start_Time", "Start_Year", "Start_Hour"]].copy()
     tmp["Start_Day_Year"] = tmp["Start_Time"].dt.dayofyear
-    avg_hour_trip_count = tmp.groupby(['Start_Hour', "Start_Year", "Start_Day_Year"]).size().groupby("Start_Hour").mean()
+    avg_hour_trip_count = tmp.groupby(['Start_Hour', "Start_Year", "Start_Day_Year"]).size().groupby(
+        "Start_Hour").mean()
 
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'tab:red'
@@ -264,7 +268,8 @@ def analyse_date_pattern(df):
 
     tmp = df[["Start_Time", "Start_Hour", "Start_Weekday", "Start_Year"]].copy()
     tmp["Start_Weekday_Year"] = tmp["Start_Time"].dt.weekofyear
-    tmp = tmp.groupby(['Start_Weekday', "Start_Hour", "Start_Year", "Start_Weekday_Year"]).size().groupby(["Start_Weekday", "Start_Hour"]).mean().reset_index(name='counts')
+    tmp = tmp.groupby(['Start_Weekday', "Start_Hour", "Start_Year", "Start_Weekday_Year"]).size().groupby(
+        ["Start_Weekday", "Start_Hour"]).mean().reset_index(name='counts')
 
     bins = list(range(24))
     plt.figure(figsize=(15, 7))
@@ -282,7 +287,8 @@ def analyse_geo_pattern(df):
     lat, lng = df["Start_Latitude"].mean(), df["Start_Longitude"].mean()
     m = generate_dual_map([lat, lng], 14)
 
-    day_count = (pd.to_datetime(df["Start_Time"]).max() - pd.to_datetime(df["Start_Time"]).min())/np.timedelta64(1, 'D')
+    day_count = (pd.to_datetime(df["Start_Time"]).max() - pd.to_datetime(df["Start_Time"]).min()) / np.timedelta64(1,
+                                                                                                                   'D')
     tmp = df.copy()
     tmp["Count"] = 1
     drop_offs = tmp[['End_Latitude', 'End_Longitude', 'Count']].groupby(
@@ -291,8 +297,8 @@ def analyse_geo_pattern(df):
     tmp["Count"] = 1
     pick_ups = tmp[['Start_Latitude', 'Start_Longitude', 'Count']].groupby(
         ['Start_Latitude', 'Start_Longitude']).sum().reset_index()
-    pick_ups["Count"] = np.ceil(pick_ups["Count"]/day_count)
-    drop_offs["Count"] = np.ceil(drop_offs["Count"]/day_count)
+    pick_ups["Count"] = np.ceil(pick_ups["Count"] / day_count)
+    drop_offs["Count"] = np.ceil(drop_offs["Count"] / day_count)
 
     print(len(pick_ups), "stations plotting...")
     colormap = cm.linear.YlOrBr_05.scale(0, max(pick_ups['Count'].max(), drop_offs['Count'].max()))
@@ -301,31 +307,31 @@ def analyse_geo_pattern(df):
     for i in range(len(pick_ups)):
         folium.Circle(
             location=[pick_ups.iloc[i]['Start_Latitude'], pick_ups.iloc[i]['Start_Longitude']],
-            radius= 70,
-            color= "black",
+            radius=70,
+            color="black",
             weight=2,
-            #dash_array= '5,5',
+            # dash_array= '5,5',
             fill_opacity=1,
-            popup= str(pick_ups.iloc[i]['Count']),
-            fill_color= colormap(pick_ups.iloc[i]['Count'])
+            popup=str(pick_ups.iloc[i]['Count']),
+            fill_color=colormap(pick_ups.iloc[i]['Count'])
         ).add_to(m.m1)
 
     for i in range(len(drop_offs)):
         folium.Circle(
             location=[drop_offs.iloc[i]['End_Latitude'], drop_offs.iloc[i]['End_Longitude']],
-            radius= 70,
-            color= "black",
+            radius=70,
+            color="black",
             weight=2,
-            #dash_array= '5,5',
+            # dash_array= '5,5',
             fill_opacity=1,
             popup=str(drop_offs.iloc[i]['Count']),
-            fill_color= colormap(drop_offs.iloc[i]['Count'])
+            fill_color=colormap(drop_offs.iloc[i]['Count'])
         ).add_to(m.m2)
 
-    #m.add_child(colormap)
-    #m.m2.add_child(colormap)
+    # m.add_child(colormap)
+    # m.m2.add_child(colormap)
 
-    #folium.LayerControl(collapsed=False).add_to(m)
+    # folium.LayerControl(collapsed=False).add_to(m)
     m.save("map.html")
     webbrowser.open("file://" + os.path.realpath("map.html"))
 
@@ -339,11 +345,11 @@ def plot_stations(df, title="map"):
     for _, row in df.iterrows():
         folium.Circle(
             location=[row['Latitude'], row['Longitude']],
-            radius= 40,
-            color= "green",
-            fill_color= "green",
+            radius=40,
+            color="green",
+            fill_color="green",
             fill_opacity=1,
-            popup= str(row["Station_ID"]),
+            popup=str(row["Station_ID"]),
         ).add_to(m)
 
     m.save(title + ".html")
@@ -358,24 +364,25 @@ def plot_diff_stations(df, df2, title="map"):
 
     for _, row in df.iterrows():
         color = "red"
-        id = row["Station_ID"]
+        sid = row["Station_ID"]
         lat = row['Latitude']
         lng = row['Longitude']
 
-        if ((df2['Station_ID'] == id) & np.isclose(df2['Latitude'], lat) & np.isclose(df2['Longitude'], lng)).any():
+        if ((df2['Station_ID'] == sid) & np.isclose(df2['Latitude'], lat) & np.isclose(df2['Longitude'], lng)).any():
             color = "green"
-        elif (df2['Station_ID'] == id).any() and (~np.isclose(df2['Latitude'], lat) & ~np.isclose(df2['Longitude'], lng)).all():
+        elif (df2['Station_ID'] == sid).any() and (
+                ~np.isclose(df2['Latitude'], lat) & ~np.isclose(df2['Longitude'], lng)).all():
             color = "yellow"
-        elif ((df2['Station_ID'] != id) & np.isclose(df2['Latitude'], lat) & np.isclose(df2['Longitude'], lng)).any():
+        elif ((df2['Station_ID'] != sid) & np.isclose(df2['Latitude'], lat) & np.isclose(df2['Longitude'], lng)).any():
             color = "blue"
 
         folium.Circle(
             location=[lat, lng],
-            radius= 40,
-            color= color,
-            fill_color= color,
+            radius=40,
+            color=color,
+            fill_color=color,
             fill_opacity=1,
-            popup= str(id)
+            popup=str(sid)
         ).add_to(m)
 
     m.save(title + ".html")
@@ -400,7 +407,8 @@ def show_station_change(raw_trip_data_path, station_data, trip_data):
 
 
 def plot_unbalance_network(df):
-    day_count = (pd.to_datetime(df["Start_Time"]).max() - pd.to_datetime(df["Start_Time"]).min()) / np.timedelta64(1,'D')
+    day_count = (pd.to_datetime(df["Start_Time"]).max() - pd.to_datetime(df["Start_Time"]).min()) / np.timedelta64(1,
+                                                                                                                   'D')
     stations = utils.get_start_station_dict(df)
 
     # Get difference between two stations
@@ -418,13 +426,14 @@ def plot_unbalance_network(df):
 
     for i, row in df_agg.iterrows():
         from_id, to_id, out_count = row["Start_Station_ID"], row['End_Station_ID'], row["Counts"]
-        in_count_series = df_agg.loc[(df_agg['Start_Station_ID'] == to_id) & (df_agg['End_Station_ID'] == from_id), "Counts"]
+        in_count_series = df_agg.loc[
+            (df_agg['Start_Station_ID'] == to_id) & (df_agg['End_Station_ID'] == from_id), "Counts"]
         in_count = 0 if in_count_series.empty else in_count_series.values[0]
         row["Counts"] = in_count - out_count
 
     # Aggregate them to only positive edge
     df_agg = df_agg.loc[df_agg["Counts"] > 0]
-    df_agg["Counts"] = df_agg["Counts"]/day_count
+    df_agg["Counts"] = df_agg["Counts"] / day_count
 
     # Plot the network
     g = nx.DiGraph()
@@ -444,7 +453,7 @@ def plot_unbalance_network(df):
     vmax = max(values)
     shift = max(abs(vmax), abs(vmin))
     # Normalize by log
-    values = [math.log(x+1) if x >= 0 else -math.log(-x+1) for x in values]
+    values = [math.log(x + 1) if x >= 0 else -math.log(-x + 1) for x in values]
     nvmin = min(values)
     nvmax = max(values)
     nshift = max(abs(nvmax), abs(nvmin))
@@ -456,13 +465,13 @@ def plot_unbalance_network(df):
     plt.gca().invert_yaxis()
     plt.gca().invert_xaxis()
 
-    nodes = nx.draw_networkx_nodes(g, stations, node_size=50, width=3, nodelist=list(balance_list.keys()),
-                                   node_color=values, cmap=plt.get_cmap("PiYG"),
-                                   vmin=0, vmax=nshift*2)
+    nx.draw_networkx_nodes(g, stations, node_size=50, width=3, nodelist=list(balance_list.keys()),
+                           node_color=values, cmap=plt.get_cmap("PiYG"),
+                           vmin=0, vmax=nshift * 2)
     edges = nx.draw_networkx_edges(g, stations, node_size=50, arrowstyle='-|>',
                                    arrowsize=6, edge_color=weights, edgelist=edges,
                                    edge_cmap=plt.cm.Blues, width=2)
-    #nx.draw_networkx_labels(g, stations)
+    # nx.draw_networkx_labels(g, stations)
 
     ax = plt.gca()
 
@@ -517,7 +526,8 @@ def analyse_demographic_pattern(raw_data_path):
     plt.ylabel('Average Trip Duration (minutes)')
     plt.title('Gender & Age Ridership for NYC', fontsize=15)
     for i, label in enumerate(["Masculine", "Female"]):
-        plt.plot(tmp[tmp['Gender'] == i+1]['Age'], tmp[tmp['Gender'] == i+1]['counts'], linestyle='-', marker='o', label=label)
+        plt.plot(tmp[tmp['Gender'] == i + 1]['Age'], tmp[tmp['Gender'] == i + 1]['counts'], linestyle='-', marker='o',
+                 label=label)
     plt.legend()
     plt.show()
 
@@ -527,21 +537,24 @@ def analyse_demographic_pattern(raw_data_path):
     df["Year"] = df["Start_Time"].dt.year
     bins = list(range(24))
 
-    tmp = df.groupby(['Gender', "Hour", "Day_Year", "Year"]).size().groupby(["Gender", "Hour"]).mean().reset_index(name='counts')
+    tmp = df.groupby(['Gender', "Hour", "Day_Year", "Year"]).size().groupby(["Gender", "Hour"]).mean().reset_index(
+        name='counts')
     plt.figure(figsize=(15, 7))
     plt.xlabel('Hour')
     plt.ylabel('Average Hourly Trip Count')
     plt.title('Gender & Schedule relationship', fontsize=15)
     plt.xticks(bins)
     for i, label in enumerate(["Masculine", "Female"]):
-        plt.plot(tmp[tmp['Gender'] == i+1]['Hour'], tmp[tmp['Gender'] == i+1]['counts'], linestyle='-', marker='o', label=label)
+        plt.plot(tmp[tmp['Gender'] == i + 1]['Hour'], tmp[tmp['Gender'] == i + 1]['counts'], linestyle='-', marker='o',
+                 label=label)
     plt.legend()
     plt.show()
 
     # Schedule & Age
     bins = list(range(24))
 
-    tmp = df.groupby([pd.cut(df["Age"], np.arange(15, 60, 5)), "Hour", "Day_Year", "Year"]).size().groupby(["Age", "Hour"]).mean().reset_index(name='counts')
+    tmp = df.groupby([pd.cut(df["Age"], np.arange(15, 60, 5)), "Hour", "Day_Year", "Year"]).size().groupby(
+        ["Age", "Hour"]).mean().reset_index(name='counts')
     plt.figure(figsize=(15, 7))
     plt.xlabel('Hour')
     plt.ylabel('Average Hourly Trip Count')

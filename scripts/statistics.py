@@ -89,7 +89,7 @@ def analyse_weather(df, start_year=None):
     outer_colors.append(cmap(188))
     inner_colors.extend(cmap(np.arange(0, 256, 256//(len(rainy_conds)+3))[1:]))
 
-    ax.pie([sum(x) for x in vals], radius=1, colors=outer_colors, labels=["Cloudy", "Foggy", "Rainy"],
+    ax.pie([sum(x) for x in vals], radius=1, colors=outer_colors, labels=["Cloudy", "Foggy", "Rainy"], autopct='%1.1f%%',
            wedgeprops=dict(width=size, edgecolor='w'), textprops={'fontsize': 24})
 
     ax.pie(list(itertools.chain(*vals)), radius=1 - size, colors=inner_colors, labels=cloudy_conds+foggy_conds+rainy_conds,
@@ -496,8 +496,58 @@ def generate_dual_map(location=[40.693943, -73.985880], zoom_start=12, tiles="Ca
 
 def analyse_demographic_pattern(raw_data_path):
     df = utils.read_raw_demographic_data(raw_data_path)
+    df.loc[:, 'Trip_Duration'] = ((df.loc[:, 'Trip_Duration'] / 60).apply(np.ceil)).astype(np.int32)
+
     df.dropna(inplace=True)
     df["Age"] = 2019 - df["Birth_Year"]
     df.drop(df.loc[(df["Age"] > 90) | (df["Age"] < 4)].index, inplace=True)
     print(df.describe())
 
+    # Gender distribution
+    plt.axes(aspect='equal')
+    plt.pie(df.groupby("Gender").size(), labels=['Masculine', 'Female'], autopct='%1.1f%%',
+            pctdistance=0.6, labeldistance=1.05, radius=1)
+    plt.title('Gender distribution')
+    plt.show()
+
+    # Age & Trip duration relation
+    tmp = df.groupby(['Gender', "Age"])["Trip_Duration"].mean().reset_index(name='counts')
+    plt.figure(figsize=(15, 7))
+    plt.xlabel('Age')
+    plt.ylabel('Average Trip Duration (minutes)')
+    plt.title('Gender & Age Ridership for NYC', fontsize=15)
+    for i, label in enumerate(["Masculine", "Female"]):
+        plt.plot(tmp[tmp['Gender'] == i+1]['Age'], tmp[tmp['Gender'] == i+1]['counts'], linestyle='-', marker='o', label=label)
+    plt.legend()
+    plt.show()
+
+    # Schedule & Gender
+    df["Hour"] = df["Start_Time"].dt.hour
+    df["Day_Year"] = df["Start_Time"].dt.dayofyear
+    df["Year"] = df["Start_Time"].dt.year
+    bins = list(range(24))
+
+    tmp = df.groupby(['Gender', "Hour", "Day_Year", "Year"]).size().groupby(["Gender", "Hour"]).mean().reset_index(name='counts')
+    plt.figure(figsize=(15, 7))
+    plt.xlabel('Hour')
+    plt.ylabel('Average Hourly Trip Count')
+    plt.title('Gender & Schedule relationship', fontsize=15)
+    plt.xticks(bins)
+    for i, label in enumerate(["Masculine", "Female"]):
+        plt.plot(tmp[tmp['Gender'] == i+1]['Hour'], tmp[tmp['Gender'] == i+1]['counts'], linestyle='-', marker='o', label=label)
+    plt.legend()
+    plt.show()
+
+    # Schedule & Age
+    bins = list(range(24))
+
+    tmp = df.groupby([pd.cut(df["Age"], np.arange(15, 60, 5)), "Hour", "Day_Year", "Year"]).size().groupby(["Age", "Hour"]).mean().reset_index(name='counts')
+    plt.figure(figsize=(15, 7))
+    plt.xlabel('Hour')
+    plt.ylabel('Average Hourly Trip Count')
+    plt.title('Age & Schedule relationship', fontsize=15)
+    plt.xticks(bins)
+    for i in tmp["Age"].unique():
+        plt.plot(tmp[tmp['Age'] == i]['Hour'], tmp[tmp['Age'] == i]['counts'], linestyle='-', marker='o', label=i)
+    plt.legend()
+    plt.show()

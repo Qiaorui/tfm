@@ -172,7 +172,8 @@ def read_raw_demographic_data(path):
                       "Start_Latitude", "Start_Longitude", "End_Station_ID", "End_Station_Name",
                       "End_Latitude", "End_Longitude", "Bike_ID", "User_Type", "Birth_Year", "Gender"],
                          usecols=["Start_Time", "Trip_Duration", "User_Type", "Birth_Year", "Gender"],
-                         na_values={"Gender":0}
+                         na_values={"Gender":0},
+                         parse_dates=["Start_Time"]
                          )
         frame_list.append(df)
     if not frame_list:

@@ -70,7 +70,7 @@ def main():
 
         print("{0:-^80}".format(" Weather Analysis "))
         statistics.analyse_weather(weather_data, 2017)
-        exit(1)
+
         print("{0:-^80}".format(" Trip Analysis "))
         statistics.analyse_trip_duration(trip_data)
 

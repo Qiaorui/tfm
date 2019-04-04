@@ -7,13 +7,14 @@ import folium
 from folium.plugins import HeatMap
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 import branca.colormap as cm
+import itertools
 import math
 import webbrowser
 import networkx as nx
 import os
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
-import itertools
+
 
 DPI = 300
 
@@ -196,7 +197,7 @@ def analyse_date_pattern(df):
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     average_month_trip_count = df.groupby(['Start_Month', 'Start_Year'], as_index=False).size().groupby('Start_Month').mean().sort_index()
     color = 'tab:red'
-    ax2.set_ylabel('Average Trip Count by Month', color=color)  # we already handled the x-label with ax1
+    ax2.set_ylabel('Average Monthly Trip Count', color=color)  # we already handled the x-label with ax1
     ax2.plot(bins, average_month_trip_count, color=color, linewidth=3)
     ax2.set_ylim([0, max(average_month_trip_count) * 1.1])
     ax2.tick_params(axis='y', labelcolor=color)
@@ -224,7 +225,7 @@ def analyse_date_pattern(df):
 
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'tab:red'
-    ax2.set_ylabel('Average Trip Count by Weekday', color=color)  # we already handled the x-label with ax1
+    ax2.set_ylabel('Average Daily Trip Count', color=color)  # we already handled the x-label with ax1
     ax2.set_ylim([0, max(avg_weekday_trip_count) * 1.1])
     ax2.plot(bins, avg_weekday_trip_count.sort_index(), color=color, linewidth=3)
     ax2.tick_params(axis='y', labelcolor=color)
@@ -252,7 +253,7 @@ def analyse_date_pattern(df):
 
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'tab:red'
-    ax2.set_ylabel('Average Trip count by Hour of day', color=color)  # we already handled the x-label with ax1
+    ax2.set_ylabel('Average Hourly Trip count', color=color)  # we already handled the x-label with ax1
     ax2.plot(bins, avg_hour_trip_count.sort_index(), color=color, linewidth=3)
     ax2.tick_params(axis='y', labelcolor=color)
 
@@ -268,7 +269,7 @@ def analyse_date_pattern(df):
     bins = list(range(24))
     plt.figure(figsize=(15, 7))
     plt.xlabel('Hourly distribution by weekday')
-    plt.ylabel('Average Trip count by Hour of Weekday')
+    plt.ylabel('Average Hourly Trip count')
     plt.title('Ridership by hour and weekday for NYC', fontsize=15)
     plt.xticks(bins)
     for i in range(1, 8, 1):
@@ -499,3 +500,4 @@ def analyse_demographic_pattern(raw_data_path):
     df["Age"] = 2019 - df["Birth_Year"]
     df.drop(df.loc[(df["Age"] > 90) | (df["Age"] < 4)].index, inplace=True)
     print(df.describe())
+

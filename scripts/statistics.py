@@ -424,12 +424,18 @@ def plot_unbalance_network(df):
     for s in stations.keys():
         balance_list[s] = (in_list.get(s, 0) - out_list.get(s, 0)) / day_count
 
+    checked = []
     for i, row in df_agg.iterrows():
         from_id, to_id, out_count = row["Start_Station_ID"], row['End_Station_ID'], row["Counts"]
+
         in_count_series = df_agg.loc[
             (df_agg['Start_Station_ID'] == to_id) & (df_agg['End_Station_ID'] == from_id), "Counts"]
         in_count = 0 if in_count_series.empty else in_count_series.values[0]
-        row["Counts"] = in_count - out_count
+        if (to_id, from_id) in checked:
+            row["Counts"] = -in_count
+        else:
+            row["Counts"] = out_count - in_count
+        checked.append((from_id, to_id))
 
     # Aggregate them to only positive edge
     df_agg = df_agg.loc[df_agg["Counts"] > 0]

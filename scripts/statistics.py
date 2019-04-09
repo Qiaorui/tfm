@@ -33,11 +33,23 @@ def analyse_weather(df, start_year=None):
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Temperature'].mean())
     plt.show()
 
+    plt.figure(figsize=(10, 10))
+    plt.title("Histogram of Temperature")
+    plt.xlabel("Celsius")
+    plt.hist(df['Temperature'], range(math.floor(df['Temperature'].min()), math.ceil(df['Temperature'].max()+1), 1))
+    plt.show()
+
     plt.figure(figsize=(20, 10))
     plt.title("Visibility")
     plt.xlabel("Date")
     plt.ylabel("Mile")
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Visibility'].mean())
+    plt.show()
+
+    plt.figure(figsize=(10, 10))
+    plt.title("Histogram of Visibility")
+    plt.xlabel("Mile")
+    plt.hist(df['Visibility'], range(math.floor(df['Visibility'].min()), math.ceil(df['Visibility'].max()+1), 1))
     plt.show()
 
     plt.figure(figsize=(20, 10))
@@ -47,11 +59,23 @@ def analyse_weather(df, start_year=None):
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Humidity'].mean())
     plt.show()
 
+    plt.figure(figsize=(10, 10))
+    plt.title("Histogram of Humidity")
+    plt.xlabel("Percentage")
+    plt.hist(df['Humidity'], range(math.floor(df['Humidity'].min()), math.ceil(df['Humidity'].max()+1), 1))
+    plt.show()
+
     plt.figure(figsize=(20, 10))
     plt.title("Wind")
     plt.xlabel("Date")
     plt.ylabel("KPH")
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Wind'].mean())
+    plt.show()
+
+    plt.figure(figsize=(10, 10))
+    plt.title("Histogram of Wind")
+    plt.xlabel("KPH")
+    plt.hist(df['Wind'], range(math.floor(df['Wind'].min()), math.ceil(df['Wind'].max()+1), 1))
     plt.show()
 
     plt.figure(figsize=(20, 10))
@@ -603,3 +627,7 @@ def analyse_demographic_pattern(raw_data_path):
         plt.plot(tmp[tmp['Age'] == i]['Hour'], tmp[tmp['Age'] == i]['counts'], linestyle='-', marker='o', label=i)
     plt.legend()
     plt.show()
+
+
+def analyse_weather_trip(df):
+    return None

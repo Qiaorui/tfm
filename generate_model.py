@@ -48,9 +48,10 @@ def main():
     pick_ups.rename(columns={"Start_Station_ID": "Station_ID", "Start_Time": "Timestamp"}, inplace=True)
     drop_offs.rename(columns={"Stop_Station_ID": "Station_ID", "Stop_Time": "Timestamp"}, inplace=True)
 
-    pick_ups = utils.aggregate_by_time_slot(pick_ups, args.ts)
-    pick_ups = utils.fill_weather_data(pick_ups, weather_data)
-
+    pick_ups = pick_ups.groupby("Station_ID")
+    for sid, sdf in pick_ups:
+        sdf = utils.aggregate_by_time_slot(sdf, 30)
+        print(sid, sdf["Timestamp"].min(), sdf["Timestamp"].max())
 
     # PCA
 

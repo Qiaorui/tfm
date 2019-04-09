@@ -267,14 +267,21 @@ def get_dropoffs(df):
                       'Stop_Season', 'Stop_Time', 'Stop_Weekday', 'Stop_Year']]
 
 
-def aggregate_by_time_slot(df, ts):
-    df.groupby()
-
-    return None
+def aggregate_by_time_slot(df, ts, index):
+    df = df.groupby([pd.Grouper(key="Timestamp", freq=str(ts)+'Min')]).size().reset_index(name="Count")
+    df = df.set_index("Timestamp")
+    df = df.reindex(index, fill_value=0)
+    return df
 
 
 def fill_weather_data(df, weather_df):
-    return None
+    idx = np.searchsorted(weather_df.Datetime, df.index) - 1
+    df["Temperature"] = weather_df.iloc[idx].Temperature.values
+    df["Wind"] = weather_df.iloc[idx].Wind.values
+    df["Humidity"] = weather_df.iloc[idx].Humidity.values
+    df["Visibility"] = weather_df.iloc[idx].Visibility.values
+    df["Condition"] = weather_df.iloc[idx].Condition.values
+    return df
 
 
 def get_station_list(df):

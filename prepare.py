@@ -3,6 +3,7 @@ from scripts import utils
 from scripts import statistics
 import pandas as pd
 import argparse
+import gc
 
 
 def main():
@@ -61,19 +62,32 @@ def main():
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)
 
+
     if args.s:
         # Statistical analysis
         print("{0:*^80}".format(" Statistic Analysis "))
 
-        print("{0:-^80}".format(" Demographic Analysis "))
-        #statistics.analyse_demographic_pattern(raw_trip_data_path)
-
         print("{0:-^80}".format(" Weather Analysis "))
-        #statistics.analyse_weather(weather_data, 2017)
+        statistics.analyse_weather(weather_data, 2017)
+
+        pick_ups = trip_data[['Start_Time']].copy()
+        pick_ups.rename(columns={"Start_Time": "Timestamp"}, inplace=True)
+        start = pick_ups["Timestamp"].min().replace(hour=0, minute=0, second=0)
+        end = pick_ups["Timestamp"].max().replace(hour=23, minute=59)
+
+        index = pd.date_range(start=start, end=end, freq='30Min')
+
+        pick_ups = utils.aggregate_by_time_slot(pick_ups, 30, index)
+        pick_ups = utils.fill_weather_data(pick_ups, weather_data)
+
+        statistics.analyse_weather_trip(pick_ups)
+        exit(1)
+
+        print("{0:-^80}".format(" Demographic Analysis "))
+        statistics.analyse_demographic_pattern(raw_trip_data_path)
 
         print("{0:-^80}".format(" Trip Analysis "))
         statistics.analyse_trip_duration(trip_data)
-        exit(1)
 
         print("{0:-^80}".format(" Time Analysis "))
         statistics.analyse_date_pattern(trip_data)
@@ -83,6 +97,7 @@ def main():
         statistics.show_station_change(raw_trip_data_path, station_data, trip_data)
         statistics.analyse_geo_pattern(trip_data)
         statistics.plot_unbalance_network(trip_data)
+
 
 
 if __name__ == '__main__':

@@ -62,7 +62,7 @@ def analyse_weather(df, start_year=None):
     #plt.figure(figsize=(10, 10))
     plt.title("Histogram of Humidity")
     plt.xlabel("Percentage")
-    plt.hist(df['Humidity'], range(math.floor(df['Humidity'].min()), math.ceil(df['Humidity'].max()+1), 1))
+    plt.hist(df['Humidity'], range(0, 101))
     plt.show()
 
     plt.figure(figsize=(20, 10))
@@ -649,6 +649,7 @@ def analyse_weather_trip(df):
     plt.xlabel("Percentage")
     plt.ylabel("Average Hourly Trip Count")
     plt.plot(hum.index, hum["Count"])
+    plt.xlim((0,100))
     plt.show()
 
     wind = df.groupby("Wind").agg({"Count":"mean"})
@@ -656,4 +657,13 @@ def analyse_weather_trip(df):
     plt.xlabel("KPH")
     plt.ylabel("Average Hourly Trip Count")
     plt.plot(wind.index, wind["Count"])
+    plt.show()
+
+    #plt.figure(figsize=(20, 10))
+    cond = df.groupby("Condition")
+    data = [tdf["Count"].to_numpy() for _, tdf in cond]
+    plt.title("Hourly Trip Count by Weather Condition")
+    plt.ylabel("Average Hourly Trip Count")
+    plt.boxplot(data)
+    plt.xticks(np.arange(len(list(cond.groups.keys())))+1, list(cond.groups.keys()), rotation=45)
     plt.show()

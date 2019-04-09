@@ -80,7 +80,6 @@ def main():
         pick_ups = utils.fill_weather_data(pick_ups, weather_data)
 
         statistics.analyse_weather_trip(pick_ups)
-        exit(1)
 
         print("{0:-^80}".format(" Demographic Analysis "))
         statistics.analyse_demographic_pattern(raw_trip_data_path)
@@ -96,7 +95,6 @@ def main():
         statistics.show_station_change(raw_trip_data_path, station_data, trip_data)
         statistics.analyse_geo_pattern(trip_data)
         statistics.plot_unbalance_network(trip_data)
-
 
 
 if __name__ == '__main__':

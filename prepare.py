@@ -66,13 +66,14 @@ def main():
         print("{0:*^80}".format(" Statistic Analysis "))
 
         print("{0:-^80}".format(" Demographic Analysis "))
-        statistics.analyse_demographic_pattern(raw_trip_data_path)
+        #statistics.analyse_demographic_pattern(raw_trip_data_path)
 
         print("{0:-^80}".format(" Weather Analysis "))
-        statistics.analyse_weather(weather_data, 2017)
+        #statistics.analyse_weather(weather_data, 2017)
 
         print("{0:-^80}".format(" Trip Analysis "))
         statistics.analyse_trip_duration(trip_data)
+        exit(1)
 
         print("{0:-^80}".format(" Time Analysis "))
         statistics.analyse_date_pattern(trip_data)

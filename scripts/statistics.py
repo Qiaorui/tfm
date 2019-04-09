@@ -90,7 +90,7 @@ def analyse_weather(df, start_year=None):
     inner_colors.extend(cmap(np.arange(0, 256, 256 // (len(rainy_conds) + 3))[1:]))
 
     ax.pie([sum(x) for x in vals], radius=1, colors=outer_colors, labels=["Cloudy", "Foggy", "Rainy"],
-           autopct='%1.1f%%',
+           autopct='%1.1f%%', pctdistance=0.83,
            wedgeprops=dict(width=size, edgecolor='w'), textprops={'fontsize': 24})
 
     ax.pie(list(itertools.chain(*vals)), radius=1 - size, colors=inner_colors,
@@ -110,12 +110,14 @@ def analyse_trip_duration(df, start_year=None):
     print(df.describe())
     print(df.info())
 
+    max_triptime = df["Trip_Duration"].max()
+
     f = df['Trip_Duration'].value_counts()
     f.sort_index(inplace=True)
 
     # Plot Distribution of trip duration
     plt.figure(dpi=DPI)
-    plt.hist(df.loc[:, 'Trip_Duration'])
+    plt.hist(df.loc[:, 'Trip_Duration'], range(0, max_triptime, 5))
     plt.title('Distribution of Trip Durations')
     plt.xlabel('Duration (m)')
     plt.show()
@@ -123,7 +125,7 @@ def analyse_trip_duration(df, start_year=None):
     # Plot Distribution of trip duration in log scale
     plt.figure(dpi=DPI)
     plt.yscale('log')
-    plt.hist(df.loc[:, 'Trip_Duration'])
+    plt.hist(df.loc[:, 'Trip_Duration'], range(0, max_triptime, 5))
     plt.title('Distribution of Trip Durations')
     plt.xlabel('Duration (m)')
     plt.show()
@@ -145,6 +147,7 @@ def analyse_trip_duration(df, start_year=None):
     plt.title('Trip duration distribution within 60 minutes')
     plt.plot(f.index, f)
     plt.xlim(0, 60)
+    plt.ylabel("Count")
     plt.xlabel("Minute")
     plt.show()
 
@@ -158,6 +161,36 @@ def analyse_trip_duration(df, start_year=None):
     plt.ylabel("Count")
     plt.xlabel("Minute")
     plt.show()
+
+    # Plot of stations which most user done the circulation trip
+    tmp = tmp[["Start_Station_ID", "Start_Latitude", "Start_Longitude"]]
+    round_trip_station = tmp.groupby(["Start_Station_ID", "Start_Latitude", "Start_Longitude"], as_index=False).size().reset_index(name="Round_Count").sort_values("Start_Station_ID")
+    all_station_count = df.groupby("Start_Station_ID").size().to_frame("Total_Count").sort_values("Start_Station_ID")
+    data = pd.merge(round_trip_station, all_station_count, on="Start_Station_ID")
+    data["Pct"] = data["Round_Count"] / data["Total_Count"] * 100
+
+    lat, lng = df["Start_Latitude"].mean(), df["Start_Longitude"].mean()
+    m = generate_base_map([lat, lng], 14, tiles="OpenStreetMap")
+
+    colormap = cm.linear.YlOrRd_04.scale(0, max(data["Pct"]))
+    colormap.caption = 'Percentage of Round Trip'
+
+    for _, row in data.iterrows():
+        folium.Circle(
+            location=[row['Start_Latitude'], row['Start_Longitude']],
+            radius=70,
+            color="black",
+            weight=2,
+            # dash_array= '5,5',
+            fill_opacity=1,
+            popup=str(row['Start_Station_ID']),
+            fill_color=colormap(row['Pct'])
+        ).add_to(m)
+
+    m.add_child(colormap)
+    # folium.LayerControl(collapsed=False).add_to(m)
+    m.save("map.html")
+    webbrowser.open("file://" + os.path.realpath("map.html"))
 
 
 def analyse_date_pattern(df):

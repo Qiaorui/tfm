@@ -33,7 +33,7 @@ def analyse_weather(df, start_year=None):
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Temperature'].mean())
     plt.show()
 
-    plt.figure(figsize=(10, 10))
+    #plt.figure(figsize=(10, 10))
     plt.title("Histogram of Temperature")
     plt.xlabel("Celsius")
     plt.hist(df['Temperature'], range(math.floor(df['Temperature'].min()), math.ceil(df['Temperature'].max()+1), 1))
@@ -46,7 +46,7 @@ def analyse_weather(df, start_year=None):
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Visibility'].mean())
     plt.show()
 
-    plt.figure(figsize=(10, 10))
+    #plt.figure(figsize=(10, 10))
     plt.title("Histogram of Visibility")
     plt.xlabel("Mile")
     plt.hist(df['Visibility'], range(math.floor(df['Visibility'].min()), math.ceil(df['Visibility'].max()+1), 1))
@@ -59,7 +59,7 @@ def analyse_weather(df, start_year=None):
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Humidity'].mean())
     plt.show()
 
-    plt.figure(figsize=(10, 10))
+    #plt.figure(figsize=(10, 10))
     plt.title("Histogram of Humidity")
     plt.xlabel("Percentage")
     plt.hist(df['Humidity'], range(math.floor(df['Humidity'].min()), math.ceil(df['Humidity'].max()+1), 1))
@@ -72,7 +72,7 @@ def analyse_weather(df, start_year=None):
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Wind'].mean())
     plt.show()
 
-    plt.figure(figsize=(10, 10))
+    #plt.figure(figsize=(10, 10))
     plt.title("Histogram of Wind")
     plt.xlabel("KPH")
     plt.hist(df['Wind'], range(math.floor(df['Wind'].min()), math.ceil(df['Wind'].max()+1), 1))
@@ -630,4 +630,30 @@ def analyse_demographic_pattern(raw_data_path):
 
 
 def analyse_weather_trip(df):
-    return None
+    temp = df.groupby("Temperature").agg({"Count":"mean"})
+    plt.title("Hourly Trip Count by Temperature")
+    plt.xlabel("Celsius")
+    plt.ylabel("Average Hourly Trip Count")
+    plt.plot(temp.index, temp["Count"])
+    plt.show()
+
+    vis = df.groupby("Visibility").agg({"Count":"mean"})
+    plt.title("Hourly Trip Count by Visibility")
+    plt.xlabel("Mile")
+    plt.ylabel("Average Hourly Trip Count")
+    plt.plot(vis.index, vis["Count"])
+    plt.show()
+
+    hum = df.groupby("Humidity").agg({"Count":"mean"})
+    plt.title("Hourly Trip Count by Humidity")
+    plt.xlabel("Percentage")
+    plt.ylabel("Average Hourly Trip Count")
+    plt.plot(hum.index, hum["Count"])
+    plt.show()
+
+    wind = df.groupby("Wind").agg({"Count":"mean"})
+    plt.title("Hourly Trip Count by Wind")
+    plt.xlabel("KPH")
+    plt.ylabel("Average Hourly Trip Count")
+    plt.plot(wind.index, wind["Count"])
+    plt.show()

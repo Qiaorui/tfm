@@ -62,7 +62,6 @@ def main():
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)
 
-
     if args.s:
         # Statistical analysis
         print("{0:*^80}".format(" Statistic Analysis "))

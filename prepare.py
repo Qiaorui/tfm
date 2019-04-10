@@ -80,7 +80,7 @@ def main():
         pick_ups = utils.fill_weather_data(pick_ups, weather_data)
 
         statistics.analyse_weather_trip(pick_ups)
-
+        exit(1)
         print("{0:-^80}".format(" Demographic Analysis "))
         statistics.analyse_demographic_pattern(raw_trip_data_path)
 

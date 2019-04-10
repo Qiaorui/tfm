@@ -62,7 +62,7 @@ def analyse_weather(df, start_year=None):
     #plt.figure(figsize=(10, 10))
     plt.title("Histogram of Humidity")
     plt.xlabel("Percentage")
-    plt.hist(df['Humidity'], range(0, 101))
+    plt.hist(df['Humidity'], bins=50)
     plt.show()
 
     plt.figure(figsize=(20, 10))
@@ -649,7 +649,7 @@ def analyse_weather_trip(df):
     plt.xlabel("Percentage")
     plt.ylabel("Average Hourly Trip Count")
     plt.plot(hum.index, hum["Count"])
-    plt.xlim((0,100))
+    #plt.xlim((0,100))
     plt.show()
 
     wind = df.groupby("Wind").agg({"Count":"mean"})
@@ -659,11 +659,26 @@ def analyse_weather_trip(df):
     plt.plot(wind.index, wind["Count"])
     plt.show()
 
-    #plt.figure(figsize=(20, 10))
+    wind = df.groupby("Wind", as_index=False).agg({"Count":"mean"})
+    wind = wind.groupby(pd.cut(wind["Wind"], np.arange(0, wind["Wind"].max()+1, 1))).sum()
+    plt.title("Hourly Trip Count by Wind")
+    plt.xlabel("KPH")
+    plt.ylabel("Average Hourly Trip Count")
+    plt.plot([x.left for x in wind.index], wind["Count"])
+    plt.show()
+
+    plt.figure(figsize=(10, 10))
     cond = df.groupby("Condition")
+    #indices = cond["Count"].mean().sort_values(ascending=False).index
     data = [tdf["Count"].to_numpy() for _, tdf in cond]
     plt.title("Hourly Trip Count by Weather Condition")
     plt.ylabel("Average Hourly Trip Count")
-    plt.boxplot(data)
+
+    bplot = plt.boxplot(data, 0, '', patch_artist=True)
+    colors = ['lightgreen', 'pink', 'lightgreen', 'lightblue', 'lightblue', 'pink', 'lightblue', 'lightblue',
+              'lightblue', 'pink', 'lightgreen', 'lightgreen', 'lightgreen', 'lightblue', 'lightgreen', 'lightblue']
+    for b, c in zip(bplot["boxes"], colors):
+        b.set_facecolor(c)
+
     plt.xticks(np.arange(len(list(cond.groups.keys())))+1, list(cond.groups.keys()), rotation=45)
     plt.show()

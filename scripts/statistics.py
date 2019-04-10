@@ -637,6 +637,9 @@ def analyse_weather_trip(df):
     plt.plot(temp.index, temp["Count"])
     plt.show()
 
+    mt = temp.idxmax()
+    print(df[df["Temperature"] == mt.tolist()[0]])
+
     vis = df.groupby("Visibility").agg({"Count":"mean"})
     plt.title("Hourly Trip Count by Visibility")
     plt.xlabel("Mile")

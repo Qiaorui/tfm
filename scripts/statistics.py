@@ -143,7 +143,7 @@ def analyse_trip_duration(df, start_year=None):
     plt.figure(dpi=DPI)
     plt.hist(df.loc[:, 'Trip_Duration'], range(0, max_triptime, 5))
     plt.title('Distribution of Trip Durations')
-    plt.xlabel('Duration (m)')
+    plt.xlabel('Duration (minutes)')
     plt.show()
 
     # Plot Distribution of trip duration in log scale
@@ -151,12 +151,13 @@ def analyse_trip_duration(df, start_year=None):
     plt.yscale('log')
     plt.hist(df.loc[:, 'Trip_Duration'], range(0, max_triptime, 5))
     plt.title('Distribution of Trip Durations')
-    plt.xlabel('Duration (m)')
+    plt.xlabel('Duration (minutes)')
     plt.show()
 
     # Boxplot of trip duration
     plt.figure(dpi=DPI)
     plt.boxplot(list(df.loc[:, 'Trip_Duration']), 0, 'gD')
+    plt.ylabel('Duration (minutes)')
     plt.title('Boxplot')
     plt.show()
 
@@ -164,6 +165,7 @@ def analyse_trip_duration(df, start_year=None):
     plt.figure(dpi=DPI)
     plt.boxplot(list(df.loc[:, 'Trip_Duration']), 0, '')
     plt.title('Boxplot without outlier')
+    plt.ylabel('Duration (minutes)')
     plt.show()
 
     # Plot of trip duration distribution for the trips within 60 minutes
@@ -524,7 +526,7 @@ def plot_unbalance_network(df):
     # Shift all values
     values = [x + nshift for x in values]
 
-    plt.figure(figsize=(20, 15))
+    plt.figure(figsize=(15, 7))
     plt.gca().invert_yaxis()
     plt.gca().invert_xaxis()
 
@@ -670,7 +672,7 @@ def analyse_weather_trip(df):
     plt.plot([x.left for x in wind.index], wind["Count"])
     plt.show()
 
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(10, 7))
     cond = df.groupby("Condition")
     #indices = cond["Count"].mean().sort_values(ascending=False).index
     data = [tdf["Count"].to_numpy() for _, tdf in cond]

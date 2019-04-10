@@ -25,6 +25,11 @@ def preprocess_trips(raw_path, dest_path, stations):
 
     complete_station(df, stations)
 
+    low_freq = df['Start_Station_ID'].value_counts()
+    low_freq = low_freq[low_freq < 10]
+    print("Dropping:", low_freq.keys())
+    df.drop(df.loc[df['Start_Station_ID'].isin(low_freq.keys())].index, inplace=True)
+
     df['Start_Station_ID'] = df['Start_Station_ID'].astype(np.int16)
     df['End_Station_ID'] = df['End_Station_ID'].astype(np.int16)
 

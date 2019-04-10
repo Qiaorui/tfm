@@ -657,6 +657,10 @@ def analyse_weather_trip(df):
     #plt.xlim((0,100))
     plt.show()
 
+    #mt = hum.sort_values("Count", ascending=False)
+    #print(mt)
+    print(df[df["Humidity"] <= 14])
+
     wind = df.groupby("Wind").agg({"Count":"mean"})
     plt.title("Hourly Trip Count by Wind")
     plt.xlabel("KPH")

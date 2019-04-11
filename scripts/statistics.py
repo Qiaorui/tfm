@@ -526,7 +526,7 @@ def plot_unbalance_network(df):
     # Shift all values
     values = [x + nshift for x in values]
 
-    plt.figure(figsize=(15, 7))
+    fig = plt.figure(figsize=(10, 7))
     plt.gca().invert_yaxis()
     plt.gca().invert_xaxis()
 
@@ -555,6 +555,7 @@ def plot_unbalance_network(df):
     cbb.set_label('Average station balance')
 
     ax.set_axis_off()
+    fig.tight_layout()
     plt.show()
 
 

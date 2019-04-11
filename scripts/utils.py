@@ -16,6 +16,7 @@ BASE_PATTERN_JC = "JC-{}-citibike-tripdata.csv.zip"
 STATION_URL = "https://feeds.citibikenyc.com/stations/stations.json"
 
 DATE_RANGE = [y * 100 + m + 1 for y in range(2017, 2019) for m in range(12)]
+#DATE_RANGE += [201901, 201902]
 
 
 def download_station_data(dest_path):

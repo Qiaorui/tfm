@@ -198,7 +198,7 @@ def analyse_trip_duration(df, start_year=None):
     lat, lng = df["Start_Latitude"].mean(), df["Start_Longitude"].mean()
     m = generate_base_map([lat, lng], 14, tiles="OpenStreetMap")
 
-    colormap = cm.linear.YlOrRd_04.scale(0, max(data["Pct"]))
+    colormap = cm.linear.YlOrRd_04.scale(0, 20)
     colormap.caption = 'Percentage of Round Trip'
 
     for _, row in data.iterrows():
@@ -338,6 +338,25 @@ def analyse_date_pattern(df):
     plt.xticks(bins)
     for i in range(1, 8, 1):
         plt.plot(bins, tmp[tmp['Start_Weekday'] == i]['counts'], linestyle='-', marker='o', label=weekdays[i - 1])
+    plt.legend()
+    plt.show()
+
+    # Holiday & Workingday relationship
+
+    tmp = df[["Start_Time", "Start_Hour", "Start_Weekday", "Start_Year", "Start_Holiday"]].copy()
+    tmp = df[df["Start_Weekday"] <= 5]
+    tmp["Start_Day_Year"] = tmp["Start_Time"].dt.dayofyear
+    tmp = tmp.groupby(['Start_Holiday', 'Start_Hour', "Start_Year", "Start_Day_Year"]).size().groupby(
+        ['Start_Holiday', "Start_Hour"]).mean().reset_index(name='counts')
+
+    bins = list(range(24))
+    plt.figure(figsize=(15, 7))
+    plt.xlabel('Hourly distribution by holiday')
+    plt.ylabel('Average Hourly Trip count')
+    plt.title('Ridership by hour and holiday for NYC', fontsize=15)
+    plt.xticks(bins)
+    for i in [True, False]:
+        plt.plot(bins, tmp[tmp['Start_Holiday'] == i]['counts'], linestyle='-', marker='o', label="Holiday (Mon-Fri)" if i else "Workingday")
     plt.legend()
     plt.show()
 

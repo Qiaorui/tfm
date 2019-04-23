@@ -234,8 +234,8 @@ def read_cleaned_weather_data(path):
     frame_list = []
     for f in all_files:
         df = pd.read_csv(f, index_col=None, header=0,
-                         dtype={"Condition": str, "Temperature": np.float32, "Wind": np.float32, "Humidity": np.int8,
-                                "Visibility": np.float32},
+                         dtype={"Condition": str, "Temperature": np.float16, "Wind": np.float16, "Humidity": np.int8,
+                                "Visibility": np.float16},
                          parse_dates=["Datetime"]
                          )
         frame_list.append(df)

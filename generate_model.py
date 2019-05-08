@@ -218,6 +218,13 @@ def main():
     x_train.drop('Count', axis=1, inplace=True)
     x_test.drop('Count', axis=1, inplace=True)
 
+
+    arima = models.ARIMA()
+    arima.fit(x_train, y_train)
+    exit(1)
+
+
+
     ha = models.HA()
     ha.fit(x_train, y_train)
     y = ha.predict(x_test)

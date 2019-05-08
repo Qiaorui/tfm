@@ -1,12 +1,10 @@
 from scripts import preprocess
 from scripts import utils
+from scripts import models
 import pandas as pd
 import gc
 import argparse
 
-from sklearn.feature_selection import RFE
-from sklearn.linear_model import LinearRegression
-import math
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -14,30 +12,8 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 from sklearn.decomposition import PCA
 import statsmodels.api as sm
 
-
-def convert_to_sequence(df, output_columns, lags=0, aheads=1, dropnan=True):
-    new_df = pd.DataFrame()
-    x_columns = []
-    # Add lags (t-lag, t-lag+1, t-lag+2, ... , t-1)
-    for lag in range(lags, 0, -1):
-        for column in df.columns:
-            new_column_name = column+"_lag_"+str(lag)
-            new_df[new_column_name] = df[column].shift(lag).values
-            x_columns.append(new_column_name)
-    # Add current observation (t)
-    for column in df.columns:
-        new_df[column] = df[column].values
-        x_columns.append(column)
-    # Add ste aheads (t+1, t+2, ... , t+aheads)
-    y_columns = []
-    for ahead in range(1, aheads+1, 1):
-        for output_column in output_columns:
-            new_column_name = output_column+"_ahead_"+str(ahead)
-            new_df[new_column_name] = df[output_column].shift(-ahead).values
-            y_columns.append(new_column_name)
-    if dropnan:
-        new_df.dropna(inplace=True)
-    return new_df
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
 
 
 def pca(df, tv):
@@ -45,7 +21,7 @@ def pca(df, tv):
     y = df[tv]
     x = df.drop(tv, axis=1)
 
-    N = 300
+    N = 1000
     plt.plot(y.tail(N).index, y.tail(N))
     plt.gcf().autofmt_xdate()
     plt.show()
@@ -228,22 +204,60 @@ def main():
     data = prepare_data(pick_ups, weather_data, time_slot)
 
     busiest_station = pick_ups["Station_ID"].value_counts().idxmax()
+    print("{0:*^80}".format(" PCA "))
     # PCA
-    pca_data = data.loc[data["Station_ID"]==busiest_station].drop("Station_ID", axis=1)
-    pca(pca_data, 'Count')
+    pca_data = data.loc[data["Station_ID"]==busiest_station]
+    #pca(pca_data, 'Count')
 
-    dg = data.groupby("Station_ID")
-    for id, df in dg:
-        sequence = convert_to_sequence(df.drop(columns=['Holiday', 'Station_ID']), ['Count'], 3, 4)
-        print(sequence)
-        exit(1)
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
+    x_train = data[data.index < th_day]
+    x_test = data[data.index >= th_day]
+    y_train = x_train['Count']
+    y_test = x_test['Count']
+    x_train.drop('Count', axis=1, inplace=True)
+    x_test.drop('Count', axis=1, inplace=True)
+
+    ha = models.HA()
+    ha.fit(x_train, y_train)
+    y = ha.predict(x_test)
+    models.score(y_test.tolist(), y)
+
+    #dg = data.groupby("Station_ID")
+    #for id, df in dg:
+    #    sequence = convert_to_sequence(df.drop(columns=['Holiday', 'Station_ID']), ['Count'], 3, 4)
+    #    print(sequence)
+    #    exit(1)
 
     # Save model per each techniques
 
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
+    y_test = pca_data['Count']
+    week_sample = y_test.loc[th_day - pd.DateOffset(7):th_day + pd.DateOffset(7)]
+    day_sample = y_test.loc[th_day - pd.DateOffset(1):th_day + pd.DateOffset(1)]
+    base_week_df = pd.DataFrame(index=week_sample.index)
+    base_week_df = base_week_df[base_week_df.index >= th_day]
+    base_day_df = pd.DataFrame(index=day_sample.index)
+    base_day_df = base_day_df[base_day_df.index >= th_day]
+
+    ha_sample = ha.predict(pca_data.loc[th_day : th_day + pd.DateOffset(7)])
+    base_week_df['ha'] = ha_sample
+
+    plt.plot(week_sample, label="Observed")
+    plt.plot(base_week_df, label="HA")
+    plt.gcf().autofmt_xdate()
+    plt.legend()
+    plt.show()
+
+    ha_sample = ha.predict(pca_data.loc[th_day : th_day + pd.DateOffset(1)])
+    base_day_df['ha'] = ha_sample
+
+    plt.plot(day_sample, label="Observed")
+    plt.plot(base_day_df, label="HA")
+    plt.gcf().autofmt_xdate()
+    plt.legend()
+    plt.show()
 
 
 if __name__ == '__main__':

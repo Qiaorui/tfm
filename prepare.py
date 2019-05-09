@@ -74,7 +74,7 @@ def main():
         start = pick_ups["Timestamp"].min().replace(hour=0, minute=0, second=0)
         end = pick_ups["Timestamp"].max().replace(hour=23, minute=59)
 
-        index = pd.date_range(start=start, end=end, freq='30Min')
+        index = pd.date_range(start=start, end=end, freq='30Min', normalize=True)
 
         pick_ups = utils.aggregate_by_time_slot(pick_ups, 30, index)
         pick_ups = utils.fill_weather_data(pick_ups, weather_data)

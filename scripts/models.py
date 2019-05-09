@@ -8,6 +8,9 @@ import statsmodels.api as sm
 import matplotlib
 import itertools
 import numpy as np
+from time import sleep
+import gc
+import psutil
 
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
@@ -51,9 +54,6 @@ class BaseModel:
         self.data = None
         self.model = None
 
-    def fit(self, x, y):
-        print("Training...")
-
     def predict(self, x):
         print("Predicting...")
         y = None
@@ -87,7 +87,7 @@ class ARIMA(BaseModel):
         y['Station_ID'] = x['Station_ID']
         groups = y.groupby(["Station_ID"])
 
-
+        """
         # ADF stationary test
         adf_results = []
         for Station_ID, df in tqdm(groups, leave=False, total=len(groups), unit="group", desc="ADF test"):
@@ -104,8 +104,7 @@ class ARIMA(BaseModel):
             print("\nSome stations may be non-stationary")
             for adf in non_stationary:
                 print('ADF Statistic:', adf[0], 'p-value:', adf[1])
-
-
+        """
         # Autocorrelation
         station = groups.get_group(sid)
         plot_acf(station['Count'], lags=np.arange(100))
@@ -114,35 +113,63 @@ class ARIMA(BaseModel):
         plot_pacf(station['Count'], lags=np.arange(100))
         plt.show()
 
+        # Grid Search
         p = range(3)
         q = range(3)
         d = [0, 1]
-        pdq = list(itertools.product(p, d, q))
-        seasonal_pdq = [(v[0], v[1], v[2], s) for v in list(itertools.product(p, d, q))]
-        for param in pdq:
-            for param_seasonal in seasonal_pdq:
-                sum_aic = 0
-                for Station_ID, df in groups:
-                    df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
-                    try:
-                        mod = sm.tsa.statespace.SARIMAX(df.drop("Station_ID", axis=1),
-                                                        order=param,
-                                                        seasonal_order=param_seasonal,
-                                                        )#enforce_stationarity=False,
-                                                        #enforce_invertibility=False)
-                        results = mod.fit(disp=0)
-                        if np.isnan(results.aic):
-                            sum_aic = np.nan
-                            break
-                        sum_aic += results.aic
-                    except Exception as e:
-                        print(str(e))
-                        continue
-                print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, sum_aic/len(groups)))
+        options = list(itertools.product(p, d, q, p, d, q, [s]))
+        search_results = []
+        for p, d, q, P, D, Q, S in tqdm(options, leave=False, total=len(options), unit="option", desc="ARIMA order"):
+            sleep(0.1)
+            sum_aic = 0
+            gc.collect()
+            for Station_ID, df in groups:
+                df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
+                try:
+                    mod = sm.tsa.statespace.SARIMAX(df.drop("Station_ID", axis=1),
+                                                    order=(p, d, q),
+                                                    seasonal_order=(P, D, Q, S))
+                    results = mod.fit(disp=0)
+                    if np.isnan(results.aic):
+                        sum_aic = np.nan
+                        break
+                    sum_aic += results.aic
+                    del mod
+                    del results
+                except Exception as e:
+                    print(str(e))
+                    continue
+            search_results.append(((p, d, q), (P, D, Q, S), sum_aic / len(groups)))
+            # print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, sum_aic/len(groups)))
 
+        for param, param_seasonal, aic in search_results:
+            print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, aic))
+
+        best_param = min(search_results, key=lambda x: x[2])
+        print("The best param: ARIMA{}x{} - AIC:{}".format(best_param[0], best_param[1], best_param[2]))
 
     def fit(self, x, y, param, param_seasonal):
-        print("bazinga")
+        self.model = {}
+
+        y = pd.DataFrame(y)
+        y['Station_ID'] = x['Station_ID']
+        groups = y.groupby(["Station_ID"])
+        sum_aic = 0
+        for Station_ID, df in tqdm(groups, leave=False, total=len(groups), unit="group"):
+            df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
+            try:
+                mod = sm.tsa.statespace.SARIMAX(df.drop("Station_ID", axis=1),
+                                                order=param,
+                                                seasonal_order=param_seasonal)
+                results = mod.fit(disp=0)
+                if np.isnan(results.aic):
+                    sum_aic = np.nan
+                    break
+                self.model[Station_ID] = results
+            except Exception as e:
+                print(str(e))
+                continue
+        print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, sum_aic / len(groups)))
 
     def predict(self, x):
         self.model = None

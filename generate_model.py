@@ -14,6 +14,8 @@ import statsmodels.api as sm
 
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
+import warnings
+warnings.simplefilter("ignore")
 
 
 def pca(df, tv):
@@ -89,7 +91,7 @@ def prepare_data(df, weather_data, time_slot):
 
     start = df["Timestamp"].min().replace(hour=0, minute=0, second=0)
     end = df["Timestamp"].max().replace(hour=23, minute=59)
-    index = pd.date_range(start=start, end=end, freq=str(time_slot) + 'Min')
+    index = pd.date_range(start=start, end=end, freq=str(time_slot) + 'Min', normalize=True)
 
     station_groups = df.groupby("Station_ID")
     for sid, sdf in station_groups:
@@ -159,6 +161,7 @@ def main():
     parser.add_argument("-ot", type=int, help="Outlier threshold")
     parser.add_argument("-ts", type=int, default=30, help="Time slot for the aggregation, units in minute")
     parser.add_argument("-tp", type=float, default=0.2, help="Test size percentage for split the data")
+    parser.add_argument("-start", default="2017-01-01", help="Input start date")
     parser.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
 
     args = parser.parse_args()
@@ -167,6 +170,7 @@ def main():
     trip_data_path = args.ct
     time_slot = args.ts
     test_pct = args.tp
+    start = pd.to_datetime(args.start).normalize()
 
     pd.set_option('display.precision', 3)
     pd.set_option('display.max_columns', 500)
@@ -178,6 +182,8 @@ def main():
     assert trip_data is not None
 
     assert 24*60 % time_slot == 0
+
+    trip_data = trip_data[trip_data['Start_Time'] >= start]
 
     if args.ot is not None:
         print("Removing outlier with threshold", args.ot)

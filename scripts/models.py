@@ -178,14 +178,17 @@ class ARIMA(BaseModel):
         for idx, row in tqdm(x.iterrows(), leave=False, total=len(x.index), unit="row", desc="Predicting"):
             if row['Station_ID'] != sid:
                 if size > 0:
-                    pred = self.model[sid].predict(n_periods=size)
+                    pred = self.model[sid].forecast(size)
                     y.extend(list(pred))
+                    #print(len(list(pred)), len(y))
                 size = 0
                 sid = row['Station_ID']
             size += 1
-        pred = self.model[sid].predict(n_periods=size)
-        y.extend(list(pred))
 
+        print(sid, size)
+        pred = self.model[sid].forecast(size)
+        y.extend(list(pred))
+        print(len(list(pred)), len(y))
         return y
 
 

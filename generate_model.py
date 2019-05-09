@@ -262,8 +262,9 @@ def main():
     base_week_df['ha'] = ha_sample
     base_week_df['arima'] = arima_sample
 
+    plt.figure(figsize=(15, 7))
     plt.plot(week_sample, label="Observed")
-    plt.plot(base_week_df, label="HA")
+    plt.plot(base_week_df)
     plt.gcf().autofmt_xdate()
     plt.legend()
     plt.show()
@@ -273,8 +274,9 @@ def main():
     base_day_df['ha'] = ha_sample
     base_day_df['arima'] = arima_sample
 
+    plt.figure(figsize=(15, 7))
     plt.plot(day_sample, label="Observed")
-    plt.plot(base_day_df, label="HA")
+    plt.plot(base_day_df)
     plt.gcf().autofmt_xdate()
     plt.legend()
     plt.show()

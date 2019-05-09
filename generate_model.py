@@ -228,7 +228,7 @@ def main():
     arima = models.ARIMA()
     #param = arima.test(x_train, y_train, 1440//time_slot, busiest_station)
     #arima.fit(x_train, y_train, param[0], param[1])
-    arima.fit(x_train, y_train, (1,0,1), (1,0,1,24))
+    arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, 24))
     y = arima.predict(x_test)
     models.score(y_test.tolist(), y)
 

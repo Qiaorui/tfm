@@ -164,6 +164,7 @@ class ARIMA(BaseModel):
                 if np.isnan(results.aic):
                     sum_aic = np.nan
                     break
+                sum_aic += results.aic
                 self.model[Station_ID] = results
             except Exception as e:
                 print(str(e))

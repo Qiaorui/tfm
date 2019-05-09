@@ -220,7 +220,7 @@ def main():
 
 
     arima = models.ARIMA()
-    arima.fit(x_train, y_train)
+    arima.test(x_train, y_train, 1440//time_slot, busiest_station)
     exit(1)
 
 

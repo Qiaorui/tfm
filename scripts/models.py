@@ -8,6 +8,9 @@ import statsmodels.api as sm
 import matplotlib
 import itertools
 import numpy as np
+
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.tsa.stattools import adfuller
 pd.options.mode.chained_assignment = None
 
 
@@ -79,15 +82,43 @@ class ARIMA(BaseModel):
         super().__init__()
         print("Creating ARIMA model")
 
-    def fit(self, x, y):
+    def test(self, x, y, s, sid):
         y = pd.DataFrame(y)
         y['Station_ID'] = x['Station_ID']
         groups = y.groupby(["Station_ID"])
 
-        p = [0, 1, 2, 4, 6, 8, 10]
-        q = d = range(0, 3)
+
+        # ADF stationary test
+        adf_results = []
+        for Station_ID, df in tqdm(groups, leave=False, total=len(groups), unit="group", desc="ADF test"):
+            res = adfuller(df['Count'].tolist())
+            adf_results.append((res[0], res[1]))
+
+        for adf in adf_results:
+            print('ADF Statistic:', adf[0], 'p-value:', adf[1])
+
+        non_stationary = [(adf, p) for adf, p in adf_results if p > 0.01]
+        if not non_stationary:
+            print("\nAll stations followed stationary time series")
+        else:
+            print("\nSome stations may be non-stationary")
+            for adf in non_stationary:
+                print('ADF Statistic:', adf[0], 'p-value:', adf[1])
+
+
+        # Autocorrelation
+        station = groups.get_group(sid)
+        plot_acf(station['Count'], lags=np.arange(100))
+        plt.show()
+        # Partial Autocorrelation
+        plot_pacf(station['Count'], lags=np.arange(100))
+        plt.show()
+
+        p = range(3)
+        q = range(3)
+        d = [0, 1]
         pdq = list(itertools.product(p, d, q))
-        seasonal_pdq = [(v[0], v[1], v[2], 12) for v in list(itertools.product(p, d, q))]
+        seasonal_pdq = [(v[0], v[1], v[2], s) for v in list(itertools.product(p, d, q))]
         for param in pdq:
             for param_seasonal in seasonal_pdq:
                 sum_aic = 0
@@ -97,16 +128,21 @@ class ARIMA(BaseModel):
                         mod = sm.tsa.statespace.SARIMAX(df.drop("Station_ID", axis=1),
                                                         order=param,
                                                         seasonal_order=param_seasonal,
-                                                        enforce_stationarity=False,
-                                                        enforce_invertibility=False)
+                                                        )#enforce_stationarity=False,
+                                                        #enforce_invertibility=False)
                         results = mod.fit(disp=0)
-                        if results.aic is not np.nan:
-                            sum_aic += results.aic
-                    except:
+                        if np.isnan(results.aic):
+                            sum_aic = np.nan
+                            break
+                        sum_aic += results.aic
+                    except Exception as e:
+                        print(str(e))
                         continue
-                print('ARIMA{}x{}12 - AIC:{}'.format(param, param_seasonal, sum_aic/len(groups)))
+                print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, sum_aic/len(groups)))
 
 
+    def fit(self, x, y, param, param_seasonal):
+        print("bazinga")
 
     def predict(self, x):
         self.model = None

@@ -226,9 +226,11 @@ def main():
 
 
     arima = models.ARIMA()
-    arima.test(x_train, y_train, 1440//time_slot, busiest_station)
-    exit(1)
-
+    #param = arima.test(x_train, y_train, 1440//time_slot, busiest_station)
+    #arima.fit(x_train, y_train, param[0], param[1])
+    arima.fit(x_train, y_train, (1,0,1), (1,0,1,24))
+    y = arima.predict(x_test)
+    models.score(y_test.tolist(), y)
 
 
     ha = models.HA()
@@ -255,7 +257,10 @@ def main():
     base_day_df = base_day_df[base_day_df.index >= th_day]
 
     ha_sample = ha.predict(pca_data.loc[th_day : th_day + pd.DateOffset(7)])
+    arima_sample = arima.predict(pca_data.loc[th_day : th_day + pd.DateOffset(7)])
+
     base_week_df['ha'] = ha_sample
+    base_week_df['arima'] = arima_sample
 
     plt.plot(week_sample, label="Observed")
     plt.plot(base_week_df, label="HA")
@@ -264,7 +269,9 @@ def main():
     plt.show()
 
     ha_sample = ha.predict(pca_data.loc[th_day : th_day + pd.DateOffset(1)])
+    arima_sample = arima.predict(pca_data.loc[th_day : th_day + pd.DateOffset(1)])
     base_day_df['ha'] = ha_sample
+    base_day_df['arima'] = arima_sample
 
     plt.plot(day_sample, label="Observed")
     plt.plot(base_day_df, label="HA")

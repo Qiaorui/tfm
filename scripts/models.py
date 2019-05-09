@@ -8,9 +8,7 @@ import statsmodels.api as sm
 import matplotlib
 import itertools
 import numpy as np
-from time import sleep
 import gc
-import psutil
 
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
@@ -120,7 +118,6 @@ class ARIMA(BaseModel):
         options = list(itertools.product(p, d, q, p, d, q, [s]))
         search_results = []
         for p, d, q, P, D, Q, S in tqdm(options, leave=False, total=len(options), unit="option", desc="ARIMA order"):
-            sleep(0.1)
             sum_aic = 0
             gc.collect()
             for Station_ID, df in groups:
@@ -134,19 +131,21 @@ class ARIMA(BaseModel):
                         sum_aic = np.nan
                         break
                     sum_aic += results.aic
-                    del mod
-                    del results
                 except Exception as e:
                     print(str(e))
                     continue
-            search_results.append(((p, d, q), (P, D, Q, S), sum_aic / len(groups)))
+            if not np.isnan(sum_aic):
+                search_results.append(((p, d, q), (P, D, Q, S), sum_aic / len(groups)))
             # print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, sum_aic/len(groups)))
 
-        for param, param_seasonal, aic in search_results:
+        search_results = sorted(search_results, key=lambda x: x[2])
+        for param, param_seasonal, aic in search_results[:20]:
             print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, aic))
 
-        best_param = min(search_results, key=lambda x: x[2])
+        best_param = search_results[0]
         print("The best param: ARIMA{}x{} - AIC:{}".format(best_param[0], best_param[1], best_param[2]))
+
+        return best_param
 
     def fit(self, x, y, param, param_seasonal):
         self.model = {}
@@ -172,7 +171,21 @@ class ARIMA(BaseModel):
         print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, sum_aic / len(groups)))
 
     def predict(self, x):
-        self.model = None
+        y = []
+        sid = -1
+        size = 0
+        for idx, row in tqdm(x.iterrows(), leave=False, total=len(x.index), unit="row", desc="Predicting"):
+            if row['Station_ID'] != sid:
+                if size > 0:
+                    pred = self.model[sid].predict(n_periods=size)
+                    y.extend(list(pred))
+                size = 0
+                sid = row['Station_ID']
+            size += 1
+        pred = self.model[sid].predict(n_periods=size)
+        y.extend(list(pred))
+
+        return y
 
 
 class SSA(BaseModel):

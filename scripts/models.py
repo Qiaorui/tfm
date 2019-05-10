@@ -198,11 +198,12 @@ class SSA(BaseModel):
         print("Creating SSA model")
         self.data = None
 
-    def test(self, x, y, s):
+    def test(self, x, y, s, sid):
         y = pd.DataFrame(y)
         y['Station_ID'] = x['Station_ID']
         groups = y.groupby(["Station_ID"])
 
+        # Find contribution
         all_contrib = []
         for Station_ID, df in groups:
             df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
@@ -231,6 +232,23 @@ class SSA(BaseModel):
         plt.axhline(y=0.8, color='r', linestyle='-')
         plt.title("Cumulative Contribution of Singular")
         plt.show()
+
+        # Plot the reconstruction
+        station = groups.get_group(sid)
+        ssa = mySSA(station['Count'])
+        ssa.embed(embedding_dimension=40, suspected_frequency=s)
+        ssa.decompose()
+        for i in range(10):
+            plt.figure(figsize=(11,2))
+            ssa.view_reconstruction(ssa.Xs[i], names=i, symmetric_plots=i != 0)
+            plt.show()
+
+        ts_copy10 = ssa.ts.copy()
+        reconstructed10 = ssa.view_reconstruction(*[ssa.Xs[i] for i in list(range(10))], names=list(range(10)), return_df=True, plot=False)
+        ts_copy10['Reconstruction'] = reconstructed10.Reconstruction.values
+        ts_copy10.plot(title='Original vs. Reconstructed Time Series')
+        plt.show()
+
 
     def fit(self, x, y):
         return None

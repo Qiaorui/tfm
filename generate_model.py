@@ -171,6 +171,7 @@ def main():
     time_slot = args.ts
     test_pct = args.tp
     start = pd.to_datetime(args.start).normalize()
+    seasonality = 1440//time_slot if 1440//time_slot > 1 else 7
 
     pd.set_option('display.precision', 3)
     pd.set_option('display.max_columns', 500)
@@ -226,7 +227,7 @@ def main():
 
     """
     arima = models.ARIMA()
-    #arima.test(x_train, y_train, 1440//time_slot, busiest_station)
+    #arima.test(x_train, y_train, seasonality, busiest_station)
     #arima.fit(x_train, y_train, param[0], param[1])
     arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, 24))
     y = arima.predict(x_test)
@@ -239,7 +240,7 @@ def main():
     """
 
     ssa = models.SSA()
-    ssa.test(x_train, y_train, 1440//time_slot)
+    ssa.test(x_train, y_train, seasonality, busiest_station)
     exit(1)
 
     #dg = data.groupby("Station_ID")

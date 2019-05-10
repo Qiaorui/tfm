@@ -198,12 +198,39 @@ class SSA(BaseModel):
         print("Creating SSA model")
         self.data = None
 
-    def test(self, x, y):
+    def test(self, x, y, s):
         y = pd.DataFrame(y)
         y['Station_ID'] = x['Station_ID']
         groups = y.groupby(["Station_ID"])
 
-        return None
+        all_contrib = []
+        for Station_ID, df in groups:
+            df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
+            ssa = mySSA(df['Count'])
+            ssa.embed(embedding_dimension=40, suspected_frequency=s)
+            ssa.decompose()
+            contrib = list(itertools.chain.from_iterable(ssa.s_contributions.values))
+            if not all_contrib:
+                all_contrib = [[] for _ in range(len(contrib))]
+            for idx, value in enumerate(contrib):
+                all_contrib[idx].append(value)
+        mean_contrib = [np.mean(x) for x in all_contrib]
+
+        plt.figure(figsize=(11, 4))
+        plt.bar(range(len(mean_contrib)), mean_contrib)
+        plt.xlabel("Singular i")
+        plt.xticks(range(len(mean_contrib)), range(1, len(mean_contrib)+1))
+        plt.title("contribution of Singular")
+        plt.show()
+
+        cumulative = np.cumsum(mean_contrib)
+        plt.figure(figsize=(11, 4))
+        plt.plot(range(len(mean_contrib)), cumulative)
+        plt.xlabel("Singular i")
+        plt.xticks(range(len(mean_contrib)), range(1, len(mean_contrib)+1))
+        plt.axhline(y=0.8, color='r', linestyle='-')
+        plt.title("Cumulative Contribution of Singular")
+        plt.show()
 
     def fit(self, x, y):
         return None

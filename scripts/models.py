@@ -1,4 +1,5 @@
 from . import utils
+from .mySSA import mySSA
 import pandas as pd
 from tqdm import tqdm
 import math
@@ -85,7 +86,6 @@ class ARIMA(BaseModel):
         y['Station_ID'] = x['Station_ID']
         groups = y.groupby(["Station_ID"])
 
-        """
         # ADF stationary test
         adf_results = []
         for Station_ID, df in tqdm(groups, leave=False, total=len(groups), unit="group", desc="ADF test"):
@@ -102,7 +102,7 @@ class ARIMA(BaseModel):
             print("\nSome stations may be non-stationary")
             for adf in non_stationary:
                 print('ADF Statistic:', adf[0], 'p-value:', adf[1])
-        """
+
         # Autocorrelation
         station = groups.get_group(sid)
         plot_acf(station['Count'], lags=np.arange(100))
@@ -116,34 +116,35 @@ class ARIMA(BaseModel):
         q = range(3)
         d = [0, 1]
         options = list(itertools.product(p, d, q, p, d, q, [s]))
-        search_results = []
-        for p, d, q, P, D, Q, S in tqdm(options, leave=False, total=len(options), unit="option", desc="ARIMA order"):
-            sum_aic = 0
-            gc.collect()
-            for Station_ID, df in groups:
-                df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
+
+        best_param = []
+        for Station_ID, df in groups:
+            df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
+
+            search_results = []
+
+            for p, d, q, P, D, Q, S in tqdm(options, leave=False, total=len(options), unit="option", desc="ARIMA order"):
+                gc.collect()
+                param = (p, d, q)
+                param_seasonal = (P, D, Q, S)
                 try:
                     mod = sm.tsa.statespace.SARIMAX(df.drop("Station_ID", axis=1),
-                                                    order=(p, d, q),
-                                                    seasonal_order=(P, D, Q, S))
+                                                    order=param,
+                                                    seasonal_order=param_seasonal)
                     results = mod.fit(disp=0)
                     if np.isnan(results.aic):
-                        sum_aic = np.nan
-                        break
-                    sum_aic += results.aic
+                        continue
+                    print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, results.aic))
+                    search_results.append((param, param_seasonal, results.aic))
                 except Exception as e:
                     print(str(e))
                     continue
-            if not np.isnan(sum_aic):
-                search_results.append(((p, d, q), (P, D, Q, S), sum_aic / len(groups)))
-            # print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, sum_aic/len(groups)))
 
-        search_results = sorted(search_results, key=lambda x: x[2])
-        for param, param_seasonal, aic in search_results[:20]:
-            print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, aic))
-
-        best_param = search_results[0]
-        print("The best param: ARIMA{}x{} - AIC:{}".format(best_param[0], best_param[1], best_param[2]))
+            search_results = sorted(search_results, key=lambda x: x[2])
+            print("\nFor Station ", Station_ID, " :")
+            for param, param_seasonal, aic in search_results[:3]:
+                print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, aic))
+            best_param.append((Station_ID, search_results[0][0], search_results[0][1], search_results[0][2]))
 
         return best_param
 
@@ -180,7 +181,6 @@ class ARIMA(BaseModel):
                 if size > 0:
                     pred = self.model[sid].forecast(size)
                     y.extend(list(pred))
-                    #print(len(list(pred)), len(y))
                 size = 0
                 sid = row['Station_ID']
             size += 1
@@ -197,6 +197,20 @@ class SSA(BaseModel):
         super().__init__()
         print("Creating SSA model")
         self.data = None
+
+    def test(self, x, y):
+        y = pd.DataFrame(y)
+        y['Station_ID'] = x['Station_ID']
+        groups = y.groupby(["Station_ID"])
+
+        return None
+
+    def fit(self, x, y):
+        return None
+
+    def predict(self, x):
+        y = []
+        return y
 
 
 class VAR(BaseModel):

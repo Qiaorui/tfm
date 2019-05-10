@@ -224,14 +224,13 @@ def main():
     x_train.drop('Count', axis=1, inplace=True)
     x_test.drop('Count', axis=1, inplace=True)
 
-
     arima = models.ARIMA()
-    #param = arima.test(x_train, y_train, 1440//time_slot, busiest_station)
+    arima.test(x_train, y_train, 1440//time_slot, busiest_station)
+    exit(1)
     #arima.fit(x_train, y_train, param[0], param[1])
-    arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, 24))
+    #arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, 24))
     y = arima.predict(x_test)
     models.score(y_test.tolist(), y)
-
 
     ha = models.HA()
     ha.fit(x_train, y_train)
@@ -264,7 +263,8 @@ def main():
 
     plt.figure(figsize=(15, 7))
     plt.plot(week_sample, label="Observed")
-    plt.plot(base_week_df)
+    plt.plot(base_week_df['ha'], label="HA")
+    plt.plot(base_week_df['arima'], label="ARIMA")
     plt.gcf().autofmt_xdate()
     plt.legend()
     plt.show()
@@ -276,7 +276,8 @@ def main():
 
     plt.figure(figsize=(15, 7))
     plt.plot(day_sample, label="Observed")
-    plt.plot(base_day_df)
+    plt.plot(base_day_df['ha'], label="HA")
+    plt.plot(base_week_df['arima'], label="ARIMA")
     plt.gcf().autofmt_xdate()
     plt.legend()
     plt.show()

@@ -228,11 +228,16 @@ def main():
     x_train.drop('Count', axis=1, inplace=True)
     x_test.drop('Count', axis=1, inplace=True)
 
+    ssa = models.SSA()
+    ssa_param = ssa.test(x_train, y_train, seasonality, busiest_station)
+    ssa.fit(x_train, y_train, seasonality)
+    y = ssa.predict(x_test, ssa_param)
+    models.score(y_test.tolist(), y)
 
     arima = models.ARIMA()
-    arima.test(x_train, y_train, seasonality, [busiest_station, median_station, idle_station])
-    #arima.fit(x_train, y_train, param[0], param[1])
-    #arima.fit(x_train, y_train, (2, 1, 2), (2, 1, 2, 24))
+    #param, param2 = arima.test(x_train, y_train, seasonality, [busiest_station, median_station, idle_station])
+    #arima.fit(x_train, y_train, param, param2)
+    arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, 24))
     y = arima.predict(x_test)
     models.score(y_test.tolist(), y)
 
@@ -240,10 +245,6 @@ def main():
     ha.fit(x_train, y_train)
     y = ha.predict(x_test)
     models.score(y_test.tolist(), y)
-
-
-    ssa = models.SSA()
-    ssa.test(x_train, y_train, seasonality, busiest_station)
 
     #dg = data.groupby("Station_ID")
     #for id, df in dg:
@@ -265,27 +266,34 @@ def main():
 
     ha_sample = ha.predict(pca_data.loc[th_day : th_day + pd.DateOffset(7)])
     arima_sample = arima.predict(pca_data.loc[th_day : th_day + pd.DateOffset(7)])
+    ssa_sample = ssa.predict(pca_data.loc[th_day : th_day + pd.DateOffset(7)], ssa_param)
 
     base_week_df['ha'] = ha_sample
     base_week_df['arima'] = arima_sample
+    base_week_df['ssa'] = ssa_sample
 
     plt.figure(figsize=(15, 7))
     plt.plot(week_sample, label="Observed")
     plt.plot(base_week_df['ha'], label="HA")
     plt.plot(base_week_df['arima'], label="ARIMA")
+    plt.plot(base_week_df['ssa'], label="SSA")
     plt.gcf().autofmt_xdate()
     plt.legend()
     plt.show()
 
     ha_sample = ha.predict(pca_data.loc[th_day : th_day + pd.DateOffset(1)])
     arima_sample = arima.predict(pca_data.loc[th_day : th_day + pd.DateOffset(1)])
+    ssa_sample = ssa.predict(pca_data.loc[th_day : th_day + pd.DateOffset(1)], ssa_param)
+
     base_day_df['ha'] = ha_sample
     base_day_df['arima'] = arima_sample
+    base_day_df['ssa'] = ssa_sample
 
     plt.figure(figsize=(15, 7))
     plt.plot(day_sample, label="Observed")
     plt.plot(base_day_df['ha'], label="HA")
-    plt.plot(base_week_df['arima'], label="ARIMA")
+    plt.plot(base_day_df['arima'], label="ARIMA")
+    plt.plot(base_day_df['ssa'], label='SSA')
     plt.gcf().autofmt_xdate()
     plt.legend()
     plt.show()

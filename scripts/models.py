@@ -145,7 +145,7 @@ class ARIMA(BaseModel):
                                                     order=param,
                                                     seasonal_order=param_seasonal)
                         results = mod.fit(disp=0)
-                        results.save("model/" + file_name)
+                        #results.save("model/" + file_name)
                     if np.isnan(results.aic):
                         sum_aic = np.nan
                         break
@@ -160,6 +160,8 @@ class ARIMA(BaseModel):
         print("\nTop search results :")
         for param, param_seasonal, aic in search_results:
             print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, aic))
+
+        return search_results[0][0], search_results[0][1]
 
     def fit(self, x, y, param, param_seasonal):
         self.model = {}
@@ -247,28 +249,60 @@ class SSA(BaseModel):
         plt.title("Cumulative Contribution of Singular")
         plt.show()
 
+        signal_size = next(x[0] for x in enumerate(cumulative) if x[1] > 0.8) + 1
+
         # Plot the reconstruction
         station = groups.get_group(sid)
         ssa = mySSA(station['Count'])
         ssa.embed(embedding_dimension=40, suspected_frequency=s)
         ssa.decompose()
-        for i in range(10):
+
+        for i in range(signal_size):
             plt.figure(figsize=(11,2))
             ssa.view_reconstruction(ssa.Xs[i], names=i, symmetric_plots=i != 0)
             plt.show()
 
         ts_copy10 = ssa.ts.copy()
-        reconstructed10 = ssa.view_reconstruction(*[ssa.Xs[i] for i in list(range(10))], names=list(range(10)), return_df=True, plot=False)
+        reconstructed10 = ssa.view_reconstruction(*[ssa.Xs[i] for i in list(range(signal_size))], names=list(range(signal_size)), return_df=True, plot=False)
         ts_copy10['Reconstruction'] = reconstructed10.Reconstruction.values
         ts_copy10.plot(title='Original vs. Reconstructed Time Series')
         plt.show()
 
+        return signal_size
 
-    def fit(self, x, y):
-        return None
+    def fit(self, x, y, s):
+        self.model = {}
 
-    def predict(self, x):
+        y = pd.DataFrame(y)
+        y['Station_ID'] = x['Station_ID']
+        groups = y.groupby(["Station_ID"])
+        for Station_ID, df in tqdm(groups, leave=False, total=len(groups), unit="group"):
+            df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
+            ssa = mySSA(df['Count'])
+            ssa.embed(embedding_dimension=40, suspected_frequency=s)
+            ssa.decompose()
+            self.model[Station_ID] = ssa
+
+    def predict(self, x, signal_size):
         y = []
+        sid = -1
+        size = 0
+        for idx, row in tqdm(x.iterrows(), leave=False, total=len(x.index), unit="row", desc="Predicting"):
+            if row['Station_ID'] != sid:
+                if size > 0:
+                    pred = self.model[sid].forecast_recurrent(steps_ahead=size, singular_values=list(range(signal_size)), return_df=True)
+                    pred = pred.tail(size)['Forecast'].to_numpy()
+                    y.extend(list(pred))
+                size = 0
+                sid = row['Station_ID']
+            size += 1
+
+        pred = self.model[sid].forecast_recurrent(steps_ahead=size, singular_values=list(range(signal_size)),
+                                                  return_df=True)
+        pred = pred.tail(size)['Forecast'].to_numpy()
+        y.extend(list(pred))
+        print(len(list(pred)), len(y))
+
         return y
 
 

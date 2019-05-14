@@ -210,7 +210,10 @@ def main():
 
     data = prepare_data(pick_ups, weather_data, time_slot)
 
-    busiest_station = pick_ups["Station_ID"].value_counts().idxmax()
+    station_freq_counts = pick_ups["Station_ID"].value_counts()
+    busiest_station = station_freq_counts.idxmax()
+    idle_station = station_freq_counts.idxmin()
+    median_station = station_freq_counts.index[len(station_freq_counts)//2]
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
@@ -225,11 +228,11 @@ def main():
     x_train.drop('Count', axis=1, inplace=True)
     x_test.drop('Count', axis=1, inplace=True)
 
-    """
+
     arima = models.ARIMA()
-    #arima.test(x_train, y_train, seasonality, busiest_station)
+    arima.test(x_train, y_train, seasonality, [busiest_station, median_station, idle_station])
     #arima.fit(x_train, y_train, param[0], param[1])
-    arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, 24))
+    #arima.fit(x_train, y_train, (2, 1, 2), (2, 1, 2, 24))
     y = arima.predict(x_test)
     models.score(y_test.tolist(), y)
 
@@ -237,11 +240,10 @@ def main():
     ha.fit(x_train, y_train)
     y = ha.predict(x_test)
     models.score(y_test.tolist(), y)
-    """
+
 
     ssa = models.SSA()
     ssa.test(x_train, y_train, seasonality, busiest_station)
-    exit(1)
 
     #dg = data.groupby("Station_ID")
     #for id, df in dg:

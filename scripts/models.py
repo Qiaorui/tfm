@@ -56,11 +56,6 @@ class BaseModel:
         self.data = None
         self.model = None
 
-    def predict(self, x):
-        print("Predicting...")
-        y = None
-        return y
-
 
 class HA(BaseModel):
     def __init__(self):
@@ -201,10 +196,8 @@ class ARIMA(BaseModel):
                 sid = row['Station_ID']
             size += 1
 
-        print(sid, size)
         pred = self.model[sid].forecast(size)
         y.extend(list(pred))
-        print(len(list(pred)), len(y))
         return y
 
 
@@ -212,7 +205,6 @@ class SSA(BaseModel):
     def __init__(self):
         super().__init__()
         print("Creating SSA model")
-        self.data = None
 
     def test(self, x, y, s, sid):
         y = pd.DataFrame(y)
@@ -249,12 +241,13 @@ class SSA(BaseModel):
         plt.title("Cumulative Contribution of Singular")
         plt.show()
 
-        signal_size = next(x[0] for x in enumerate(cumulative) if x[1] > 0.8) + 1
+        #signal_size = next(x[0] for x in enumerate(cumulative) if x[1] > 0.8) + 1
+        signal_size = 5
 
         # Plot the reconstruction
         station = groups.get_group(sid)
         ssa = mySSA(station['Count'])
-        ssa.embed(embedding_dimension=40, suspected_frequency=s)
+        ssa.embed(embedding_dimension=50, suspected_frequency=s)
         ssa.decompose()
 
         for i in range(signal_size):
@@ -278,10 +271,9 @@ class SSA(BaseModel):
         groups = y.groupby(["Station_ID"])
         for Station_ID, df in tqdm(groups, leave=False, total=len(groups), unit="group"):
             df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
-            ssa = mySSA(df['Count'])
-            ssa.embed(embedding_dimension=40, suspected_frequency=s)
-            ssa.decompose()
-            self.model[Station_ID] = ssa
+            self.model[Station_ID] = mySSA(df['Count'])
+            self.model[Station_ID].embed(embedding_dimension=50, suspected_frequency=s)
+            self.model[Station_ID].decompose()
 
     def predict(self, x, signal_size):
         y = []
@@ -291,7 +283,7 @@ class SSA(BaseModel):
             if row['Station_ID'] != sid:
                 if size > 0:
                     pred = self.model[sid].forecast_recurrent(steps_ahead=size, singular_values=list(range(signal_size)), return_df=True)
-                    pred = pred.tail(size)['Forecast'].to_numpy()
+                    pred = pred.tail(size)['Forecast'].values
                     y.extend(list(pred))
                 size = 0
                 sid = row['Station_ID']
@@ -299,35 +291,24 @@ class SSA(BaseModel):
 
         pred = self.model[sid].forecast_recurrent(steps_ahead=size, singular_values=list(range(signal_size)),
                                                   return_df=True)
-        pred = pred.tail(size)['Forecast'].to_numpy()
+        pred = pred.tail(size)['Forecast'].values
         y.extend(list(pred))
-        print(len(list(pred)), len(y))
-
         return y
-
-
-class VAR(BaseModel):
-    def __init__(self):
-        super().__init__()
-        print("Creating VAR model")
-
-
-class LTSM(BaseModel):
-    def __init__(self):
-        super().__init__()
-        print("Creating LTSM model")
-        self.data = None
-
-
-class MLP(BaseModel):
-    def __init__(self):
-        super().__init__()
-        print("Creating MLP model")
-        self.data = None
 
 
 class LR(BaseModel):
     def __init__(self):
         super().__init__()
         print("Creating LR model")
-        self.data = None
+
+
+class MLP(BaseModel):
+    def __init__(self):
+        super().__init__()
+        print("Creating MLP model")
+
+
+class LTSM(BaseModel):
+    def __init__(self):
+        super().__init__()
+        print("Creating LTSM model")

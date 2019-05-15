@@ -230,7 +230,7 @@ def main():
 
     ssa = models.SSA()
     ssa_param = ssa.test(x_train, y_train, seasonality, busiest_station)
-    ssa.fit(x_train, y_train, seasonality)
+    ssa.fit(x_train, y_train, 6)
     y = ssa.predict(x_test, ssa_param)
     models.score(y_test.tolist(), y)
 

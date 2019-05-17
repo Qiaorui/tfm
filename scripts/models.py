@@ -88,18 +88,18 @@ class ARIMA(BaseModel):
         adf_results = []
         for Station_ID, df in tqdm(groups, leave=False, total=len(groups), unit="group", desc="ADF test"):
             res = adfuller(df['Count'].tolist())
-            adf_results.append((res[0], res[1]))
+            adf_results.append((Station_ID, res[0], res[1]))
 
         for adf in adf_results:
-            print('ADF Statistic:', adf[0], 'p-value:', adf[1])
+            print('Station ', adf[0], ' ADF Statistic:', adf[1], 'p-value:', adf[2])
 
-        non_stationary = [(adf, p) for adf, p in adf_results if p > 0.01]
+        non_stationary = [(sid, adf, p) for sid, adf, p in adf_results if p > 0.01]
         if not non_stationary:
             print("\nAll stations followed stationary time series")
         else:
             print("\nSome stations may be non-stationary")
             for adf in non_stationary:
-                print('ADF Statistic:', adf[0], 'p-value:', adf[1])
+                print('Station ', adf[0], ' ADF Statistic:', adf[1], 'p-value:', adf[2])
 
         # Autocorrelation
         station = groups.get_group(sids[0])
@@ -112,7 +112,7 @@ class ARIMA(BaseModel):
         # Grid Search
         p = range(3)
         q = range(3)
-        d = [0, 1]
+        d = range(2)
         options = list(itertools.product(p, d, q, p, d, q, [s]))
         options.reverse()
 

@@ -154,13 +154,66 @@ def prepare_data(df, weather_data, time_slot):
     return data
 
 
+def lstrip_data(data, th):
+    to_remove = []
+
+    groups = data.groupby("Station_ID")
+    for sid, df in groups:
+        start_day = df.index.min()
+        th_day = start_day + pd.DateOffset(th)
+        cumsum = df['Count'].cumsum()
+        index = np.argmax(cumsum > 0)
+        if index > th_day:
+            to_remove.append((sid, index.normalize()))
+
+    for sid, idx in to_remove:
+        data = data[~((data["Station_ID"] == sid) & (data.index < idx))]
+
+    return data
+
+
+def evaluate_n_days(x_test, y_test, model, th_day, n_days):
+    x_test = x_test.loc[th_day:th_day + pd.DateOffset(n_days)]
+    y_test = y_test.loc[th_day:th_day + pd.DateOffset(n_days)]
+    y = model.predict(x_test)
+    mse, rmse = models.score(y_test.tolist(), y)
+    return mse, rmse
+
+
+def plot_sample_station_prediction(df, th_day, n_days, ha, arima, ssa):
+    y = df['Count']
+    x = df.drop('Count', axis=1)
+    x_test = x.loc[th_day : th_day + pd.DateOffset(n_days)]
+
+    sample = y.loc[th_day - pd.DateOffset(n_days):th_day + pd.DateOffset(n_days)]
+    base_df = pd.DataFrame(index=sample.index)
+    base_df = base_df[base_df.index >= th_day]
+
+    ha_sample = ha.predict(x_test)
+    arima_sample = arima.predict(x_test)
+    ssa_sample = ssa.predict(x_test, 5)
+
+    base_df['ha'] = ha_sample
+    base_df['arima'] = arima_sample
+    base_df['ssa'] = ssa_sample
+
+    plt.figure(figsize=(15, 7))
+    plt.plot(sample, label="Observed")
+    plt.plot(base_df['ha'], label="HA")
+    plt.plot(base_df['arima'], label="ARIMA")
+    plt.plot(base_df['ssa'], label="SSA")
+    plt.gcf().autofmt_xdate()
+    plt.legend()
+    plt.show()
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-cw", default="cleaned_data/weather.csv", help="input cleaned weather data path")
     parser.add_argument("-ct", default="cleaned_data/JC_trip_data.csv", help="input cleaned trip data path")
     parser.add_argument("-ot", type=int, help="Outlier threshold")
     parser.add_argument("-ts", type=int, default=30, help="Time slot for the aggregation, units in minute")
-    parser.add_argument("-tp", type=float, default=0.2, help="Test size percentage for split the data")
+    #parser.add_argument("-tp", type=float, default=0.2, help="Test size percentage for split the data")
     parser.add_argument("-start", default="2017-01-01", help="Input start date")
     parser.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
 
@@ -169,7 +222,7 @@ def main():
     weather_data_path = args.cw
     trip_data_path = args.ct
     time_slot = args.ts
-    test_pct = args.tp
+    #test_pct = args.tp
     start = pd.to_datetime(args.start).normalize()
     seasonality = 1440//time_slot if 1440//time_slot > 1 else 7
 
@@ -205,10 +258,14 @@ def main():
     pick_ups.rename(columns={"Start_Station_ID": "Station_ID", "Start_Time": "Timestamp"}, inplace=True)
     #drop_offs.rename(columns={"Stop_Station_ID": "Station_ID", "Stop_Time": "Timestamp"}, inplace=True)
 
-    th_day = pick_ups['Timestamp'].max().value - (pick_ups['Timestamp'].max().value - pick_ups['Timestamp'].min().value) * test_pct
-    th_day = pd.to_datetime(th_day).normalize()
+    #th_day = pick_ups['Timestamp'].max().value - (pick_ups['Timestamp'].max().value - pick_ups['Timestamp'].min().value) * test_pct
+    #th_day = pd.to_datetime(th_day).normalize()
+    th_day = pd.to_datetime("2018-12-01").normalize()
 
     data = prepare_data(pick_ups, weather_data, time_slot)
+
+    # Left Strip the data in case some station are new and hasn't historical data
+    data = lstrip_data(data, 7)
 
     station_freq_counts = pick_ups["Station_ID"].value_counts()
     busiest_station = station_freq_counts.idxmax()
@@ -228,17 +285,17 @@ def main():
     x_train.drop('Count', axis=1, inplace=True)
     x_test.drop('Count', axis=1, inplace=True)
 
+    arima = models.ARIMA()
+    #param, param2 = arima.test(x_train, y_train, seasonality, station_freq_counts.index)
+    #arima.fit(x_train, y_train, param, param2)
+    arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, 24))
+    y = arima.predict(x_test)
+    models.score(y_test.tolist(), y)
+
     ssa = models.SSA()
     ssa_param = ssa.test(x_train, y_train, seasonality, busiest_station)
     ssa.fit(x_train, y_train, 6)
     y = ssa.predict(x_test, ssa_param)
-    models.score(y_test.tolist(), y)
-
-    arima = models.ARIMA()
-    #param, param2 = arima.test(x_train, y_train, seasonality, [busiest_station, median_station, idle_station])
-    #arima.fit(x_train, y_train, param, param2)
-    arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, 24))
-    y = arima.predict(x_test)
     models.score(y_test.tolist(), y)
 
     ha = models.HA()
@@ -256,47 +313,18 @@ def main():
 
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
-    y_test = pca_data['Count']
-    week_sample = y_test.loc[th_day - pd.DateOffset(7):th_day + pd.DateOffset(7)]
-    day_sample = y_test.loc[th_day - pd.DateOffset(1):th_day + pd.DateOffset(1)]
-    base_week_df = pd.DataFrame(index=week_sample.index)
-    base_week_df = base_week_df[base_week_df.index >= th_day]
-    base_day_df = pd.DataFrame(index=day_sample.index)
-    base_day_df = base_day_df[base_day_df.index >= th_day]
 
-    ha_sample = ha.predict(pca_data.loc[th_day : th_day + pd.DateOffset(7)])
-    arima_sample = arima.predict(pca_data.loc[th_day : th_day + pd.DateOffset(7)])
-    ssa_sample = ssa.predict(pca_data.loc[th_day : th_day + pd.DateOffset(7)], ssa_param)
+    # 30 days from threshold day
+    plot_sample_station_prediction(pca_data, th_day, 30, ha, arima, ssa)
 
-    base_week_df['ha'] = ha_sample
-    base_week_df['arima'] = arima_sample
-    base_week_df['ssa'] = ssa_sample
+    # 14 days from threshold day
+    plot_sample_station_prediction(pca_data, th_day, 14, ha, arima, ssa)
 
-    plt.figure(figsize=(15, 7))
-    plt.plot(week_sample, label="Observed")
-    plt.plot(base_week_df['ha'], label="HA")
-    plt.plot(base_week_df['arima'], label="ARIMA")
-    plt.plot(base_week_df['ssa'], label="SSA")
-    plt.gcf().autofmt_xdate()
-    plt.legend()
-    plt.show()
+    # 7 days from threshold day
+    plot_sample_station_prediction(pca_data, th_day, 7, ha, arima, ssa)
 
-    ha_sample = ha.predict(pca_data.loc[th_day : th_day + pd.DateOffset(1)])
-    arima_sample = arima.predict(pca_data.loc[th_day : th_day + pd.DateOffset(1)])
-    ssa_sample = ssa.predict(pca_data.loc[th_day : th_day + pd.DateOffset(1)], ssa_param)
-
-    base_day_df['ha'] = ha_sample
-    base_day_df['arima'] = arima_sample
-    base_day_df['ssa'] = ssa_sample
-
-    plt.figure(figsize=(15, 7))
-    plt.plot(day_sample, label="Observed")
-    plt.plot(base_day_df['ha'], label="HA")
-    plt.plot(base_day_df['arima'], label="ARIMA")
-    plt.plot(base_day_df['ssa'], label='SSA')
-    plt.gcf().autofmt_xdate()
-    plt.legend()
-    plt.show()
+    # 1 day from threshold day
+    plot_sample_station_prediction(pca_data, th_day, 1, ha, arima, ssa)
 
 
 if __name__ == '__main__':

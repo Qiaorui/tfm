@@ -172,12 +172,38 @@ def lstrip_data(data, th):
     return data
 
 
-def evaluate_n_days(x_test, y_test, model, th_day, n_days):
-    x_test = x_test.loc[th_day:th_day + pd.DateOffset(n_days)]
-    y_test = y_test.loc[th_day:th_day + pd.DateOffset(n_days)]
-    y = model.predict(x_test)
-    mse, rmse = models.score(y_test.tolist(), y)
-    return mse, rmse
+def evaluate_n_days(data, th_day, n_days, ha, arima, ssa):
+    x_test = data[data.index >= th_day]
+    y_test = x_test['Count']
+    x_test.drop('Count', axis=1, inplace=True)
+
+    x_test = x_test.loc[x_test.index < (th_day + pd.DateOffset(n_days))]
+    y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n_days))]
+
+    mae_arr = []
+    rmse_arr = []
+
+    y = ha.predict(x_test)
+    mae, rmse = models.score(y_test.tolist(), y)
+    mae_arr.append(mae)
+    rmse_arr.append(rmse)
+
+    y = arima.predict(x_test)
+    mae, rmse = models.score(y_test.tolist(), y)
+    mae_arr.append(mae)
+    rmse_arr.append(rmse)
+
+    y = ssa.predict(x_test, 5)
+    mae, rmse = models.score(y_test.tolist(), y)
+    mae_arr.append(mae)
+    rmse_arr.append(rmse)
+
+    mae_df = pd.DataFrame([mae_arr], columns=["HA", "ARIMA", "SSA"])
+    rmse_df = pd.DataFrame([rmse_arr], columns=["HA", "ARIMA", "SSA"])
+    mae_df.set_index([[n_days]], inplace=True)
+    rmse_df.set_index([[n_days]], inplace=True)
+
+    return mae_df, rmse_df
 
 
 def plot_sample_station_prediction(df, th_day, n_days, ha, arima, ssa):
@@ -260,7 +286,7 @@ def main():
 
     #th_day = pick_ups['Timestamp'].max().value - (pick_ups['Timestamp'].max().value - pick_ups['Timestamp'].min().value) * test_pct
     #th_day = pd.to_datetime(th_day).normalize()
-    th_day = pd.to_datetime("2018-12-01").normalize()
+    th_day = pd.to_datetime("2018-11-01").normalize()
 
     data = prepare_data(pick_ups, weather_data, time_slot)
 
@@ -289,19 +315,13 @@ def main():
     #param, param2 = arima.test(x_train, y_train, seasonality, station_freq_counts.index)
     #arima.fit(x_train, y_train, param, param2)
     arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, 24))
-    y = arima.predict(x_test)
-    models.score(y_test.tolist(), y)
 
     ssa = models.SSA()
     ssa_param = ssa.test(x_train, y_train, seasonality, busiest_station)
-    ssa.fit(x_train, y_train, 6)
-    y = ssa.predict(x_test, ssa_param)
-    models.score(y_test.tolist(), y)
+    ssa.fit(x_train, y_train, ssa_param)
 
     ha = models.HA()
     ha.fit(x_train, y_train)
-    y = ha.predict(x_test)
-    models.score(y_test.tolist(), y)
 
     #dg = data.groupby("Station_ID")
     #for id, df in dg:
@@ -316,15 +336,48 @@ def main():
 
     # 30 days from threshold day
     plot_sample_station_prediction(pca_data, th_day, 30, ha, arima, ssa)
+    mae_df, rmse_df = evaluate_n_days(data, th_day, 30, ha, arima, ssa)
 
     # 14 days from threshold day
     plot_sample_station_prediction(pca_data, th_day, 14, ha, arima, ssa)
+    mae, rmse = evaluate_n_days(data, th_day, 14, ha, arima, ssa)
+    mae_df = mae_df.append(mae)
+    rmse_df = rmse_df.append(rmse)
 
     # 7 days from threshold day
     plot_sample_station_prediction(pca_data, th_day, 7, ha, arima, ssa)
+    mae, rmse = evaluate_n_days(data, th_day, 7, ha, arima, ssa)
+    mae_df = mae_df.append(mae)
+    rmse_df = rmse_df.append(rmse)
 
     # 1 day from threshold day
     plot_sample_station_prediction(pca_data, th_day, 1, ha, arima, ssa)
+    mae, rmse = evaluate_n_days(data, th_day, 1, ha, arima, ssa)
+    mae_df = mae_df.append(mae)
+    rmse_df = rmse_df.append(rmse)
+
+    mae_df.sort_index(inplace=True)
+    rmse_df.sort_index(inplace=True)
+    print(mae_df)
+    print(rmse_df)
+    xs = [1, 7, 14, 30]
+    xs_label = [str(i) + "days" for i in xs]
+
+    plt.plot(mae_df['HA'], linestyle='-', marker='o', label="HA")
+    plt.plot(mae_df['ARIMA'], linestyle='-', marker='o', label="ARIMA")
+    plt.plot(mae_df['SSA'], linestyle='-', marker='o', label="SSA")
+    plt.ylabel("MAE")
+    plt.xticks(xs, xs_label)
+    plt.legend()
+    plt.show()
+
+    plt.plot(rmse_df['HA'], linestyle='-', marker='o', label="HA")
+    plt.plot(rmse_df['ARIMA'], linestyle='-', marker='o', label="ARIMA")
+    plt.plot(rmse_df['SSA'], linestyle='-', marker='o', label="SSA")
+    plt.ylabel("RMSE")
+    plt.xticks(xs, xs_label)
+    plt.legend()
+    plt.show()
 
 
 if __name__ == '__main__':

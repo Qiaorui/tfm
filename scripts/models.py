@@ -128,8 +128,9 @@ class ARIMA(BaseModel):
                 df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
 
                 diff_days = (df.index.max() - df.index.min())//np.timedelta64(1,'D')
+                freq = df.index.freqstr
 
-                file_name = "SARIMA_{}_{}_{}{}{}_{}{}{}x{}.pkl".format(diff_days, sid, p,d,q,P,D,Q,S)
+                file_name = "SARIMA_{}_{}_{}_{}{}{}_{}{}{}x{}.pkl".format(diff_days, freq, sid, p,d,q,P,D,Q,S)
                 exists = os.path.exists("model/" + file_name)
                 try:
                     results = None

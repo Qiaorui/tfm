@@ -172,7 +172,7 @@ def lstrip_data(data, th):
     return data
 
 
-def plot_sample_station_prediction(df, th_day, n_days, ha, arima, ssa):
+def plot_sample_station_prediction(df, th_day, n_days, ha, arima, ssa, lr, mlp):
     y = df['Count']
     x = df.drop('Count', axis=1)
     x_test = x.loc[th_day : th_day + pd.DateOffset(n_days)]
@@ -184,16 +184,19 @@ def plot_sample_station_prediction(df, th_day, n_days, ha, arima, ssa):
     ha_sample = ha.predict(x_test)
     arima_sample = arima.predict(x_test)
     ssa_sample = ssa.predict(x_test, 5)
+    lr_sample = lr.predict(x_test)
+    mlp_sample = mlp.predict(x_test)
 
     base_df['HA'] = ha_sample
     base_df['ARIMA'] = arima_sample
     base_df['SSA'] = ssa_sample
+    base_df['LR'] = lr_sample
+    base_df['MLP'] = mlp_sample
 
     plt.figure(figsize=(15, 7))
     plt.plot(sample, label="Observed")
-    plt.plot(base_df['HA'], label="HA")
-    plt.plot(base_df['ARIMA'], label="ARIMA")
-    plt.plot(base_df['SSA'], label="SSA")
+    for col in base_df:
+        plt.plot(base_df[col], label=col)
     plt.gcf().autofmt_xdate()
     plt.legend()
     plt.show()
@@ -273,7 +276,6 @@ def main():
     days_to_evaluate = [30, 14, 7, 1]
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
 
-    """
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -281,7 +283,6 @@ def main():
     mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
 
     mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
@@ -301,8 +302,8 @@ def main():
 
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
-    #for n in days_to_evaluate:
-    #    plot_sample_station_prediction(pca_data, th_day, n, ha, arima, ssa)
+    for n in days_to_evaluate:
+        plot_sample_station_prediction(pca_data, th_day, n, ha, arima, ssa, lr, mlp)
 
     mae_df.sort_index(inplace=True)
     rmse_df.sort_index(inplace=True)

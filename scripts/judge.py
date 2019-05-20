@@ -166,7 +166,8 @@ def evaluate_mlp(data, th_day, n_days):
     x_test.drop('Count', axis=1, inplace=True)
 
     mlp = models.MLP()
-    mlp.fit(x_train, y_train)
+    mlp.test(x_train, y_train)
+    #mlp.fit(x_train, y_train)
 
     mae_dict = {}
     rmse_dict = {}

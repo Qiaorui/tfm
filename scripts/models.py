@@ -9,6 +9,7 @@ import gc
 import os
 import sklearn.linear_model
 import sklearn.neural_network
+import sklearn.model_selection
 
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
@@ -260,6 +261,7 @@ class SSA(BaseModel):
                                                   return_df=True)
         pred = pred.tail(size)['Forecast'].values
         y.extend(list(pred))
+        y = [0 if i < 0 else i for i in y]
         return y
 
 
@@ -294,13 +296,34 @@ class MLP(BaseModel):
         super().__init__()
         print("Creating MLP model")
 
+    def test(self, x, y):
+        if 'Station_ID' in x.columns:
+            dum = pd.get_dummies(x['Station_ID'], prefix="Station")
+            self.data = dum.columns.values
+            x = np.hstack([x.drop('Station_ID', axis=1), dum])
+
+        parameter_space = {
+            'hidden_layer_sizes': [(128, 128), (128, 128, 128), (256, 256, 256)],
+            'activation': ['tanh', 'relu'],
+            'solver': ['sgd', 'adam'],
+        }
+        mlp = sklearn.neural_network.MLPRegressor(verbose=True)
+        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, n_jobs=2, cv=3)
+        ms.fit(x, y)
+        print("Best parameters found:\n", ms.best_params_)
+        means = ms.cv_results_['mean_test_score']
+        stds = ms.cv_results_['std_test_score']
+        for mean, std, params in zip(means, stds, ms.cv_results_['params']):
+            print("{0:.2f} (+/- {0:.2f}) for {}".format(mean, std, params))
+        self.model = ms
+
     def fit(self, x, y):
         if 'Station_ID' in x.columns:
             dum = pd.get_dummies(x['Station_ID'], prefix="Station")
             self.data = dum.columns.values
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
 
-        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(256, 256, 256), batch_size=1024)
+        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(256, 256, 256), batch_size=1024, verbose=True)
         self.model.fit(x, y)
 
     def predict(self, x):

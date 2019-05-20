@@ -1,4 +1,3 @@
-from . import utils
 from .mySSA import mySSA
 import pandas as pd
 from tqdm import tqdm
@@ -6,11 +5,11 @@ import math
 import sklearn.metrics
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
-import matplotlib
 import itertools
 import numpy as np
 import gc
 import os
+import sklearn.linear_model
 
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
@@ -303,18 +302,25 @@ class LR(BaseModel):
         print("Creating LR model")
 
     def fit(self, x, y):
+        if 'Station_ID' in x.columns:
+            dum = pd.get_dummies(x['Station_ID'], prefix="Station")
+            self.data = dum.columns.values
+            x = np.hstack([x.drop('Station_ID', axis=1), dum])
+
         self.model = {}
-
-        y = pd.DataFrame(y)
-        y['Station_ID'] = x['Station_ID']
-        groups = y.groupby(["Station_ID"])
-        sum_aic = 0
-        for Station_ID, df in tqdm(groups, leave=False, total=len(groups), unit="group"):
-            df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
-
+        self.model = sklearn.linear_model.LinearRegression()
+        self.model.fit(x, y)
+        print("R squared:", self.model.score(x, y))
 
     def predict(self, x):
-        return None
+        if 'Station_ID' in x.columns:
+            dum = pd.get_dummies(x['Station_ID'], prefix="Station")
+            if len(dum.columns.values) == 1:
+                sid_column = dum.columns.values[0]
+                dum = pd.DataFrame(np.zeros((len(x.index), dum.shape[1]), dtype=np.int8), columns=dum.columns.values)
+                dum.loc[:, sid_column] = 1
+            x = np.hstack([x.drop('Station_ID', axis=1), dum])
+        return self.model.predict(x)
 
 
 class MLP(BaseModel):

@@ -1,6 +1,6 @@
 from scripts import preprocess
 from scripts import utils
-from scripts import models
+from scripts import judge
 import pandas as pd
 import gc
 import argparse
@@ -172,72 +172,6 @@ def lstrip_data(data, th):
     return data
 
 
-def evaluate_ha(data, th_day, n_days, ha):
-    x_test = data[data.index >= th_day]
-    y_test = x_test['Count']
-    x_test.drop('Count', axis=1, inplace=True)
-
-    mae_dict = {}
-    rmse_dict = {}
-
-    for n in n_days:
-        x_test = x_test.loc[x_test.index < (th_day + pd.DateOffset(n))]
-        y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        y = ha.predict(x_test)
-        mae, rmse = models.score(y_test.tolist(), y)
-        mae_dict[n] = mae
-        rmse_dict[n] = rmse
-
-    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['HA'])
-    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['HA'])
-
-    return mae_df, rmse_df
-
-
-def evaluate_ssa(data, th_day, n_days, ssa, ssa_param):
-    x_test = data[data.index >= th_day]
-    y_test = x_test['Count']
-    x_test.drop('Count', axis=1, inplace=True)
-
-    mae_dict = {}
-    rmse_dict = {}
-
-    for n in n_days:
-        x_test = x_test.loc[x_test.index < (th_day + pd.DateOffset(n))]
-        y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        y = ssa.predict(x_test, ssa_param)
-        mae, rmse = models.score(y_test.tolist(), y)
-        mae_dict[n] = mae
-        rmse_dict[n] = rmse
-
-    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['SSA'])
-    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['SSA'])
-
-    return mae_df, rmse_df
-
-
-def evaluate_arima(data, th_day, n_days, arima):
-    x_test = data[data.index >= th_day]
-    y_test = x_test['Count']
-    x_test.drop('Count', axis=1, inplace=True)
-
-    mae_dict = {}
-    rmse_dict = {}
-
-    for n in n_days:
-        x_test = x_test.loc[x_test.index < (th_day + pd.DateOffset(n))]
-        y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        y = arima.predict(x_test)
-        mae, rmse = models.score(y_test.tolist(), y)
-        mae_dict[n] = mae
-        rmse_dict[n] = rmse
-
-    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['ARIMA'])
-    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['ARIMA'])
-
-    return mae_df, rmse_df
-
-
 def plot_sample_station_prediction(df, th_day, n_days, ha, arima, ssa):
     y = df['Count']
     x = df.drop('Count', axis=1)
@@ -336,24 +270,22 @@ def main():
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
-    x_train = data[data.index < th_day]
-    x_test = data[data.index >= th_day]
-    y_train = x_train['Count']
-    y_test = x_test['Count']
-    x_train.drop('Count', axis=1, inplace=True)
-    x_test.drop('Count', axis=1, inplace=True)
+    days_to_evaluate = [30, 14, 7, 1]
+    mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
 
-    arima = models.ARIMA()
-    #param, param2 = arima.test(x_train, y_train, seasonality, station_freq_counts.index)
-    #arima.fit(x_train, y_train, param, param2)
-    arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, 24))
+    """
+    mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
 
-    ssa = models.SSA()
-    ssa_param = ssa.test(x_train, y_train, seasonality, busiest_station)
-    ssa.fit(x_train, y_train, ssa_param)
+    mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
+    """
 
-    ha = models.HA()
-    ha.fit(x_train, y_train)
+    mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
 
     #dg = data.groupby("Station_ID")
     #for id, df in dg:
@@ -365,19 +297,8 @@ def main():
 
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
-    days_to_evaluate = [30, 14, 7, 1]
-    mae_df, rmse_df = evaluate_ha(data, th_day, days_to_evaluate, ha)
-
-    mae, rmse = evaluate_ssa(data, th_day, days_to_evaluate, ssa, ssa_param)
-    mae_df = mae_df.join(mae, how='outer')
-    rmse_df = rmse_df.join(rmse, how='outer')
-
-    mae, rmse = evaluate_arima(data, th_day, days_to_evaluate, arima)
-    mae_df = mae_df.join(mae, how='outer')
-    rmse_df = rmse_df.join(rmse, how='outer')
-
-    for n in days_to_evaluate:
-        plot_sample_station_prediction(pca_data, th_day, n, ha, arima, ssa)
+    #for n in days_to_evaluate:
+    #    plot_sample_station_prediction(pca_data, th_day, n, ha, arima, ssa)
 
     mae_df.sort_index(inplace=True)
     rmse_df.sort_index(inplace=True)
@@ -386,16 +307,18 @@ def main():
     xs_label = [str(i) + "days" for i in days_to_evaluate]
 
     plt.plot(mae_df['HA'], linestyle='-', marker='o', label="HA")
-    plt.plot(mae_df['ARIMA'], linestyle='-', marker='o', label="ARIMA")
-    plt.plot(mae_df['SSA'], linestyle='-', marker='o', label="SSA")
+    #plt.plot(mae_df['ARIMA'], linestyle='-', marker='o', label="ARIMA")
+    #plt.plot(mae_df['SSA'], linestyle='-', marker='o', label="SSA")
+    plt.plot(mae_df['LR'], linestyle='-', marker='o', label="LR")
     plt.ylabel("MAE")
     plt.xticks(days_to_evaluate, xs_label)
     plt.legend()
     plt.show()
 
     plt.plot(rmse_df['HA'], linestyle='-', marker='o', label="HA")
-    plt.plot(rmse_df['ARIMA'], linestyle='-', marker='o', label="ARIMA")
-    plt.plot(rmse_df['SSA'], linestyle='-', marker='o', label="SSA")
+    #plt.plot(rmse_df['ARIMA'], linestyle='-', marker='o', label="ARIMA")
+    #plt.plot(rmse_df['SSA'], linestyle='-', marker='o', label="SSA")
+    plt.plot(rmse_df['LR'], linestyle='-', marker='o', label="LR")
     plt.ylabel("RMSE")
     plt.xticks(days_to_evaluate, xs_label)
     plt.legend()

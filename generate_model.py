@@ -252,7 +252,7 @@ def main():
 
     #th_day = pick_ups['Timestamp'].max().value - (pick_ups['Timestamp'].max().value - pick_ups['Timestamp'].min().value) * test_pct
     #th_day = pd.to_datetime(th_day).normalize()
-    th_day = pd.to_datetime("2018-11-01").normalize()
+    th_day = pd.to_datetime("2018-12-01").normalize()
 
     data = prepare_data(pick_ups, weather_data, time_slot)
 
@@ -287,6 +287,10 @@ def main():
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
+    mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
+
     #dg = data.groupby("Station_ID")
     #for id, df in dg:
     #    sequence = convert_to_sequence(df.drop(columns=['Holiday', 'Station_ID']), ['Count'], 3, 4)
@@ -306,19 +310,15 @@ def main():
     print(rmse_df)
     xs_label = [str(i) + "days" for i in days_to_evaluate]
 
-    plt.plot(mae_df['HA'], linestyle='-', marker='o', label="HA")
-    #plt.plot(mae_df['ARIMA'], linestyle='-', marker='o', label="ARIMA")
-    #plt.plot(mae_df['SSA'], linestyle='-', marker='o', label="SSA")
-    plt.plot(mae_df['LR'], linestyle='-', marker='o', label="LR")
+    for col in mae_df:
+        plt.plot(mae_df[col], linestyle='-', marker='o', label=col)
     plt.ylabel("MAE")
     plt.xticks(days_to_evaluate, xs_label)
     plt.legend()
     plt.show()
 
-    plt.plot(rmse_df['HA'], linestyle='-', marker='o', label="HA")
-    #plt.plot(rmse_df['ARIMA'], linestyle='-', marker='o', label="ARIMA")
-    #plt.plot(rmse_df['SSA'], linestyle='-', marker='o', label="SSA")
-    plt.plot(rmse_df['LR'], linestyle='-', marker='o', label="LR")
+    for col in rmse_df:
+        plt.plot(rmse_df[col], linestyle='-', marker='o', label=col)
     plt.ylabel("RMSE")
     plt.xticks(days_to_evaluate, xs_label)
     plt.legend()

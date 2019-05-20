@@ -302,6 +302,20 @@ class LR(BaseModel):
         super().__init__()
         print("Creating LR model")
 
+    def fit(self, x, y):
+        self.model = {}
+
+        y = pd.DataFrame(y)
+        y['Station_ID'] = x['Station_ID']
+        groups = y.groupby(["Station_ID"])
+        sum_aic = 0
+        for Station_ID, df in tqdm(groups, leave=False, total=len(groups), unit="group"):
+            df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
+
+
+    def predict(self, x):
+        return None
+
 
 class MLP(BaseModel):
     def __init__(self):

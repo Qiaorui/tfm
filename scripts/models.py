@@ -305,23 +305,24 @@ class MLP(BaseModel):
 
         n = x.shape[1] # Number of features, number of neurons in input layer
         o = 1 # Number of neurons in output layer
-        max_layer_number = 3
+        max_layer_number = 3 # Max 3 layers, 39 combinations
 
         layers = []
         for i in range(1, max_layer_number + 1):
-            layers.extend(list(itertools.product([n // 3, n // 2, n + o], repeat=i)))
+            layers.extend(list(itertools.product([n // 3, n *2// 3, n + o], repeat=i)))
         parameter_space = {
             'hidden_layer_sizes': layers,
+            'solver': ['sgd', 'adam'],
+            'activation': ['tanh', 'relu']
         }
         mlp = sklearn.neural_network.MLPRegressor()
-        #ms = sklearn.model_selection.RandomizedSearchCV(mlp, parameter_space, cv=3)
-        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, cv=3)
+        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, scoring='mae' ,cv=3)
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)
         means = ms.cv_results_['mean_test_score']
         stds = ms.cv_results_['std_test_score']
         for mean, std, params in zip(means, stds, ms.cv_results_['params']):
-            print("{0:.2f} (+/- {0:.2f}) for {}".format(mean, std, params))
+            print("{:.2f} (+/- {:.2f}) for {}".format(mean, std, params))
         self.model = ms
 
     def fit(self, x, y):
@@ -330,7 +331,7 @@ class MLP(BaseModel):
             self.data = dum.columns.values
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
 
-        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(64, 64), batch_size=1024, verbose=True)
+        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(64, 64), verbose=True)
         self.model.fit(x, y)
 
     def predict(self, x):
@@ -341,7 +342,6 @@ class MLP(BaseModel):
                 dum = pd.DataFrame(np.zeros((len(x.index), len(self.data)), dtype=np.int8), columns=self.data)
                 dum.loc[:, sid_column] = 1
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
-        print(x.shape)
         return self.model.predict(x)
 
 
@@ -349,3 +349,12 @@ class LTSM(BaseModel):
     def __init__(self):
         super().__init__()
         print("Creating LTSM model")
+
+    def test(self, x, y):
+        return None
+
+    def fit(self, x, y):
+        return None
+
+    def predict(self, x):
+        return None

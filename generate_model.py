@@ -11,7 +11,7 @@ import numpy as np
 from pandas.tseries.holiday import USFederalHolidayCalendar
 from sklearn.decomposition import PCA
 import statsmodels.api as sm
-
+from sklearn.preprocessing import MinMaxScaler
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 import warnings
@@ -35,7 +35,7 @@ def pca(df, tv):
     plt.figure(figsize=(8, 8))
     ax1 = plt.subplot(6, 1, 1)
     plt.plot(x.tail(N).index, x.tail(N)['Temperature'])
-    plt.ylabel("Temp(Cº)")
+    plt.ylabel("Temp(%)")
     # make these tick labels invisible
     plt.setp(ax1.get_xticklabels(), visible=False)
 
@@ -99,6 +99,11 @@ def prepare_data(df, weather_data, time_slot):
         sdf = utils.fill_weather_data(sdf, weather_data)
         sdf["Station_ID"] = sid
         data = data.append(sdf)
+
+    # Normalize the data
+    scaler = MinMaxScaler()
+    data[['Temperature', 'Wind', 'Humidity', 'Visibility']] = scaler.fit_transform(
+        data[['Temperature', 'Wind', 'Humidity', 'Visibility']])
 
     cloudy_conds = ["Clear", "Partly Cloudy", "Scattered Clouds", "Mostly Cloudy", "Haze", "Overcast"]
     data.loc[-data.Condition.isin(cloudy_conds), 'Condition'] = 0
@@ -273,7 +278,7 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    pca(pca_data, 'Count')
+    pca(pca_data.drop('Station_ID', axis=1), 'Count')
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))

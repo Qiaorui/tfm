@@ -172,7 +172,7 @@ def lstrip_data(data, th):
     return data
 
 
-def plot_sample_station_prediction(df, th_day, n_days, ha, arima, ssa, lr, mlp):
+def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=None, lr=None, mlp=None):
     y = df['Count']
     x = df.drop('Count', axis=1)
     x_test = x.loc[th_day : th_day + pd.DateOffset(n_days)]
@@ -181,17 +181,21 @@ def plot_sample_station_prediction(df, th_day, n_days, ha, arima, ssa, lr, mlp):
     base_df = pd.DataFrame(index=sample.index)
     base_df = base_df[base_df.index >= th_day]
 
-    ha_sample = ha.predict(x_test)
-    arima_sample = arima.predict(x_test)
-    ssa_sample = ssa.predict(x_test, 5)
-    lr_sample = lr.predict(x_test)
-    mlp_sample = mlp.predict(x_test)
-
-    base_df['HA'] = ha_sample
-    base_df['ARIMA'] = arima_sample
-    base_df['SSA'] = ssa_sample
-    base_df['LR'] = lr_sample
-    base_df['MLP'] = mlp_sample
+    if ha is not None:
+        ha_sample = ha.predict(x_test)
+        base_df['HA'] = ha_sample
+    if arima is not None:
+        arima_sample = arima.predict(x_test)
+        base_df['ARIMA'] = arima_sample
+    if ssa is not None:
+        ssa_sample = ssa.predict(x_test, 5)
+        base_df['SSA'] = ssa_sample
+    if lr is not None:
+        lr_sample = lr.predict(x_test)
+        base_df['LR'] = lr_sample
+    if mlp is not None:
+        mlp_sample = mlp.predict(x_test)
+        base_df['MLP'] = mlp_sample
 
     plt.figure(figsize=(15, 7))
     plt.plot(sample, label="Observed")
@@ -269,7 +273,7 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    #pca(pca_data, 'Count')
+    pca(pca_data, 'Count')
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
@@ -303,7 +307,7 @@ def main():
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
     for n in days_to_evaluate:
-        plot_sample_station_prediction(pca_data, th_day, n, ha, arima, ssa, lr, mlp)
+        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=None, ssa=None, lr=lr, mlp=mlp)
 
     mae_df.sort_index(inplace=True)
     rmse_df.sort_index(inplace=True)

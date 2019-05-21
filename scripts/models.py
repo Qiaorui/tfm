@@ -10,6 +10,7 @@ import os
 import sklearn.linear_model
 import sklearn.neural_network
 import sklearn.model_selection
+from scipy import stats
 
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
@@ -285,7 +286,7 @@ class LR(BaseModel):
             dum = pd.get_dummies(x['Station_ID'], prefix="Station")
             if len(dum.columns.values) == 1:
                 sid_column = dum.columns.values[0]
-                dum = pd.DataFrame(np.zeros((len(x.index), dum.shape[1]), dtype=np.int8), columns=dum.columns.values)
+                dum = pd.DataFrame(np.zeros((len(x.index), len(self.data)), dtype=np.int8), columns=self.data)
                 dum.loc[:, sid_column] = 1
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
         return self.model.predict(x)
@@ -302,13 +303,19 @@ class MLP(BaseModel):
             self.data = dum.columns.values
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
 
+        n = x.shape[1] # Number of features, number of neurons in input layer
+        o = 1 # Number of neurons in output layer
+        max_layer_number = 3
+
+        layers = []
+        for i in range(1, max_layer_number + 1):
+            layers.extend(list(itertools.product([n // 3, n // 2, n + o], repeat=i)))
         parameter_space = {
-            'hidden_layer_sizes': [(128, 128), (128, 128, 128), (256, 256, 256)],
-            'activation': ['tanh', 'relu'],
-            'solver': ['sgd', 'adam'],
+            'hidden_layer_sizes': layers,
         }
-        mlp = sklearn.neural_network.MLPRegressor(verbose=True)
-        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, n_jobs=2, cv=3)
+        mlp = sklearn.neural_network.MLPRegressor()
+        #ms = sklearn.model_selection.RandomizedSearchCV(mlp, parameter_space, cv=3)
+        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, cv=3)
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)
         means = ms.cv_results_['mean_test_score']
@@ -323,7 +330,7 @@ class MLP(BaseModel):
             self.data = dum.columns.values
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
 
-        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(256, 256, 256), batch_size=1024, verbose=True)
+        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(64, 64), batch_size=1024, verbose=True)
         self.model.fit(x, y)
 
     def predict(self, x):
@@ -331,9 +338,10 @@ class MLP(BaseModel):
             dum = pd.get_dummies(x['Station_ID'], prefix="Station")
             if len(dum.columns.values) == 1:
                 sid_column = dum.columns.values[0]
-                dum = pd.DataFrame(np.zeros((len(x.index), dum.shape[1]), dtype=np.int8), columns=dum.columns.values)
+                dum = pd.DataFrame(np.zeros((len(x.index), len(self.data)), dtype=np.int8), columns=self.data)
                 dum.loc[:, sid_column] = 1
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
+        print(x.shape)
         return self.model.predict(x)
 
 

@@ -307,7 +307,7 @@ def main():
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
     for n in days_to_evaluate:
-        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=None, ssa=None, lr=lr, mlp=mlp)
+        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=arima, ssa=ssa, lr=lr, mlp=mlp)
 
     mae_df.sort_index(inplace=True)
     rmse_df.sort_index(inplace=True)

@@ -146,6 +146,10 @@ def prepare_data(df, weather_data, time_slot):
     data['Time_Fragment_Sin'] = data['Time_Fragment_Sin'].astype(np.float16)
     data['Weekday_Sin'] = data['Weekday_Sin'].astype(np.float16)
     data['Month_Sin'] = data['Month_Sin'].astype(np.float16)
+    data['Temperature'] = data['Temperature'].astype(np.float16)
+    data['Wind'] = data['Wind'].astype(np.float16)
+    data['Humidity'] = data['Wind'].astype(np.float16)
+    data['Visibility'] = data['Visibility'].astype(np.float16)
 
     max_count = data['Count'].max()
     if max_count < (1 << 7):
@@ -278,13 +282,13 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    pca(pca_data.drop('Station_ID', axis=1), 'Count')
+    #pca(pca_data.drop('Station_ID', axis=1), 'Count')
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
     days_to_evaluate = [30, 14, 7, 1]
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
-
+    """
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -292,7 +296,7 @@ def main():
     mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -312,7 +316,7 @@ def main():
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
     for n in days_to_evaluate:
-        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=arima, ssa=ssa, lr=lr, mlp=mlp)
+        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=None, ssa=None, lr=lr, mlp=mlp)
 
     mae_df.sort_index(inplace=True)
     rmse_df.sort_index(inplace=True)

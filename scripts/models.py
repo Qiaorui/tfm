@@ -11,6 +11,7 @@ import sklearn.linear_model
 import sklearn.neural_network
 import sklearn.model_selection
 from scipy import stats
+from sklearn.preprocessing import MinMaxScaler
 
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
@@ -270,13 +271,15 @@ class LR(BaseModel):
     def __init__(self):
         super().__init__()
         print("Creating LR model")
+        #self.normalizer = MinMaxScaler()
 
     def fit(self, x, y):
         if 'Station_ID' in x.columns:
             dum = pd.get_dummies(x['Station_ID'], prefix="Station")
             self.data = dum.columns.values
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
-
+        #y = np.array(y.values)
+        #y = self.normalizer.fit_transform(y.reshape(-1, 1)).reshape(1,-1)[0]
         self.model = sklearn.linear_model.LinearRegression()
         self.model.fit(x, y)
         print("R squared:", self.model.score(x, y))
@@ -289,19 +292,25 @@ class LR(BaseModel):
                 dum = pd.DataFrame(np.zeros((len(x.index), len(self.data)), dtype=np.int8), columns=self.data)
                 dum.loc[:, sid_column] = 1
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
-        return self.model.predict(x)
+        y = self.model.predict(x)
+        #y = self.normalizer.inverse_transform(y.reshape(-1, 1))
+        #return y.reshape(1, -1)[0]
+        return y
 
 
 class MLP(BaseModel):
     def __init__(self):
         super().__init__()
         print("Creating MLP model")
+        #self.normalizer = MinMaxScaler()
 
     def test(self, x, y):
         if 'Station_ID' in x.columns:
             dum = pd.get_dummies(x['Station_ID'], prefix="Station")
             self.data = dum.columns.values
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
+        #y = np.array(y.values)
+        #y = self.normalizer.fit_transform(y.reshape(-1, 1)).reshape(1,-1)[0]
 
         n = x.shape[1] # Number of features, number of neurons in input layer
         o = 1 # Number of neurons in output layer
@@ -316,7 +325,7 @@ class MLP(BaseModel):
             'activation': ['tanh', 'relu']
         }
         mlp = sklearn.neural_network.MLPRegressor()
-        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, scoring='mae' ,cv=3)
+        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, scoring='neg_mean_squared_error', cv=3)
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)
         means = ms.cv_results_['mean_test_score']
@@ -330,7 +339,8 @@ class MLP(BaseModel):
             dum = pd.get_dummies(x['Station_ID'], prefix="Station")
             self.data = dum.columns.values
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
-
+        #y = np.array(y.values)
+        #y = self.normalizer.fit_transform(y.reshape(-1, 1)).reshape(1,-1)[0]
         self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(64, 64), verbose=True)
         self.model.fit(x, y)
 
@@ -342,7 +352,10 @@ class MLP(BaseModel):
                 dum = pd.DataFrame(np.zeros((len(x.index), len(self.data)), dtype=np.int8), columns=self.data)
                 dum.loc[:, sid_column] = 1
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
-        return self.model.predict(x)
+        y = self.model.predict(x)
+        #y = self.normalizer.inverse_transform(y.reshape(-1, 1))
+        #return y.reshape(1, -1)[0]
+        return y
 
 
 class LTSM(BaseModel):

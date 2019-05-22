@@ -268,7 +268,7 @@ def main():
 
     #th_day = pick_ups['Timestamp'].max().value - (pick_ups['Timestamp'].max().value - pick_ups['Timestamp'].min().value) * test_pct
     #th_day = pd.to_datetime(th_day).normalize()
-    th_day = pd.to_datetime("2018-12-01").normalize()
+    th_day = pd.to_datetime("2018-11-01").normalize()
 
     data = prepare_data(pick_ups, weather_data, time_slot)
 

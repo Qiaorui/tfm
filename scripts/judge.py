@@ -12,29 +12,44 @@ def score(y_true, y_pred):
     return mae, rmse
 
 
-def convert_to_sequence(df, output_columns, lags=0, aheads=1, dropnan=True):
-    new_df = pd.DataFrame()
-    x_columns = []
-    # Add lags (t-lag, t-lag+1, t-lag+2, ... , t-1)
-    for lag in range(lags, 0, -1):
-        for column in df.columns:
-            new_column_name = column + "_lag_" + str(lag)
-            new_df[new_column_name] = df[column].shift(lag).values
-            x_columns.append(new_column_name)
-    # Add current observation (t)
-    for column in df.columns:
-        new_df[column] = df[column].values
-        x_columns.append(column)
-    # Add ste aheads (t+1, t+2, ... , t+aheads)
-    y_columns = []
-    for ahead in range(1, aheads + 1, 1):
-        for output_column in output_columns:
-            new_column_name = output_column + "_ahead_" + str(ahead)
-            new_df[new_column_name] = df[output_column].shift(-ahead).values
-            y_columns.append(new_column_name)
-    if dropnan:
-        new_df.dropna(inplace=True)
-    return new_df
+# 1: Many to Many don't use target variable as feature
+# 2: Many to Many using target variable as feature
+# 3: 2 and using future sequential data as features
+def convert_to_sequence(df, output_columns, n_pre=0, n_post=2, target_as_feature=False, use_future=False, use_past=True):
+    assert n_post > 1
+
+    x_df = pd.DataFrame(index=df.index)
+    y_df = pd.DataFrame(index=df.index)
+
+    feature_columns = [col for col in df.columns.tolist() if col not in output_columns]
+
+    # Add past variables
+    if use_past:
+        for n_pre in range(n_pre, 0, -1):
+            for col in feature_columns:
+                new_column_name = col + "-" + str(n_pre)
+                x_df[new_column_name] = df[col].shift(n_pre).values
+            if target_as_feature:
+                for col in output_columns:
+                    new_column_name = col + "-" + str(n_pre)
+                    x_df[new_column_name] = df[col].shift(n_pre).values
+
+    # Add future variables
+    if use_future:
+        for n_post in range(n_post):
+            for col in feature_columns:
+                new_column_name = col + "+" + str(n_post)
+                x_df[new_column_name] = df[col].shift(-n_post).values
+
+    # Add Y target variables
+    for n_post in range(n_post):
+        for col in output_columns:
+            new_column_name = col + "+" + str(n_post)
+            y_df[new_column_name] = df[col].shift(-n_post).values
+
+    x_df.dropna(inplace=True)
+    y_df.dropna(inplace=True)
+    return x_df, y_df
 
 
 def evaluate_ha(data, th_day, n_days):
@@ -184,3 +199,64 @@ def evaluate_mlp(data, th_day, n_days):
     rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['MLP'])
 
     return mae_df, rmse_df, mlp
+
+
+def evaluate_lstm(data, th_day, n_days, n_pre=2, n_post=2):
+    non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
+    sequential_columns = [col for col in data.columns.tolist() if col not in non_sequential_columns]
+
+    x_sec = pd.DataFrame()
+    x_non_sec = pd.DataFrame()
+    y = pd.DataFrame()
+
+    groups = data.groupby('Station_ID')
+    # Frame data as a sequence
+    for station_id, df in groups:
+        # Sequential features
+        x_sec_df, ydf = convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
+                                       target_as_feature=False, use_future=False, use_past=True)
+
+        start_time = x_sec_df.index.min()
+        end_time = ydf.index.max()
+
+        x_sec_df = x_sec_df[x_sec_df.index <= end_time]
+        ydf = ydf[start_time:]
+        y = y.append(ydf)
+
+        x_sec = x_sec.append(x_sec_df)
+
+        # Non-sequential
+        x_non_sec_df = df[non_sequential_columns][(df.index >= start_time) & (df.index <= end_time)]
+        x_non_sec = x_non_sec.append(x_non_sec_df)
+
+    x_sec_train = x_sec[x_sec.index < th_day]
+    x_non_sec_train = x_non_sec[x_non_sec.index < th_day]
+    y_train = y[y.index < th_day]
+
+    x_sec_test = x_sec[x_sec.index >= th_day]
+    x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
+    y_test = y[y.index >= th_day]
+
+    print(y_train)
+    exit(1)
+
+    lstm = models.LSTM()
+    #lstm.test(x_train, y_train)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train)
+
+    mae_dict = {}
+    rmse_dict = {}
+
+    for n in n_days:
+        x_sec_test = x_sec_test.loc[x_sec_test.index < (th_day + pd.DateOffset(n))]
+        x_non_sec_test = x_non_sec_test.loc[x_non_sec_test.index < (th_day + pd.DateOffset(n))]
+        y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
+        x_non_sec = lstm.predict(x_sec_test, x_non_sec_test)
+        mae, rmse = score(y_test.tolist(), x_non_sec)
+        mae_dict[n] = mae
+        rmse_dict[n] = rmse
+
+    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['MLP'])
+    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['MLP'])
+
+    return mae_df, rmse_df, lstm

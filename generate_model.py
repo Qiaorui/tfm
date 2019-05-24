@@ -181,7 +181,7 @@ def lstrip_data(data, th):
     return data
 
 
-def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=None, lr=None, mlp=None):
+def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=None, lr=None, mlp=None, lstm=None):
     y = df['Count']
     x = df.drop('Count', axis=1)
     x_test = x.loc[th_day : th_day + pd.DateOffset(n_days)]
@@ -205,6 +205,8 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
     if mlp is not None:
         mlp_sample = mlp.predict(x_test)
         base_df['MLP'] = mlp_sample
+    if lstm is None:
+        """TODO: fill the gap"""
 
     plt.figure(figsize=(15, 7))
     plt.plot(sample, label="Observed")
@@ -268,7 +270,7 @@ def main():
 
     #th_day = pick_ups['Timestamp'].max().value - (pick_ups['Timestamp'].max().value - pick_ups['Timestamp'].min().value) * test_pct
     #th_day = pd.to_datetime(th_day).normalize()
-    th_day = pd.to_datetime("2018-11-01").normalize()
+    th_day = pd.to_datetime("2018-12-01").normalize()
 
     data = prepare_data(pick_ups, weather_data, time_slot)
 
@@ -286,9 +288,13 @@ def main():
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
+
+    ha, ssa, arima, lr, mlp, lstm = None, None, None, None, None, None
+
     days_to_evaluate = [30, 14, 7, 1]
-    mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
     """
+    mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
+
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -296,12 +302,16 @@ def main():
     mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+    
     mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
     mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
+    """
+    mae, rmse, mlp = judge.evaluate_lstm(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
@@ -316,7 +326,7 @@ def main():
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
     for n in days_to_evaluate:
-        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=None, ssa=None, lr=lr, mlp=mlp)
+        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=arima, ssa=ssa, lr=lr, mlp=mlp, lstm=lstm)
 
     mae_df.sort_index(inplace=True)
     rmse_df.sort_index(inplace=True)

@@ -10,6 +10,7 @@ import os
 import sklearn.linear_model
 import sklearn.neural_network
 import sklearn.model_selection
+import keras
 from scipy import stats
 from sklearn.preprocessing import MinMaxScaler
 
@@ -341,7 +342,10 @@ class MLP(BaseModel):
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
         #y = np.array(y.values)
         #y = self.normalizer.fit_transform(y.reshape(-1, 1)).reshape(1,-1)[0]
-        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(64, 64), verbose=True)
+        n = x.shape[1] # Number of features, number of neurons in input layer
+        o = 1 # Number of neurons in output layer
+
+        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(n*2//3, n//3, n+o), solver='sgd', activation='tanh', verbose=True)
         self.model.fit(x, y)
 
     def predict(self, x):
@@ -358,15 +362,47 @@ class MLP(BaseModel):
         return y
 
 
-class LTSM(BaseModel):
+class LSTM(BaseModel):
     def __init__(self):
         super().__init__()
-        print("Creating LTSM model")
+        print("Creating LSTM model")
 
     def test(self, x, y):
         return None
 
     def fit(self, x, y):
+        sequential_input_layer = keras.layers.Input(shape=(x.shape[1], x.shape[2]))
+
+        lstm_1_layer = keras.layers.LSTM(128)(sequential_input_layer)
+        repeat_layer = keras.layers.RepeatVector(ahead)(lstm_1_layer)
+        lstm_2_layer = keras.layers.LSTM(128, return_sequences=True)(repeat_layer)
+        time_dense_layer = keras.layers.TimeDistributed(keras.layers.Dense(1))(lstm_2_layer)
+        activation_layer = keras.layers.Activation('linear')(time_dense_layer)
+        flatten_layer = keras.layers.Flatten()(activation_layer)
+
+        non_sequential_input_layer = keras.layers.Input(shape=(non_sequential_train.shape[1],))
+
+        # Merging the second LSTM layer and non-sequential input layer
+        merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
+        dense_1_layer = keras.layers.Dense(128)(merged)
+        dense_2_layer = keras.layers.Dense(128)(dense_1_layer)
+        output_layer = keras.layers.Dense(y_train.shape[1])(dense_2_layer)
+
+        # Create keras model
+        multi_input_model = keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer], outputs=output_layer)
+
+        # Print the model summary
+        print(multi_input_model.summary())
+
+        # Compile the model
+        multi_input_model.compile(optimizer='adam', loss='rmse')
+
+        # Train the model
+        multi_input_model.fit([x_train, non_sequential_train], y_train, epochs=70, batch_size=1024,
+                              validation_data=([x_test, non_sequential_test], y_test), verbose=1, shuffle=True)
+
+        yhat = multi_input_model.predict([x_test, non_sequential_test])
+
         return None
 
     def predict(self, x):

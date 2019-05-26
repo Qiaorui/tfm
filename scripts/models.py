@@ -430,7 +430,7 @@ class LSTM(BaseModel):
     ↑ ↑ ↑ ↑ ↑ ↑
     o o o o o o
     """
-    def create_model_3(self, n_pre, n_pre_feature, n_post, n_post_feature, n_non_sec, hidden_dim=128):
+    def create_model_3(self, n_pre, n_pre_feature, n_post, n_non_sec, n_post_feature, hidden_dim=128):
 
         # Define an input sequence and process it.
         encoder_inputs = keras.layers.Input(shape=(n_pre, n_pre_feature))
@@ -470,7 +470,7 @@ class LSTM(BaseModel):
 
         return None
 
-    def fit(self, x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test):
+    def fit(self, x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type, x_future_sec_train=None, x_future_sec_test=None):
         if 'Station_ID' in x_non_sec_train.columns:
             dum = pd.get_dummies(x_non_sec_train['Station_ID'], prefix="Station")
             self.data = dum.columns.values
@@ -482,7 +482,15 @@ class LSTM(BaseModel):
         x_sec_train = x_sec_train.values.reshape(x_sec_train.shape[0], self.n_pre, x_sec_train.shape[1] // self.n_pre)
         x_sec_test = x_sec_test.values.reshape(x_sec_test.shape[0], self.n_pre, x_sec_test.shape[1]// self.n_pre)
 
-        model = self.create_model_1(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1])
+        model = None
+        if type == 1:
+            model = self.create_model_1(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1])
+        if type == 2:
+            model = self.create_model_2(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1])
+        if type == 3:
+            assert x_future_sec_train is not None
+            assert x_future_sec_test is not None
+            model = self.create_model_3(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1], x_future_sec_train.shape[2])
 
         # Print the model summary
         print(model.summary())
@@ -492,7 +500,12 @@ class LSTM(BaseModel):
         self.model = model
 
         # Train the model
-        history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=2, verbose=2)
+        history = None
+        if type == 3:
+            history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train,
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=10, verbose=2)
+        else:
+            history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=10, verbose=2)
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

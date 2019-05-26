@@ -245,7 +245,7 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
 
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)
-    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=1)
 
     mae_dict = {}
     rmse_dict = {}
@@ -259,8 +259,8 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 
-    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['LSTM'])
-    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['LSTM'])
+    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['LSTM_1'])
+    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['LSTM_1'])
 
     return mae_df, rmse_df, lstm
 

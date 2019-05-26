@@ -181,7 +181,8 @@ def lstrip_data(data, th):
     return data
 
 
-def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=None, lr=None, mlp=None, lstm=None):
+def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=None, lr=None, mlp=None,
+                                   lstm1=None, lstm2=None, lstm3=None, lstm4=None, lstm5=None, n_pre=2, n_post=2):
     y = df['Count']
     x = df.drop('Count', axis=1)
     x_test = x.loc[th_day : th_day + pd.DateOffset(n_days)]
@@ -205,8 +206,21 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
     if mlp is not None:
         mlp_sample = mlp.predict(x_test)
         base_df['MLP'] = mlp_sample
-    if lstm is None:
-        """TODO: fill the gap"""
+
+    sample.drop(sample.tail(1).index, inplace=True)
+    base_df.drop(base_df.tail(1).index, inplace=True)
+
+    non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
+    if lstm1 is not None:
+        x_sec_df, ydf = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
+                                                  target_as_feature=False, use_future=False, use_past=True)
+        x_sec_df = x_sec_df.loc[th_day : th_day + pd.DateOffset(n_days-1)]
+        x_non_sec_df = df[non_sequential_columns].loc[th_day : th_day + pd.DateOffset(n_days-1)]
+
+        x_sec_df = x_sec_df[(x_sec_df.index.hour == 0) & (x_sec_df.index.minute == 0)]
+        x_non_sec_df = x_non_sec_df[(x_non_sec_df.index.hour == 0) & (x_non_sec_df.index.minute == 0)]
+        lstm1_sample = lstm1.predict(x_sec_df, x_non_sec_df)
+        base_df['LSTM_1'] = lstm1_sample.flatten()
 
     plt.figure(figsize=(15, 7))
     plt.plot(sample, label="Observed")
@@ -289,7 +303,7 @@ def main():
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
 
-    ha, ssa, arima, lr, mlp, lstm = None, None, None, None, None, None
+    ha, ssa, arima, lr, mlp, lstm1, lstm2, lstm3, lstm4, lstm5 = None, None, None, None, None, None, None, None, None, None
 
     days_to_evaluate = [30, 14, 7, 1]
 
@@ -311,7 +325,7 @@ def main():
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
     """
-    mae, rmse, mlp = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
+    mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
@@ -326,7 +340,9 @@ def main():
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
     for n in days_to_evaluate:
-        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=arima, ssa=ssa, lr=lr, mlp=mlp, lstm=lstm)
+        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=arima, ssa=ssa, lr=lr, mlp=mlp,
+                                       lstm1=lstm1, lstm2=lstm2, lstm3=lstm3, lstm4=lstm4, lstm5=lstm5, n_pre=seasonality,
+                                       n_post=seasonality)
 
     mae_df.sort_index(inplace=True)
     rmse_df.sort_index(inplace=True)

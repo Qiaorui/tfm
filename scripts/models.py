@@ -492,7 +492,7 @@ class LSTM(BaseModel):
         self.model = model
 
         # Train the model
-        history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=5, verbose=1)
+        history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=2, verbose=2)
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

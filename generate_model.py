@@ -324,8 +324,16 @@ def main():
     mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
+
+    mae, rmse, lstm2 = judge.evaluate_lstm_2(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
+    """
+    mae, rmse, lstm3 = judge.evaluate_lstm_3(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 

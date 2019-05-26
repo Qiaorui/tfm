@@ -27,27 +27,27 @@ def convert_to_sequence(df, output_columns, n_pre=0, n_post=2, target_as_feature
 
     # Add past variables
     if use_past:
-        for n_pre in range(n_pre, 0, -1):
+        for i in range(n_pre, 0, -1):
             for col in feature_columns:
-                new_column_name = col + "-" + str(n_pre)
-                x_df[new_column_name] = df[col].shift(n_pre).values
+                new_column_name = col + "-" + str(i)
+                x_df[new_column_name] = df[col].shift(i).values
             if target_as_feature:
                 for col in output_columns:
-                    new_column_name = col + "-" + str(n_pre)
-                    x_df[new_column_name] = df[col].shift(n_pre).values
+                    new_column_name = col + "-" + str(i)
+                    x_df[new_column_name] = df[col].shift(i).values
 
     # Add future variables
     if use_future:
-        for n_post in range(n_post):
+        for i in range(n_post):
             for col in feature_columns:
-                new_column_name = col + "+" + str(n_post)
-                x_df[new_column_name] = df[col].shift(-n_post).values
+                new_column_name = col + "+" + str(i)
+                x_df[new_column_name] = df[col].shift(-i).values
 
     # Add Y target variables
-    for n_post in range(n_post):
+    for i in range(n_post):
         for col in output_columns:
-            new_column_name = col + "+" + str(n_post)
-            y_df[new_column_name] = df[col].shift(-n_post).values
+            new_column_name = col + "+" + str(i)
+            y_df[new_column_name] = df[col].shift(-i).values
 
     x_df.dropna(inplace=True)
     y_df.dropna(inplace=True)
@@ -217,7 +217,8 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
         # Sequential features
         x_sec_df, ydf = convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
                                        target_as_feature=False, use_future=False, use_past=True)
-
+        print(ydf)
+        exit(1)
         start_time = x_sec_df.index.min()
         end_time = ydf.index.max()
 
@@ -278,7 +279,7 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
     for station_id, df in groups:
         # Sequential features
         x_sec_df, ydf = convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
-                                       target_as_feature=False, use_future=False, use_past=True)
+                                       target_as_feature=False, use_future=True, use_past=False)
 
         start_time = x_sec_df.index.min()
         end_time = ydf.index.max()
@@ -301,9 +302,14 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
 
+    x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
+    x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
+    y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
+
+    print(x_sec_train.shape, x_non_sec_train.shape, y_train.shape)
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)
-    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=2)
 
     mae_dict = {}
     rmse_dict = {}
@@ -312,13 +318,13 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
         x_sec_test = x_sec_test.loc[x_sec_test.index < (th_day + pd.DateOffset(n))]
         x_non_sec_test = x_non_sec_test.loc[x_non_sec_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        x_non_sec = lstm.predict(x_sec_test, x_non_sec_test)
-        mae, rmse = score(y_test.tolist(), x_non_sec)
+        y = lstm.predict(x_sec_test, x_non_sec_test)
+        mae, rmse = score(y_test.values.flatten(), y.flatten())
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 
-    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['LSTM'])
-    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['LSTM'])
+    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['LSTM_2'])
+    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['LSTM_2'])
 
     return mae_df, rmse_df, lstm
 
@@ -335,7 +341,7 @@ def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2):
     for station_id, df in groups:
         # Sequential features
         x_sec_df, ydf = convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
-                                       target_as_feature=False, use_future=False, use_past=True)
+                                       target_as_feature=False, use_future=True, use_past=True)
 
         start_time = x_sec_df.index.min()
         end_time = ydf.index.max()
@@ -358,9 +364,13 @@ def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
 
+    x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
+    x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
+    y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
+
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)
-    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=3)
 
     mae_dict = {}
     rmse_dict = {}
@@ -369,13 +379,13 @@ def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2):
         x_sec_test = x_sec_test.loc[x_sec_test.index < (th_day + pd.DateOffset(n))]
         x_non_sec_test = x_non_sec_test.loc[x_non_sec_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        x_non_sec = lstm.predict(x_sec_test, x_non_sec_test)
-        mae, rmse = score(y_test.tolist(), x_non_sec)
+        y = lstm.predict(x_sec_test, x_non_sec_test)
+        mae, rmse = score(y_test.values.flatten(), y.flatten())
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 
-    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['LSTM'])
-    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['LSTM'])
+    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['LSTM_3'])
+    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['LSTM_3'])
 
     return mae_df, rmse_df, lstm
 
@@ -415,9 +425,13 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
 
+    x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
+    x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
+    y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
+
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)
-    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=1)
 
     mae_dict = {}
     rmse_dict = {}
@@ -426,13 +440,13 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
         x_sec_test = x_sec_test.loc[x_sec_test.index < (th_day + pd.DateOffset(n))]
         x_non_sec_test = x_non_sec_test.loc[x_non_sec_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        x_non_sec = lstm.predict(x_sec_test, x_non_sec_test)
-        mae, rmse = score(y_test.tolist(), x_non_sec)
+        y = lstm.predict(x_sec_test, x_non_sec_test)
+        mae, rmse = score(y_test.values.flatten(), y.flatten())
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 
-    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['LSTM'])
-    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['LSTM'])
+    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['LSTM_1'])
+    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['LSTM_1'])
 
     return mae_df, rmse_df, lstm
 
@@ -472,9 +486,13 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
 
+    x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
+    x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
+    y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
+
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)
-    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=1)
 
     mae_dict = {}
     rmse_dict = {}
@@ -483,12 +501,12 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2):
         x_sec_test = x_sec_test.loc[x_sec_test.index < (th_day + pd.DateOffset(n))]
         x_non_sec_test = x_non_sec_test.loc[x_non_sec_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        x_non_sec = lstm.predict(x_sec_test, x_non_sec_test)
-        mae, rmse = score(y_test.tolist(), x_non_sec)
+        y = lstm.predict(x_sec_test, x_non_sec_test)
+        mae, rmse = score(y_test.values.flatten(), y.flatten())
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 
-    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['LSTM'])
-    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['LSTM'])
+    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['LSTM_1'])
+    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['LSTM_1'])
 
     return mae_df, rmse_df, lstm

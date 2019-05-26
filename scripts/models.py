@@ -503,9 +503,9 @@ class LSTM(BaseModel):
         history = None
         if type == 3:
             history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train,
-                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=10, verbose=2)
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=3, verbose=2)
         else:
-            history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=10, verbose=2)
+            history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=3, verbose=2)
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

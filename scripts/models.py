@@ -363,47 +363,154 @@ class MLP(BaseModel):
 
 
 class LSTM(BaseModel):
-    def __init__(self):
+    def __init__(self, n_pre, n_post):
         super().__init__()
         print("Creating LSTM model")
+        self.n_pre = n_pre
+        self.n_post = n_post
 
-    def test(self, x, y):
-        return None
+    """
+          o o o
+          ↑ ↑ ↑
+    o➝o➝o➝o➝o➝o
+    ↑ ↑ ↑
+    o o o
+    """
+    def create_model_1(self, n_pre, n_feature, n_post, n_non_sec, hidden_dim=128):
+        sequential_input_layer = keras.layers.Input(shape=(n_pre, n_feature))
 
-    def fit(self, x, y):
-        sequential_input_layer = keras.layers.Input(shape=(x.shape[1], x.shape[2]))
-
-        lstm_1_layer = keras.layers.LSTM(128)(sequential_input_layer)
-        repeat_layer = keras.layers.RepeatVector(ahead)(lstm_1_layer)
-        lstm_2_layer = keras.layers.LSTM(128, return_sequences=True)(repeat_layer)
+        lstm_1_layer = keras.layers.LSTM(hidden_dim)(sequential_input_layer)
+        repeat_layer = keras.layers.RepeatVector(self.n_post)(lstm_1_layer)
+        lstm_2_layer = keras.layers.LSTM(hidden_dim, return_sequences=True)(repeat_layer)
         time_dense_layer = keras.layers.TimeDistributed(keras.layers.Dense(1))(lstm_2_layer)
         activation_layer = keras.layers.Activation('linear')(time_dense_layer)
         flatten_layer = keras.layers.Flatten()(activation_layer)
 
-        non_sequential_input_layer = keras.layers.Input(shape=(non_sequential_train.shape[1],))
+        non_sequential_input_layer = keras.layers.Input(shape=(n_non_sec,))
 
         # Merging the second LSTM layer and non-sequential input layer
         merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
-        dense_1_layer = keras.layers.Dense(128)(merged)
-        dense_2_layer = keras.layers.Dense(128)(dense_1_layer)
-        output_layer = keras.layers.Dense(y_train.shape[1])(dense_2_layer)
+        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
+        output_layer = keras.layers.Dense(n_post)(dense_2_layer)
 
         # Create keras model
-        multi_input_model = keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer], outputs=output_layer)
+        return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer], outputs=output_layer)
+
+    """
+    o o o
+    ↑ ↑ ↑
+    o➝o➝o
+    ↑ ↑ ↑
+    o o o
+    """
+    def create_model_2(self, n_pre, n_feature, n_post, n_non_sec, hidden_dim=128):
+        sequential_input_layer = keras.layers.Input(shape=(n_pre, n_feature))
+
+        lstm_1_layer = keras.layers.LSTM(hidden_dim, return_sequences=True)(sequential_input_layer)
+        time_dense_layer = keras.layers.TimeDistributed(keras.layers.Dense(1))(lstm_1_layer)
+        activation_layer = keras.layers.Activation('linear')(time_dense_layer)
+        flatten_layer = keras.layers.Flatten()(activation_layer)
+
+        non_sequential_input_layer = keras.layers.Input(shape=(n_non_sec,))
+
+        # Merging the second LSTM layer and non-sequential input layer
+        merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
+        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
+        output_layer = keras.layers.Dense(n_post)(dense_2_layer)
+
+        # Create keras model
+        return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer], outputs=output_layer)
+
+    """
+          o o o
+          ↑ ↑ ↑
+    o➝o➝o➝o➝o➝o
+    ↑ ↑ ↑ ↑ ↑ ↑
+    o o o o o o
+    """
+    def create_model_3(self, n_pre, n_pre_feature, n_post, n_post_feature, n_non_sec, hidden_dim=128):
+
+        # Define an input sequence and process it.
+        encoder_inputs = keras.layers.Input(shape=(n_pre, n_pre_feature))
+        encoder = keras.layers.LSTM(hidden_dim, return_state=True)
+        encoder_outputs, state_h, state_c = encoder(encoder_inputs)
+        # We discard `encoder_outputs` and only keep the states.
+        encoder_states = [state_h, state_c]
+
+        # Set up the decoder, using `encoder_states` as initial state.
+        decoder_inputs = keras.layers.Input(shape=(n_post, n_post_feature))
+        # We set up our decoder to return full output sequences,
+        # and to return internal states as well. We don't use the
+        # return states in the training model, but we will use them in inference.
+        decoder_lstm = keras.layers.LSTM(hidden_dim, return_sequences=True, return_state=True)
+        decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
+        decoder_dense = keras.layers.Dense(n_post_feature, activation='softmax')
+        decoder_outputs = decoder_dense(decoder_outputs)
+
+        flatten_layer = keras.layers.Flatten()(decoder_outputs)
+
+        non_sequential_input_layer = keras.layers.Input(shape=(n_non_sec,))
+
+        # Merging the second LSTM layer and non-sequential input layer
+        merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
+        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
+        output_layer = keras.layers.Dense(n_post)(dense_2_layer)
+
+        # Create keras model
+        return keras.Model(inputs=[encoder_inputs, decoder_inputs, non_sequential_input_layer], outputs=output_layer)
+
+    def test(self, x_sec, x_non_sec, y):
+        if 'Station_ID' in x_non_sec.columns:
+            dum = pd.get_dummies(x_non_sec['Station_ID'], prefix="Station")
+            self.data = dum.columns.values
+            x_non_sec = np.hstack([x_non_sec.drop('Station_ID', axis=1), dum])
+
+        return None
+
+    def fit(self, x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test):
+        if 'Station_ID' in x_non_sec_train.columns:
+            dum = pd.get_dummies(x_non_sec_train['Station_ID'], prefix="Station")
+            self.data = dum.columns.values
+            x_non_sec_train = np.hstack([x_non_sec_train.drop('Station_ID', axis=1), dum])
+            dum = pd.get_dummies(x_non_sec_test['Station_ID'], prefix="Station")
+            x_non_sec_test = np.hstack([x_non_sec_test.drop('Station_ID', axis=1), dum])
+
+        assert x_sec_train.shape[1] % self.n_pre == 0
+        x_sec_train = x_sec_train.values.reshape(x_sec_train.shape[0], self.n_pre, x_sec_train.shape[1] // self.n_pre)
+        x_sec_test = x_sec_test.values.reshape(x_sec_test.shape[0], self.n_pre, x_sec_test.shape[1]// self.n_pre)
+
+        model = self.create_model_1(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1])
 
         # Print the model summary
-        print(multi_input_model.summary())
+        print(model.summary())
 
         # Compile the model
-        multi_input_model.compile(optimizer='adam', loss='rmse')
+        model.compile(optimizer='adam', loss='mse')
+        self.model = model
 
         # Train the model
-        multi_input_model.fit([x_train, non_sequential_train], y_train, epochs=70, batch_size=1024,
-                              validation_data=([x_test, non_sequential_test], y_test), verbose=1, shuffle=True)
+        history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=5, verbose=1)
 
-        yhat = multi_input_model.predict([x_test, non_sequential_test])
+        # Plot training & validation loss values
+        plt.plot(history.history['loss'])
+        plt.plot(history.history['val_loss'])
+        plt.title('Model loss')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Test'], loc='upper left')
+        plt.show()
 
-        return None
+    def predict(self, x_sec, x_non_sec):
+        if 'Station_ID' in x_non_sec.columns:
+            dum = pd.get_dummies(x_non_sec['Station_ID'], prefix="Station")
+            if len(dum.columns.values) == 1:
+                sid_column = dum.columns.values[0]
+                dum = pd.DataFrame(np.zeros((len(x_non_sec.index), len(self.data)), dtype=np.int8), columns=self.data)
+                dum.loc[:, sid_column] = 1
+            x_non_sec = np.hstack([x_non_sec.drop('Station_ID', axis=1), dum])
+        x_sec = x_sec.values.reshape(x_sec.shape[0], self.n_pre, x_sec.shape[1] // self.n_pre)
 
-    def predict(self, x):
-        return None
+        return self.model.predict([x_sec, x_non_sec])

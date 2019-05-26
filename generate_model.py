@@ -292,9 +292,9 @@ def main():
     ha, ssa, arima, lr, mlp, lstm = None, None, None, None, None, None
 
     days_to_evaluate = [30, 14, 7, 1]
-    """
-    mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
 
+    mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
+    """
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -311,7 +311,7 @@ def main():
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
     """
-    mae, rmse, mlp = judge.evaluate_lstm(data, th_day, days_to_evaluate)
+    mae, rmse, mlp = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 

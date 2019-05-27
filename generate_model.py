@@ -284,7 +284,7 @@ def main():
 
     #th_day = pick_ups['Timestamp'].max().value - (pick_ups['Timestamp'].max().value - pick_ups['Timestamp'].min().value) * test_pct
     #th_day = pd.to_datetime(th_day).normalize()
-    th_day = pd.to_datetime("2018-12-01").normalize()
+    th_day = pd.to_datetime("2018-11-01").normalize()
 
     data = prepare_data(pick_ups, weather_data, time_slot)
 
@@ -332,10 +332,19 @@ def main():
     mae, rmse, lstm2 = judge.evaluate_lstm_2(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     mae, rmse, lstm3 = judge.evaluate_lstm_3(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
+    """
+    mae, rmse, lstm4 = judge.evaluate_lstm_4(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
+
+    mae, rmse, lstm5 = judge.evaluate_lstm_5(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
+
 
     #dg = data.groupby("Station_ID")
     #for id, df in dg:

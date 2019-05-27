@@ -521,8 +521,9 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2):
     for n in n_days:
         x_sec_test = x_sec_test.loc[x_sec_test.index < (th_day + pd.DateOffset(n))]
         x_non_sec_test = x_non_sec_test.loc[x_non_sec_test.index < (th_day + pd.DateOffset(n))]
+        x_future_sec_test = x_future_sec_test.loc[x_future_sec_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        y = lstm.predict(x_sec_test, x_non_sec_test)
+        y = lstm.predict(x_sec_test, x_non_sec_test, x_future_sec_test)
         mae, rmse = score(y_test.values.flatten(), y.flatten())
         mae_dict[n] = mae
         rmse_dict[n] = rmse

@@ -446,7 +446,7 @@ class LSTM(BaseModel):
         # return states in the training model, but we will use them in inference.
         decoder_lstm = keras.layers.LSTM(hidden_dim, return_sequences=True, return_state=True)
         decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
-        decoder_dense = keras.layers.Dense(n_post_feature, activation='softmax')
+        decoder_dense = keras.layers.Dense(n_post_feature, activation='relu')
         decoder_outputs = decoder_dense(decoder_outputs)
 
         flatten_layer = keras.layers.Flatten()(decoder_outputs)
@@ -506,9 +506,9 @@ class LSTM(BaseModel):
         history = None
         if type == 3:
             history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train,
-                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=3, verbose=2)
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=2, verbose=2)
         else:
-            history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=3, verbose=2)
+            history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=2, verbose=2)
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

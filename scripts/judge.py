@@ -416,7 +416,7 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
     for station_id, df in groups:
         # Sequential features
         x_sec_df, ydf, _ = convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
-                                       target_as_feature=False, use_future=False, use_past=True)
+                                       target_as_feature=True, use_future=False, use_past=True)
 
         start_time = x_sec_df.index.min()
         end_time = ydf.index.max()
@@ -478,7 +478,7 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2):
     for station_id, df in groups:
         # Sequential features
         x_sec_df, ydf, x_future_sec_df = convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
-                                       target_as_feature=False, use_future=True, use_past=True)
+                                       target_as_feature=True, use_future=True, use_past=True)
 
         start_time = x_sec_df.index.min()
         end_time = ydf.index.max()

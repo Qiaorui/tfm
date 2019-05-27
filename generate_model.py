@@ -212,7 +212,7 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
 
     non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
     if lstm1 is not None:
-        x_sec_df, ydf = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
+        x_sec_df, ydf, _ = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
                                                   target_as_feature=False, use_future=False, use_past=True)
         x_sec_df = x_sec_df.loc[th_day : th_day + pd.DateOffset(n_days-1)]
         x_non_sec_df = df[non_sequential_columns].loc[th_day : th_day + pd.DateOffset(n_days-1)]

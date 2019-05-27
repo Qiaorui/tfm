@@ -481,6 +481,9 @@ class LSTM(BaseModel):
         assert x_sec_train.shape[1] % self.n_pre == 0
         x_sec_train = x_sec_train.values.reshape(x_sec_train.shape[0], self.n_pre, x_sec_train.shape[1] // self.n_pre)
         x_sec_test = x_sec_test.values.reshape(x_sec_test.shape[0], self.n_pre, x_sec_test.shape[1]// self.n_pre)
+        if type == 3:
+            x_future_sec_test = x_future_sec_test.values.reshape(x_future_sec_test.shape[0], self.n_post, x_future_sec_test.shape[1]//self.n_post)
+            x_future_sec_train = x_future_sec_train.values.reshape(x_future_sec_train.shape[0], self.n_post, x_future_sec_train.shape[1]//self.n_post)
 
         model = None
         if type == 1:
@@ -516,7 +519,7 @@ class LSTM(BaseModel):
         plt.legend(['Train', 'Test'], loc='upper left')
         plt.show()
 
-    def predict(self, x_sec, x_non_sec):
+    def predict(self, x_sec, x_non_sec, x_future_sec=None):
         if 'Station_ID' in x_non_sec.columns:
             dum = pd.get_dummies(x_non_sec['Station_ID'], prefix="Station")
             if len(dum.columns.values) == 1:
@@ -525,5 +528,7 @@ class LSTM(BaseModel):
                 dum.loc[:, sid_column] = 1
             x_non_sec = np.hstack([x_non_sec.drop('Station_ID', axis=1), dum])
         x_sec = x_sec.values.reshape(x_sec.shape[0], self.n_pre, x_sec.shape[1] // self.n_pre)
-
-        return self.model.predict([x_sec, x_non_sec])
+        if x_future_sec is None:
+            return self.model.predict([x_sec, x_non_sec])
+        x_future_sec = x_future_sec.values.reshape(x_future_sec.shape[0], self.n_post, x_future_sec.shape[1] // self.n_post)
+        return self.model.predict([x_sec, x_future_sec, x_non_sec])

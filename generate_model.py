@@ -211,16 +211,74 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
     base_df.drop(base_df.tail(1).index, inplace=True)
 
     non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
+    x_non_sec_df = df[non_sequential_columns].loc[th_day: th_day + pd.DateOffset(n_days - 1)]
+    x_non_sec_df = x_non_sec_df[(x_non_sec_df.index.hour == 0) & (x_non_sec_df.index.minute == 0)]
     if lstm1 is not None:
         x_sec_df, ydf, _ = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
                                                   target_as_feature=False, use_future=False, use_past=True)
         x_sec_df = x_sec_df.loc[th_day : th_day + pd.DateOffset(n_days-1)]
-        x_non_sec_df = df[non_sequential_columns].loc[th_day : th_day + pd.DateOffset(n_days-1)]
-
         x_sec_df = x_sec_df[(x_sec_df.index.hour == 0) & (x_sec_df.index.minute == 0)]
-        x_non_sec_df = x_non_sec_df[(x_non_sec_df.index.hour == 0) & (x_non_sec_df.index.minute == 0)]
+
         lstm1_sample = lstm1.predict(x_sec_df, x_non_sec_df)
         base_df['LSTM_1'] = lstm1_sample.flatten()
+
+    if lstm2 is not None:
+        x_sec_df, ydf, x_future_sec_df = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
+                                                  target_as_feature=False, use_future=True, use_past=False)
+        x_sec_df = x_sec_df.loc[th_day : th_day + pd.DateOffset(n_days-1)]
+        x_sec_df = x_sec_df[(x_sec_df.index.hour == 0) & (x_sec_df.index.minute == 0)]
+
+        lstm2_sample = lstm2.predict(x_sec_df, x_non_sec_df, x_future_sec_df)
+        base_df['LSTM_2'] = lstm2_sample.flatten()
+    if lstm3 is not None:
+        x_sec_df, ydf, x_future_sec_df = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
+                                                  target_as_feature=False, use_future=True, use_past=True)
+        x_sec_df = x_sec_df.loc[th_day : th_day + pd.DateOffset(n_days-1)]
+        x_future_sec_df = x_future_sec_df.loc[th_day : th_day + pd.DateOffset(n_days-1)]
+
+        x_sec_df = x_sec_df[(x_sec_df.index.hour == 0) & (x_sec_df.index.minute == 0)]
+        x_future_sec_df = x_future_sec_df[(x_future_sec_df.index.hour == 0) & (x_future_sec_df.index.minute == 0)]
+
+        lstm3_sample = lstm3.predict(x_sec_df, x_non_sec_df, x_future_sec_df)
+        base_df['LSTM_3'] = lstm3_sample.flatten()
+    if lstm4 is not None:
+        x_sec_df, ydf, _ = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
+                                                  target_as_feature=True, use_future=False, use_past=True)
+        x_sec_df = x_sec_df.loc[th_day : th_day + pd.DateOffset(n_days-1)]
+        x_sec_df = x_sec_df[(x_sec_df.index.hour == 0) & (x_sec_df.index.minute == 0)]
+
+        lstm4_sample = []
+        for i in range(len(x_sec_df.index)):
+            x_sec_row = x_sec_df.iloc[[i]]
+            x_non_sec_row = x_non_sec_df.iloc[[i]]
+            if lstm4_sample:
+                for idx, j in enumerate(y[-n_pre:]):
+                    x_sec_row['Count-' + str(n_pre-idx)] = j
+            y_row = lstm4.predict(x_sec_row, x_non_sec_row)
+            lstm4_sample.extend(y_row.flatten())
+
+        base_df['LSTM_4'] = lstm4_sample
+    if lstm5 is not None:
+        x_sec_df, ydf, x_future_sec_df = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
+                                                  target_as_feature=True, use_future=True, use_past=True)
+        x_sec_df = x_sec_df.loc[th_day : th_day + pd.DateOffset(n_days-1)]
+        x_future_sec_df = x_future_sec_df.loc[th_day : th_day + pd.DateOffset(n_days-1)]
+
+        x_sec_df = x_sec_df[(x_sec_df.index.hour == 0) & (x_sec_df.index.minute == 0)]
+        x_future_sec_df = x_future_sec_df[(x_future_sec_df.index.hour == 0) & (x_future_sec_df.index.minute == 0)]
+
+        lstm5_sample = []
+        for i in range(len(x_sec_df.index)):
+            x_sec_row = x_sec_df.iloc[[i]]
+            x_non_sec_row = x_non_sec_df.iloc[[i]]
+            x_sec_future_row = x_future_sec_df.iloc[[i]]
+            if lstm5_sample:
+                for idx, j in enumerate(y[-n_pre:]):
+                    x_sec_row['Count-' + str(n_pre-idx)] = j
+            y_row = lstm5.predict(x_sec_row, x_non_sec_row, x_sec_future_row)
+            lstm5_sample.extend(y_row.flatten())
+
+        base_df['LSTM_5'] = lstm5_sample
 
     plt.figure(figsize=(15, 7))
     plt.plot(sample, label="Observed")
@@ -324,7 +382,7 @@ def main():
     mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -336,7 +394,7 @@ def main():
     mae, rmse, lstm3 = judge.evaluate_lstm_3(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     mae, rmse, lstm4 = judge.evaluate_lstm_4(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')

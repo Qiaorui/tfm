@@ -310,7 +310,6 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
     y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
 
-    print(x_sec_train.shape, x_non_sec_train.shape, y_train.shape)
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)
     lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=2)

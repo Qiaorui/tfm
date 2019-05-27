@@ -454,8 +454,19 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
         x_sec_test = x_sec_test.loc[x_sec_test.index < (th_day + pd.DateOffset(n))]
         x_non_sec_test = x_non_sec_test.loc[x_non_sec_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        y = lstm.predict(x_sec_test, x_non_sec_test)
-        mae, rmse = score(y_test.values.flatten(), y.flatten())
+
+        y = []
+        for i in range(len(x_sec_test.index)):
+            x_sec_row = x_sec_test.iloc[[i]]
+            x_non_sec_row = x_non_sec_test.iloc[[i]]
+            if y:
+                for idx, j in enumerate(y[-n_pre:]):
+                    x_sec_row['Count-' + str(n_pre-idx)] = j
+            y_row = lstm.predict(x_sec_row, x_non_sec_row)
+            y.extend(y_row.flatten())
+
+        #y = lstm.predict(x_sec_test, x_non_sec_test)
+        mae, rmse = score(y_test.values.flatten(), y)
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 
@@ -523,8 +534,19 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2):
         x_non_sec_test = x_non_sec_test.loc[x_non_sec_test.index < (th_day + pd.DateOffset(n))]
         x_future_sec_test = x_future_sec_test.loc[x_future_sec_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        y = lstm.predict(x_sec_test, x_non_sec_test, x_future_sec_test)
-        mae, rmse = score(y_test.values.flatten(), y.flatten())
+
+        y = []
+        for i in range(len(x_sec_test.index)):
+            x_sec_row = x_sec_test.iloc[[i]]
+            x_non_sec_row = x_non_sec_test.iloc[[i]]
+            x_future_sec_row = x_future_sec_test.iloc[[i]]
+            if y:
+                for idx, j in enumerate(y[-n_pre:]):
+                    x_sec_row['Count-' + str(n_pre-idx)] = j
+            y_row = lstm.predict(x_sec_row, x_non_sec_row, x_future_sec_row)
+            y.extend(y_row.flatten())
+
+        mae, rmse = score(y_test.values.flatten(), y)
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 

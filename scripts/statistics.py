@@ -225,7 +225,6 @@ def analyse_date_pattern(df):
     # Yearly and seasonally distribution
     t17 = df.groupby("Start_Year").get_group(2017)['Start_Season'].value_counts().sort_index()
     t18 = df.groupby("Start_Year").get_group(2018)['Start_Season'].value_counts().sort_index()
-    #t19 = df.groupby("Start_Year").get_group(2019)['Start_Season'].value_counts().sort_index()
     bins = np.array((range(1, 5, 1)))
 
     width = 0.35  # the width of the bars
@@ -407,10 +406,6 @@ def analyse_geo_pattern(df):
             fill_color=colormap(drop_offs.iloc[i]['Count'])
         ).add_to(m.m2)
 
-    # m.add_child(colormap)
-    # m.m2.add_child(colormap)
-
-    # folium.LayerControl(collapsed=False).add_to(m)
     m.save("map.html")
     webbrowser.open("file://" + os.path.realpath("map.html"))
 

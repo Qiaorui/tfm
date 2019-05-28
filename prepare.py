@@ -94,7 +94,12 @@ def main():
         statistics.plot_stations(station_data)
         statistics.show_station_change(raw_trip_data_path, station_data, trip_data)
         statistics.analyse_geo_pattern(trip_data)
+        statistics.analyse_geo_pattern(trip_data[(trip_data['Start_Hour'] >= 7) & (trip_data['Start_Hour'] <= 9)])
+        statistics.analyse_geo_pattern(trip_data[(trip_data['Start_Hour'] >= 17) & (trip_data['Start_Hour'] <= 19)])
+
         statistics.plot_unbalance_network(trip_data)
+        statistics.plot_unbalance_network(trip_data[(trip_data['Start_Hour'] >= 7) & (trip_data['Start_Hour'] <= 9)])
+        statistics.plot_unbalance_network(trip_data[(trip_data['Start_Hour'] >= 17) & (trip_data['Start_Hour'] <= 19)])
 
 
 if __name__ == '__main__':

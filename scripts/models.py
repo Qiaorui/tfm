@@ -122,6 +122,8 @@ class ARIMA(BaseModel):
                     break
             if not np.isnan(sum_aic):
                 search_results.append((param, param_seasonal, sum_aic/len(sids)))
+                if len(search_results) > 2:
+                    break
         search_results = sorted(search_results, key=lambda x: x[2])
         print("\nTop search results :")
         for param, param_seasonal, aic in search_results:
@@ -508,9 +510,9 @@ class LSTM(BaseModel):
         history = None
         if type == 3:
             history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train,
-                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=10, verbose=0)
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=2, verbose=0)
         else:
-            history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=10, verbose=0)
+            history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=2, verbose=0)
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

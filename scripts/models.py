@@ -169,6 +169,7 @@ class ARIMA(BaseModel):
 
         pred = self.model[sid].forecast(size)
         y.extend(list(pred))
+        y = [0 if i < 0 else i for i in y]
         return y
 
 
@@ -359,6 +360,7 @@ class MLP(BaseModel):
         y = self.model.predict(x)
         #y = self.normalizer.inverse_transform(y.reshape(-1, 1))
         #return y.reshape(1, -1)[0]
+        y = [0 if i < 0 else i for i in y]
         return y
 
 
@@ -528,7 +530,11 @@ class LSTM(BaseModel):
                 dum.loc[:, sid_column] = 1
             x_non_sec = np.hstack([x_non_sec.drop('Station_ID', axis=1), dum])
         x_sec = x_sec.values.reshape(x_sec.shape[0], self.n_pre, x_sec.shape[1] // self.n_pre)
+        y = None
         if x_future_sec is None:
-            return self.model.predict([x_sec, x_non_sec])
-        x_future_sec = x_future_sec.values.reshape(x_future_sec.shape[0], self.n_post, x_future_sec.shape[1] // self.n_post)
-        return self.model.predict([x_sec, x_future_sec, x_non_sec])
+            y = self.model.predict([x_sec, x_non_sec])
+        else:
+            x_future_sec = x_future_sec.values.reshape(x_future_sec.shape[0], self.n_post, x_future_sec.shape[1] // self.n_post)
+            y = self.model.predict([x_sec, x_future_sec, x_non_sec])
+
+        return list(map(lambda yy: [0 if i < 0 else i for i in yy], y))

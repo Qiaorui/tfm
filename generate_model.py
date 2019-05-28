@@ -223,12 +223,12 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
         base_df['LSTM_1'] = lstm1_sample.flatten()
 
     if lstm2 is not None:
-        x_sec_df, ydf, x_future_sec_df = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
+        x_sec_df, ydf, _ = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
                                                   target_as_feature=False, use_future=True, use_past=False)
         x_sec_df = x_sec_df.loc[th_day : th_day + pd.DateOffset(n_days-1)]
         x_sec_df = x_sec_df[(x_sec_df.index.hour == 0) & (x_sec_df.index.minute == 0)]
 
-        lstm2_sample = lstm2.predict(x_sec_df, x_non_sec_df, x_future_sec_df)
+        lstm2_sample = lstm2.predict(x_sec_df, x_non_sec_df)
         base_df['LSTM_2'] = lstm2_sample.flatten()
     if lstm3 is not None:
         x_sec_df, ydf, x_future_sec_df = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
@@ -382,7 +382,7 @@ def main():
     mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -398,19 +398,11 @@ def main():
     mae, rmse, lstm4 = judge.evaluate_lstm_4(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     mae, rmse, lstm5 = judge.evaluate_lstm_5(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
-
-    #dg = data.groupby("Station_ID")
-    #for id, df in dg:
-    #    sequence = convert_to_sequence(df.drop(columns=['Holiday', 'Station_ID']), ['Count'], 3, 4)
-    #    print(sequence)
-    #    exit(1)
-
-    # Save model per each techniques
 
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))

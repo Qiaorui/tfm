@@ -413,7 +413,9 @@ def main():
 
     mae_df.sort_index(inplace=True)
     rmse_df.sort_index(inplace=True)
+    print("MAE:")
     print(mae_df)
+    print("\nRMSE:")
     print(rmse_df)
     xs_label = [str(i) + "days" for i in days_to_evaluate]
 

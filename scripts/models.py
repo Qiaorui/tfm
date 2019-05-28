@@ -508,9 +508,9 @@ class LSTM(BaseModel):
         history = None
         if type == 3:
             history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train,
-                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=10, verbose=0)
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=3, verbose=0)
         else:
-            history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=10, verbose=0)
+            history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=3, verbose=0)
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])
@@ -537,4 +537,4 @@ class LSTM(BaseModel):
             x_future_sec = x_future_sec.values.reshape(x_future_sec.shape[0], self.n_post, x_future_sec.shape[1] // self.n_post)
             y = self.model.predict([x_sec, x_future_sec, x_non_sec])
 
-        return list(map(lambda yy: [0 if i < 0 else i for i in yy], y))
+        return np.array(list(map(lambda yy: [0 if i < 0 else i for i in yy], y)))

@@ -356,7 +356,7 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    #pca(pca_data.drop('Station_ID', axis=1), 'Count')
+    pca(pca_data.drop('Station_ID', axis=1), 'Count')
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))

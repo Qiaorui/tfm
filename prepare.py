@@ -3,7 +3,6 @@ from scripts import utils
 from scripts import statistics
 import pandas as pd
 import argparse
-import gc
 
 
 def main():

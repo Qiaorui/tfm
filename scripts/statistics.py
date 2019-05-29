@@ -351,7 +351,7 @@ def analyse_date_pattern(df):
 
     bins = list(range(24))
     plt.figure(figsize=(15, 7))
-    plt.xlabel('Hourly distribution by holiday')
+    plt.xlabel('Hourly distribution')
     plt.ylabel('Average Hourly Trip count')
     plt.title('Ridership by hour and holiday for NYC', fontsize=15)
     plt.xticks(bins)

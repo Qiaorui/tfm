@@ -342,7 +342,7 @@ def main():
 
     #th_day = pick_ups['Timestamp'].max().value - (pick_ups['Timestamp'].max().value - pick_ups['Timestamp'].min().value) * test_pct
     #th_day = pd.to_datetime(th_day).normalize()
-    th_day = pd.to_datetime("2018-12-01").normalize()
+    th_day = pd.to_datetime("2018-11-01").normalize()
 
     data = prepare_data(pick_ups, weather_data, time_slot)
 
@@ -356,7 +356,7 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    pca(pca_data.drop('Station_ID', axis=1), 'Count', seasonality)
+    #pca(pca_data.drop('Station_ID', axis=1), 'Count', seasonality)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
@@ -366,7 +366,7 @@ def main():
     days_to_evaluate = [30, 14, 7, 1]
 
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
-
+    """
     mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -382,7 +382,7 @@ def main():
     mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+        """
     mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')

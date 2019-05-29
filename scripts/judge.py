@@ -1,6 +1,5 @@
 from scripts import models
 import pandas as pd
-import numpy as np
 import math
 import sklearn.metrics
 
@@ -235,6 +234,10 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
         x_non_sec_df = df[non_sequential_columns][(df.index >= start_time) & (df.index <= end_time)]
         x_non_sec = x_non_sec.append(x_non_sec_df)
 
+    x_non_sec = x_non_sec[(x_non_sec.index.minute==0) & (x_non_sec.index.hour==0)]
+    y = y[(y.index.minute == 0) & (y.index.hour == 0)]
+    x_sec = x_sec[(x_sec.index.minute == 0) & (x_sec.index.hour == 0)]
+
     x_sec_train = x_sec[x_sec.index < th_day]
     x_non_sec_train = x_non_sec[x_non_sec.index < th_day]
     y_train = y[y.index < th_day]
@@ -243,9 +246,9 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
 
-    x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
-    x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
-    y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
+    #x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
+    #x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
+    #y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
 
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)
@@ -297,6 +300,10 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
         x_non_sec_df = df[non_sequential_columns][(df.index >= start_time) & (df.index <= end_time)]
         x_non_sec = x_non_sec.append(x_non_sec_df)
 
+    x_non_sec = x_non_sec[(x_non_sec.index.minute==0) & (x_non_sec.index.hour==0)]
+    y = y[(y.index.minute == 0) & (y.index.hour == 0)]
+    x_sec = x_sec[(x_sec.index.minute == 0) & (x_sec.index.hour == 0)]
+
     x_sec_train = x_sec[x_sec.index < th_day]
     x_non_sec_train = x_non_sec[x_non_sec.index < th_day]
     y_train = y[y.index < th_day]
@@ -305,9 +312,9 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
 
-    x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
-    x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
-    y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
+    #x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
+    #x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
+    #y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
 
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)
@@ -361,21 +368,25 @@ def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2):
         x_non_sec_df = df[non_sequential_columns][(df.index >= start_time) & (df.index <= end_time)]
         x_non_sec = x_non_sec.append(x_non_sec_df)
 
+    x_non_sec = x_non_sec[(x_non_sec.index.minute==0) & (x_non_sec.index.hour==0)]
+    y = y[(y.index.minute == 0) & (y.index.hour == 0)]
+    x_sec = x_sec[(x_sec.index.minute == 0) & (x_sec.index.hour == 0)]
+    x_future_sec = x_future_sec[(x_future_sec.index.minute == 0) & (x_future_sec.index.hour == 0)]
+
     x_sec_train = x_sec[x_sec.index < th_day]
     x_non_sec_train = x_non_sec[x_non_sec.index < th_day]
     y_train = y[y.index < th_day]
     x_future_sec_train = x_future_sec[x_future_sec.index < th_day]
-
 
     x_sec_test = x_sec[x_sec.index >= th_day]
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
     x_future_sec_test = x_future_sec[x_future_sec.index >= th_day]
 
-    x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
-    x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
-    y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
-    x_future_sec_test = x_future_sec_test[(x_future_sec_test.index.minute == 0) & (x_future_sec_test.index.hour == 0)]
+    #x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
+    #x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
+    #y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
+    #x_future_sec_test = x_future_sec_test[(x_future_sec_test.index.minute == 0) & (x_future_sec_test.index.hour == 0)]
 
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)
@@ -427,6 +438,10 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
         x_non_sec_df = df[non_sequential_columns][(df.index >= start_time) & (df.index <= end_time)]
         x_non_sec = x_non_sec.append(x_non_sec_df)
 
+    x_non_sec = x_non_sec[(x_non_sec.index.minute == 0) & (x_non_sec.index.hour == 0)]
+    y = y[(y.index.minute == 0) & (y.index.hour == 0)]
+    x_sec = x_sec[(x_sec.index.minute == 0) & (x_sec.index.hour == 0)]
+
     x_sec_train = x_sec[x_sec.index < th_day]
     x_non_sec_train = x_non_sec[x_non_sec.index < th_day]
     y_train = y[y.index < th_day]
@@ -435,9 +450,9 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
 
-    x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
-    x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
-    y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
+    #x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
+    #x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
+    #y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
 
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)
@@ -511,21 +526,25 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2):
         x_non_sec_df = df[non_sequential_columns][(df.index >= start_time) & (df.index <= end_time)]
         x_non_sec = x_non_sec.append(x_non_sec_df)
 
+    x_non_sec = x_non_sec[(x_non_sec.index.minute == 0) & (x_non_sec.index.hour == 0)]
+    y = y[(y.index.minute == 0) & (y.index.hour == 0)]
+    x_sec = x_sec[(x_sec.index.minute == 0) & (x_sec.index.hour == 0)]
+    x_future_sec = x_future_sec[(x_future_sec.index.minute == 0) & (x_future_sec.index.hour == 0)]
+
     x_sec_train = x_sec[x_sec.index < th_day]
     x_non_sec_train = x_non_sec[x_non_sec.index < th_day]
     y_train = y[y.index < th_day]
     x_future_sec_train = x_future_sec[x_future_sec.index < th_day]
-
 
     x_sec_test = x_sec[x_sec.index >= th_day]
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
     x_future_sec_test = x_future_sec[x_future_sec.index >= th_day]
 
-    x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
-    x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
-    y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
-    x_future_sec_test = x_future_sec_test[(x_future_sec_test.index.minute == 0) & (x_future_sec_test.index.hour == 0)]
+    #x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
+    #x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
+    #y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
+    #x_future_sec_test = x_future_sec_test[(x_future_sec_test.index.minute == 0) & (x_future_sec_test.index.hour == 0)]
 
     lstm = models.LSTM(n_pre, n_post)
     #lstm.test(x_train, y_train)

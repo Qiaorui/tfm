@@ -246,12 +246,7 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
 
-    #x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
-    #x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
-    #y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
-
     lstm = models.LSTM(n_pre, n_post)
-    #lstm.test(x_train, y_train)
     lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=1)
 
     mae_dict = {}
@@ -274,7 +269,6 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
 
 def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
     non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
-    sequential_columns = [col for col in data.columns.tolist() if col not in non_sequential_columns]
 
     x_sec = pd.DataFrame()
     x_non_sec = pd.DataFrame()
@@ -312,12 +306,7 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
 
-    #x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
-    #x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
-    #y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
-
     lstm = models.LSTM(n_pre, n_post)
-    #lstm.test(x_train, y_train)
     lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=2)
 
     mae_dict = {}
@@ -383,13 +372,7 @@ def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2):
     y_test = y[y.index >= th_day]
     x_future_sec_test = x_future_sec[x_future_sec.index >= th_day]
 
-    #x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
-    #x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
-    #y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
-    #x_future_sec_test = x_future_sec_test[(x_future_sec_test.index.minute == 0) & (x_future_sec_test.index.hour == 0)]
-
     lstm = models.LSTM(n_pre, n_post)
-    #lstm.test(x_train, y_train)
     lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, 3, x_future_sec_train, x_future_sec_test)
 
     mae_dict = {}
@@ -450,12 +433,7 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
     x_non_sec_test = x_non_sec[x_non_sec.index >= th_day]
     y_test = y[y.index >= th_day]
 
-    #x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
-    #x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
-    #y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
-
     lstm = models.LSTM(n_pre, n_post)
-    #lstm.test(x_train, y_train)
     lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=1)
 
     mae_dict = {}
@@ -485,7 +463,6 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
                 y_row = lstm.predict(x_sec_row, x_non_sec_row)
                 y.extend(y_row.flatten())
 
-        #y = lstm.predict(x_sec_test, x_non_sec_test)
         mae, rmse = score(tmp_y_test.values.flatten(), y)
         mae_dict[n] = mae
         rmse_dict[n] = rmse
@@ -541,13 +518,7 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2):
     y_test = y[y.index >= th_day]
     x_future_sec_test = x_future_sec[x_future_sec.index >= th_day]
 
-    #x_sec_test = x_sec_test[(x_sec_test.index.minute == 0) & (x_sec_test.index.hour == 0)]
-    #x_non_sec_test = x_non_sec_test[(x_non_sec_test.index.minute == 0) & (x_non_sec_test.index.hour == 0) ]
-    #y_test = y_test[(y_test.index.minute == 0) & (y_test.index.hour == 0)]
-    #x_future_sec_test = x_future_sec_test[(x_future_sec_test.index.minute == 0) & (x_future_sec_test.index.hour == 0)]
-
     lstm = models.LSTM(n_pre, n_post)
-    #lstm.test(x_train, y_train)
     lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, 3, x_future_sec_train, x_future_sec_test)
 
     mae_dict = {}

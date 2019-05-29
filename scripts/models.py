@@ -190,7 +190,7 @@ class SSA(BaseModel):
         for Station_ID, df in groups:
             df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
             ssa = mySSA(df['Count'])
-            ssa.embed(embedding_dimension=40, suspected_frequency=s)
+            ssa.embed(embedding_dimension=40 if s < 40 else s*2, suspected_frequency=s)
             ssa.decompose()
             contrib = list(itertools.chain.from_iterable(ssa.s_contributions.values))
             if not all_contrib:

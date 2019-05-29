@@ -18,7 +18,7 @@ import warnings
 warnings.simplefilter("ignore")
 
 
-def pca(df, tv):
+def pca(df, tv, seasonality):
 
     y = df[tv]
     x = df.drop(tv, axis=1)
@@ -28,7 +28,7 @@ def pca(df, tv):
     plt.gcf().autofmt_xdate()
     plt.show()
 
-    decomposition = sm.tsa.seasonal_decompose(y.tail(N), model='additive')
+    decomposition = sm.tsa.seasonal_decompose(y.tail(N), model='additive', freq=seasonality)
     fig = decomposition.plot()
     plt.show()
 
@@ -148,7 +148,7 @@ def prepare_data(df, weather_data, time_slot):
     data['Month_Sin'] = data['Month_Sin'].astype(np.float16)
     data['Temperature'] = data['Temperature'].astype(np.float16)
     data['Wind'] = data['Wind'].astype(np.float16)
-    data['Humidity'] = data['Wind'].astype(np.float16)
+    data['Humidity'] = data['Humidity'].astype(np.float16)
     data['Visibility'] = data['Visibility'].astype(np.float16)
 
     max_count = data['Count'].max()
@@ -356,7 +356,7 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    pca(pca_data.drop('Station_ID', axis=1), 'Count')
+    pca(pca_data.drop('Station_ID', axis=1), 'Count', seasonality)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
@@ -367,11 +367,11 @@ def main():
 
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
 
-    mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
+    mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
-    mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index)
+    mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
     

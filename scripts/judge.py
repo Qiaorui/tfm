@@ -128,9 +128,9 @@ def evaluate_arima(data, th_day, n_days, seasonality, sids):
     x_test.drop('Count', axis=1, inplace=True)
 
     arima = models.ARIMA()
-    param, param2 = arima.test(x_train, y_train, seasonality, sids)
-    arima.fit(x_train, y_train, param, param2)
-    #arima.fit(x_train, y_train, (1, 1, 1), (1, 1, 1, seasonality))
+    #param, param2 = arima.test(x_train, y_train, seasonality, sids)
+    #arima.fit(x_train, y_train, param, param2)
+    arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, seasonality))
 
     mae_dict = {}
     rmse_dict = {}

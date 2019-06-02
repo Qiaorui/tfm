@@ -14,11 +14,17 @@ import keras
 from scipy import stats
 from sklearn.preprocessing import MinMaxScaler
 
+from time import time
+from tensorflow.python.keras.callbacks import TensorBoard
+import tensorflow as tf
+
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.statespace.sarimax import SARIMAXResults
 
 pd.options.mode.chained_assignment = None
+
+dropout = 0.
 
 
 class BaseModel:
@@ -367,6 +373,9 @@ class MLP(BaseModel):
 
 
 class LSTM(BaseModel):
+
+
+
     def __init__(self, n_pre, n_post):
         super().__init__()
         print("Creating LSTM model")
@@ -383,9 +392,9 @@ class LSTM(BaseModel):
     def create_model_1(self, n_pre, n_feature, n_post, n_non_sec, hidden_dim=128):
         sequential_input_layer = keras.layers.Input(shape=(n_pre, n_feature))
 
-        lstm_1_layer = keras.layers.LSTM(hidden_dim)(sequential_input_layer)
+        lstm_1_layer = keras.layers.LSTM(hidden_dim, dropout=dropout)(sequential_input_layer)
         repeat_layer = keras.layers.RepeatVector(self.n_post)(lstm_1_layer)
-        lstm_2_layer = keras.layers.LSTM(hidden_dim, return_sequences=True)(repeat_layer)
+        lstm_2_layer = keras.layers.LSTM(hidden_dim, return_sequences=True, dropout=dropout)(repeat_layer)
         time_dense_layer = keras.layers.TimeDistributed(keras.layers.Dense(1))(lstm_2_layer)
         activation_layer = keras.layers.Activation('linear')(time_dense_layer)
         flatten_layer = keras.layers.Flatten()(activation_layer)
@@ -411,7 +420,7 @@ class LSTM(BaseModel):
     def create_model_2(self, n_pre, n_feature, n_post, n_non_sec, hidden_dim=128):
         sequential_input_layer = keras.layers.Input(shape=(n_pre, n_feature))
 
-        lstm_1_layer = keras.layers.LSTM(hidden_dim, return_sequences=True)(sequential_input_layer)
+        lstm_1_layer = keras.layers.LSTM(hidden_dim, return_sequences=True, dropout=dropout)(sequential_input_layer)
         time_dense_layer = keras.layers.TimeDistributed(keras.layers.Dense(1))(lstm_1_layer)
         activation_layer = keras.layers.Activation('linear')(time_dense_layer)
         flatten_layer = keras.layers.Flatten()(activation_layer)
@@ -432,13 +441,13 @@ class LSTM(BaseModel):
           ↑ ↑ ↑
     o➝o➝o➝o➝o➝o
     ↑ ↑ ↑ ↑ ↑ ↑
-    o o o o o o
+    o o o x x x
     """
     def create_model_3(self, n_pre, n_pre_feature, n_post, n_non_sec, n_post_feature, hidden_dim=128):
 
         # Define an input sequence and process it.
         encoder_inputs = keras.layers.Input(shape=(n_pre, n_pre_feature))
-        encoder = keras.layers.LSTM(hidden_dim, return_state=True)
+        encoder = keras.layers.LSTM(hidden_dim*3, return_state=True, dropout=dropout)
         encoder_outputs, state_h, state_c = encoder(encoder_inputs)
         # We discard `encoder_outputs` and only keep the states.
         encoder_states = [state_h, state_c]
@@ -448,7 +457,7 @@ class LSTM(BaseModel):
         # We set up our decoder to return full output sequences,
         # and to return internal states as well. We don't use the
         # return states in the training model, but we will use them in inference.
-        decoder_lstm = keras.layers.LSTM(hidden_dim, return_sequences=True, return_state=True)
+        decoder_lstm = keras.layers.LSTM(hidden_dim*3, return_sequences=True, return_state=True, dropout=dropout)
         decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
         decoder_dense = keras.layers.Dense(n_post_feature, activation='relu')
         decoder_outputs = decoder_dense(decoder_outputs)
@@ -459,20 +468,12 @@ class LSTM(BaseModel):
 
         # Merging the second LSTM layer and non-sequential input layer
         merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
-        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
-        dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(dense_2_layer)
+        #dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
+        output_layer = keras.layers.Dense(n_post)(merged)
 
         # Create keras model
         return keras.Model(inputs=[encoder_inputs, decoder_inputs, non_sequential_input_layer], outputs=output_layer)
-
-    def test(self, x_sec, x_non_sec, y):
-        if 'Station_ID' in x_non_sec.columns:
-            dum = pd.get_dummies(x_non_sec['Station_ID'], prefix="Station")
-            self.data = dum.columns.values
-            x_non_sec = np.hstack([x_non_sec.drop('Station_ID', axis=1), dum])
-
-        return None
 
     def fit(self, x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type, x_future_sec_train=None, x_future_sec_test=None):
         if 'Station_ID' in x_non_sec_train.columns:
@@ -489,30 +490,34 @@ class LSTM(BaseModel):
             x_future_sec_test = x_future_sec_test.values.reshape(x_future_sec_test.shape[0], self.n_post, x_future_sec_test.shape[1]//self.n_post)
             x_future_sec_train = x_future_sec_train.values.reshape(x_future_sec_train.shape[0], self.n_post, x_future_sec_train.shape[1]//self.n_post)
 
+        dim = (x_sec_train.shape[2] + x_non_sec_train.shape[1]) // 3
+        batch_size = None
+
         model = None
         if type == 1:
-            model = self.create_model_1(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1])
+            model = self.create_model_1(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1], dim)
         if type == 2:
-            model = self.create_model_2(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1])
+            model = self.create_model_2(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1], dim)
         if type == 3:
             assert x_future_sec_train is not None
             assert x_future_sec_test is not None
-            model = self.create_model_3(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1], x_future_sec_train.shape[2])
+            model = self.create_model_3(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1], x_future_sec_train.shape[2], dim)
 
         # Print the model summary
         print(model.summary())
 
-        # Compile the model
+        #tensorboard = TensorBoard(log_dir='logs/{}'.format(time()))
         model.compile(optimizer='adam', loss='mse')
+
         self.model = model
 
         # Train the model
         history = None
         if type == 3:
-            history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train,
-                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=2, verbose=0)
+            history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train, batch_size=batch_size,
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=30, verbose=2)
         else:
-            history = model.fit([x_sec_train, x_non_sec_train], y_train, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=2, verbose=0)
+            history = model.fit([x_sec_train, x_non_sec_train], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=30, verbose=2)
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

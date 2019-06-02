@@ -382,6 +382,7 @@ def main():
     mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
+    """
 
     mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
@@ -398,17 +399,17 @@ def main():
     mae, rmse, lstm4 = judge.evaluate_lstm_4(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     mae, rmse, lstm5 = judge.evaluate_lstm_5(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
     # Evaluate the prediction
-    print("{0:*^80}".format(" Evaluation "))
-    for n in days_to_evaluate:
-        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=arima, ssa=ssa, lr=lr, mlp=mlp,
-                                       lstm1=lstm1, lstm2=lstm2, lstm3=lstm3, lstm4=lstm4, lstm5=lstm5, n_pre=seasonality,
-                                       n_post=seasonality)
+    #print("{0:*^80}".format(" Evaluation "))
+    #for n in days_to_evaluate:
+    #    plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=arima, ssa=ssa, lr=lr, mlp=mlp,
+    #                                   lstm1=lstm1, lstm2=lstm2, lstm3=lstm3, lstm4=lstm4, lstm5=lstm5, n_pre=seasonality,
+    #                                   n_post=seasonality)
 
     mae_df.sort_index(inplace=True)
     rmse_df.sort_index(inplace=True)

@@ -403,9 +403,9 @@ class LSTM(BaseModel):
 
         # Merging the second LSTM layer and non-sequential input layer
         merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
-        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
-        dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(dense_2_layer)
+        #dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
+        output_layer = keras.layers.Dense(n_post)(merged)
 
         # Create keras model
         return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer], outputs=output_layer)
@@ -429,9 +429,9 @@ class LSTM(BaseModel):
 
         # Merging the second LSTM layer and non-sequential input layer
         merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
-        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
-        dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(dense_2_layer)
+        #dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
+        output_layer = keras.layers.Dense(n_post)(merged)
 
         # Create keras model
         return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer], outputs=output_layer)
@@ -447,7 +447,7 @@ class LSTM(BaseModel):
 
         # Define an input sequence and process it.
         encoder_inputs = keras.layers.Input(shape=(n_pre, n_pre_feature))
-        encoder = keras.layers.LSTM(hidden_dim*3, return_state=True, dropout=dropout)
+        encoder = keras.layers.LSTM(hidden_dim, return_state=True, dropout=dropout)
         encoder_outputs, state_h, state_c = encoder(encoder_inputs)
         # We discard `encoder_outputs` and only keep the states.
         encoder_states = [state_h, state_c]
@@ -457,7 +457,7 @@ class LSTM(BaseModel):
         # We set up our decoder to return full output sequences,
         # and to return internal states as well. We don't use the
         # return states in the training model, but we will use them in inference.
-        decoder_lstm = keras.layers.LSTM(hidden_dim*3, return_sequences=True, return_state=True, dropout=dropout)
+        decoder_lstm = keras.layers.LSTM(hidden_dim, return_sequences=True, return_state=True, dropout=dropout)
         decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
         decoder_dense = keras.layers.Dense(n_post_feature, activation='relu')
         decoder_outputs = decoder_dense(decoder_outputs)
@@ -490,7 +490,7 @@ class LSTM(BaseModel):
             x_future_sec_test = x_future_sec_test.values.reshape(x_future_sec_test.shape[0], self.n_post, x_future_sec_test.shape[1]//self.n_post)
             x_future_sec_train = x_future_sec_train.values.reshape(x_future_sec_train.shape[0], self.n_post, x_future_sec_train.shape[1]//self.n_post)
 
-        dim = (x_sec_train.shape[2] + x_non_sec_train.shape[1]) // 3
+        dim = (x_sec_train.shape[2] + x_non_sec_train.shape[1]) * 2// 3
         batch_size = None
 
         model = None
@@ -515,9 +515,9 @@ class LSTM(BaseModel):
         history = None
         if type == 3:
             history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train, batch_size=batch_size,
-                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=30, verbose=2)
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=30, verbose=0)
         else:
-            history = model.fit([x_sec_train, x_non_sec_train], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=30, verbose=2)
+            history = model.fit([x_sec_train, x_non_sec_train], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=30, verbose=0)
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

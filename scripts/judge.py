@@ -207,8 +207,11 @@ def evaluate_mlp(data, th_day, n_days):
     return mae_df, rmse_df, mlp
 
 
+non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
+#non_sequential_columns = ['Station_ID', 'Holiday']
+
 def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
-    non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
+
 
     x_sec = pd.DataFrame()
     x_non_sec = pd.DataFrame()
@@ -268,7 +271,6 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
 
 
 def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
-    non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
 
     x_sec = pd.DataFrame()
     x_non_sec = pd.DataFrame()
@@ -328,7 +330,6 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
 
 
 def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2):
-    non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
 
     x_sec = pd.DataFrame()
     x_future_sec = pd.DataFrame()
@@ -395,7 +396,6 @@ def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2):
 
 
 def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
-    non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
 
     x_sec = pd.DataFrame()
     x_non_sec = pd.DataFrame()
@@ -474,7 +474,6 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
 
 
 def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2):
-    non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
 
     x_sec = pd.DataFrame()
     x_future_sec = pd.DataFrame()

@@ -490,7 +490,8 @@ class LSTM(BaseModel):
             x_future_sec_test = x_future_sec_test.values.reshape(x_future_sec_test.shape[0], self.n_post, x_future_sec_test.shape[1]//self.n_post)
             x_future_sec_train = x_future_sec_train.values.reshape(x_future_sec_train.shape[0], self.n_post, x_future_sec_train.shape[1]//self.n_post)
 
-        dim = (x_sec_train.shape[2] + x_non_sec_train.shape[1]) * 2// 3
+        dim = (x_sec_train.shape[2] + x_non_sec_train.shape[1]) * 2// 3 # 42
+
         batch_size = None
 
         model = None
@@ -515,9 +516,9 @@ class LSTM(BaseModel):
         history = None
         if type == 3:
             history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train, batch_size=batch_size,
-                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=30, verbose=0)
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=10, verbose=0)
         else:
-            history = model.fit([x_sec_train, x_non_sec_train], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=30, verbose=0)
+            history = model.fit([x_sec_train, x_non_sec_train], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=10, verbose=0)
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

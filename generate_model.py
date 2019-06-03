@@ -363,18 +363,10 @@ def main():
 
     ha, ssa, arima, lr, mlp, lstm1, lstm2, lstm3, lstm4, lstm5 = None, None, None, None, None, None, None, None, None, None
 
-    days_to_evaluate = [30, 14, 7, 1]
+    days_to_evaluate = [30, 14, 7]
 
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
 
-    mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index)
-    mae_df = mae_df.join(mae, how='outer')
-    rmse_df = rmse_df.join(rmse, how='outer')
-
-    mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
-    mae_df = mae_df.join(mae, how='outer')
-    rmse_df = rmse_df.join(rmse, how='outer')
-    
     mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -383,8 +375,19 @@ def main():
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
+    days_to_evaluate = [30, 14, 7, 1]
+
+    mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
+
+    mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
+
     #data.drop(["Weekend", "Condition_Good"], axis=1, inplace=True)
 
+    days_to_evaluate = [30, 14, 7]
     mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -397,6 +400,7 @@ def main():
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
+    days_to_evaluate = [30, 14, 7, 1]
     mae, rmse, lstm4 = judge.evaluate_lstm_4(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -421,14 +425,14 @@ def main():
     xs_label = [str(i) + "days" for i in days_to_evaluate]
 
     for col in mae_df:
-        plt.plot(mae_df[col], linestyle='-', marker='o', label=col)
+        plt.plot(mae_df[col].dropna(), linestyle='-', marker='o', label=col)
     plt.ylabel("MAE")
     plt.xticks(days_to_evaluate, xs_label)
     plt.legend()
     plt.show()
 
     for col in rmse_df:
-        plt.plot(rmse_df[col], linestyle='-', marker='o', label=col)
+        plt.plot(rmse_df[col].dropna(), linestyle='-', marker='o', label=col)
     plt.ylabel("RMSE")
     plt.xticks(days_to_evaluate, xs_label)
     plt.legend()
@@ -437,3 +441,22 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+def counts(data, column):
+    full_list = []
+    datr = data[column].tolist()
+    total_words = " ".join(datr).split(' ')
+    # per rows
+    for i in range(len(datr)):
+        #first per row get the words
+        word_list = re.sub("[^\w]", " ",  datr[i]).split()
+        #cycle per word
+        total_row = []
+        for word in word_list:
+            count = []
+            count = total_words.count(word)
+            val = (word, count)
+            total_row.append(val)
+        full_list.append(total_row)
+    return full_list

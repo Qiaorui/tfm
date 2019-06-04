@@ -192,7 +192,7 @@ def analyse_trip_duration(df, start_year, show):
     # Plot Distribution of trip duration
     plt.figure(dpi=DPI)
     plt.hist(df.loc[:, 'Trip_Duration'], range(0, max_triptime, 5))
-    plt.title('Distribution of Trip Durations')
+    plt.title('Distribution of Trip Duration')
     plt.xlabel('Duration (minutes)')
     plt.savefig('results/p21.pdf', bbox_inches='tight')
     if show:
@@ -205,7 +205,7 @@ def analyse_trip_duration(df, start_year, show):
     plt.figure(dpi=DPI)
     plt.yscale('log')
     plt.hist(df.loc[:, 'Trip_Duration'], range(0, max_triptime, 5))
-    plt.title('Distribution of Trip Durations')
+    plt.title('Distribution of Trip Duration')
     plt.xlabel('Duration (minutes)')
     plt.savefig('results/p22.pdf', bbox_inches='tight')
     if show:
@@ -229,7 +229,7 @@ def analyse_trip_duration(df, start_year, show):
     # Boxplot without outlier of trip duration
     plt.figure(dpi=DPI)
     plt.boxplot(list(df.loc[:, 'Trip_Duration']), 0, '')
-    plt.title('Boxplot without outlier')
+    plt.title('Boxplot without outliers')
     plt.ylabel('Duration (minutes)')
     plt.savefig('results/p24.pdf', bbox_inches='tight')
     if show:
@@ -256,7 +256,7 @@ def analyse_trip_duration(df, start_year, show):
     tmp = df[(df['Start_Station_ID']) == (df['End_Station_ID'])]
     f2 = tmp['Trip_Duration'].value_counts().sort_index()
     plt.figure(dpi=DPI)
-    plt.title('Trip duration distribution which same station drop-off')
+    plt.title('Trip duration distribution of cyclic trip')
     plt.plot(f2.index, f2)
     plt.xlim(0, 60)
     plt.ylabel("Count")
@@ -338,7 +338,7 @@ def analyse_date_pattern(df, show):
     ax1.tick_params(axis='y', labelcolor=color)
     plt.setp(ax1, xticks=bins,
              xticklabels=['Jan', 'Feb', 'Mar', 'Apr', 'may', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
-    ax1.set_title("Ridership by Month for NYC", fontsize=15)
+    ax1.set_title("Ridership by Month", fontsize=15)
 
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     average_month_trip_count = df.groupby(['Start_Month', 'Start_Year'], as_index=False).size().groupby(
@@ -370,7 +370,7 @@ def analyse_date_pattern(df, show):
     ax1.bar(bins, trip_duration, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
     plt.setp(ax1, xticks=bins, xticklabels=weekdays)
-    ax1.set_title("Ridership by Weekday for NYC", fontsize=15)
+    ax1.set_title("Ridership by Weekday", fontsize=15)
 
     tmp = df[["Start_Time", "Start_Weekday", "Start_Year"]].copy()
     tmp["Start_Weekday_Year"] = tmp["Start_Time"].dt.weekofyear
@@ -405,7 +405,7 @@ def analyse_date_pattern(df, show):
     ax1.bar(bins, trip_duration, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
     plt.setp(ax1, xticks=bins)
-    ax1.set_title("Ridership by Hour for NYC", fontsize=15)
+    ax1.set_title("Ridership by Hour", fontsize=15)
 
     tmp = df[["Start_Time", "Start_Year", "Start_Hour"]].copy()
     tmp["Start_Day_Year"] = tmp["Start_Time"].dt.dayofyear
@@ -438,7 +438,7 @@ def analyse_date_pattern(df, show):
     plt.figure(figsize=(15, 7))
     plt.xlabel('Hourly distribution by weekday')
     plt.ylabel('Average Hourly Trip count')
-    plt.title('Ridership by hour and weekday for NYC', fontsize=15)
+    plt.title('Ridership by hour and weekday', fontsize=15)
     plt.xticks(bins)
     for i in range(1, 8, 1):
         plt.plot(bins, tmp[tmp['Start_Weekday'] == i]['counts'], linestyle='-', marker='o', label=weekdays[i - 1])
@@ -462,7 +462,7 @@ def analyse_date_pattern(df, show):
     plt.figure(figsize=(15, 7))
     plt.xlabel('Hourly distribution')
     plt.ylabel('Average Hourly Trip count')
-    plt.title('Ridership by hour and holiday for NYC', fontsize=15)
+    plt.title('Ridership by hour', fontsize=15)
     plt.xticks(bins)
     for i in [True, False]:
         plt.plot(bins, tmp[tmp['Start_Holiday'] == i]['counts'], linestyle='-', marker='o', label="Holiday (Mon-Fri)" if i else "Workingday")
@@ -731,7 +731,7 @@ def analyse_demographic_pattern(raw_data_path, show):
     plt.figure(figsize=(15, 7))
     plt.xlabel('Age')
     plt.ylabel('Average Trip Duration (minutes)')
-    plt.title('Gender & Age Ridership for NYC', fontsize=15)
+    plt.title('Gender & Age Ridership', fontsize=15)
     for i, label in enumerate(["Masculine", "Female"]):
         plt.plot(tmp[tmp['Gender'] == i + 1]['Age'], tmp[tmp['Gender'] == i + 1]['counts'], linestyle='-', marker='o',
                  label=label)

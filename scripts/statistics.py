@@ -19,7 +19,7 @@ register_matplotlib_converters()
 DPI = 300
 
 
-def analyse_weather(df, start_year=None):
+def analyse_weather(df, start_year, show):
     if start_year is not None:
         df = df.loc[df['Datetime'].dt.year >= start_year]
 
@@ -31,58 +31,103 @@ def analyse_weather(df, start_year=None):
     plt.xlabel("Date")
     plt.ylabel("Celsius")
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Temperature'].mean())
-    plt.show()
+    plt.savefig('results/p1.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     #plt.figure(figsize=(10, 10))
     plt.title("Histogram of Temperature")
     plt.xlabel("Celsius")
     plt.hist(df['Temperature'], range(math.floor(df['Temperature'].min()), math.ceil(df['Temperature'].max()+1), 1))
-    plt.show()
+    plt.savefig('results/p2.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     plt.figure(figsize=(20, 10))
     plt.title("Visibility")
     plt.xlabel("Date")
     plt.ylabel("Mile")
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Visibility'].mean())
-    plt.show()
+    plt.savefig('results/p3.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     #plt.figure(figsize=(10, 10))
     plt.title("Histogram of Visibility")
     plt.xlabel("Mile")
     plt.hist(df['Visibility'], range(math.floor(df['Visibility'].min()), math.ceil(df['Visibility'].max()+1), 1))
-    plt.show()
+    plt.savefig('results/p4.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     plt.figure(figsize=(20, 10))
     plt.title("Humidity")
     plt.xlabel("Date")
     plt.ylabel("Percentage")
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Humidity'].mean())
-    plt.show()
+    plt.savefig('results/p5.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     #plt.figure(figsize=(10, 10))
     plt.title("Histogram of Humidity")
     plt.xlabel("Percentage")
     plt.hist(df['Humidity'], bins=50)
-    plt.show()
+    plt.savefig('results/p6.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     plt.figure(figsize=(20, 10))
     plt.title("Wind")
     plt.xlabel("Date")
     plt.ylabel("KPH")
     plt.plot(df['Datetime'].dt.date.unique(), df.groupby(df['Datetime'].dt.date)['Wind'].mean())
-    plt.show()
+    plt.savefig('results/p7.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     #plt.figure(figsize=(10, 10))
     plt.title("Histogram of Wind")
     plt.xlabel("KPH")
     plt.hist(df['Wind'], range(math.floor(df['Wind'].min()), math.ceil(df['Wind'].max()+1), 1))
-    plt.show()
+    plt.savefig('results/p8.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     plt.figure(figsize=(20, 10))
     plt.title("Weather Condition Distribution")
     gp = df.groupby(['Condition'])
     plt.bar(gp.size().index, gp.size())
-    plt.show()
+    plt.savefig('results/p9.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     cloudy_conds = ["Clear", "Partly Cloudy", "Scattered Clouds", "Mostly Cloudy", "Haze", "Overcast"]
     foggy_conds = ["Fog", "Mist", "Light Freezing Fog"]
@@ -122,10 +167,15 @@ def analyse_weather(df, start_year=None):
            labeldistance=0.6, rotatelabels=True, wedgeprops=dict(width=size, edgecolor='w'))
     fig.suptitle('Weather Classification', fontsize=24)
     ax.set(aspect="equal")
-    plt.show()
+    plt.savefig('results/p10.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.cla()
+        plt.close()
 
-
-def analyse_trip_duration(df, start_year=None):
+def analyse_trip_duration(df, start_year, show):
     df['Start_Time'] = pd.to_datetime(df['Start_Time'])
     df['Stop_Time'] = pd.to_datetime(df['Stop_Time'])
     if start_year is not None:
@@ -144,7 +194,12 @@ def analyse_trip_duration(df, start_year=None):
     plt.hist(df.loc[:, 'Trip_Duration'], range(0, max_triptime, 5))
     plt.title('Distribution of Trip Durations')
     plt.xlabel('Duration (minutes)')
-    plt.show()
+    plt.savefig('results/p21.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Plot Distribution of trip duration in log scale
     plt.figure(dpi=DPI)
@@ -152,21 +207,36 @@ def analyse_trip_duration(df, start_year=None):
     plt.hist(df.loc[:, 'Trip_Duration'], range(0, max_triptime, 5))
     plt.title('Distribution of Trip Durations')
     plt.xlabel('Duration (minutes)')
-    plt.show()
+    plt.savefig('results/p22.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Boxplot of trip duration
     plt.figure(dpi=DPI)
     plt.boxplot(list(df.loc[:, 'Trip_Duration']), 0, 'gD')
     plt.ylabel('Duration (minutes)')
     plt.title('Boxplot')
-    plt.show()
+    plt.savefig('results/p23.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Boxplot without outlier of trip duration
     plt.figure(dpi=DPI)
     plt.boxplot(list(df.loc[:, 'Trip_Duration']), 0, '')
     plt.title('Boxplot without outlier')
     plt.ylabel('Duration (minutes)')
-    plt.show()
+    plt.savefig('results/p24.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Plot of trip duration distribution for the trips within 60 minutes
     plt.figure(dpi=DPI)
@@ -175,7 +245,12 @@ def analyse_trip_duration(df, start_year=None):
     plt.xlim(0, 60)
     plt.ylabel("Count")
     plt.xlabel("Minute")
-    plt.show()
+    plt.savefig('results/p25.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Plot of trip duration distribution for same station pick-up and drop-off
     tmp = df[(df['Start_Station_ID']) == (df['End_Station_ID'])]
@@ -186,7 +261,12 @@ def analyse_trip_duration(df, start_year=None):
     plt.xlim(0, 60)
     plt.ylabel("Count")
     plt.xlabel("Minute")
-    plt.show()
+    plt.savefig('results/p26.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Plot of stations which most user done the circulation trip
     tmp = tmp[["Start_Station_ID", "Start_Latitude", "Start_Longitude"]]
@@ -215,11 +295,12 @@ def analyse_trip_duration(df, start_year=None):
 
     m.add_child(colormap)
     # folium.LayerControl(collapsed=False).add_to(m)
-    m.save("map.html")
-    webbrowser.open("file://" + os.path.realpath("map.html"))
+    m.save("results/map1.html")
+    if show:
+        webbrowser.open("file://" + os.path.realpath("results/map1.html"))
 
 
-def analyse_date_pattern(df):
+def analyse_date_pattern(df, show):
     weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
     # Yearly and seasonally distribution
@@ -236,7 +317,12 @@ def analyse_date_pattern(df):
     plt.title('Ridership by Season and Year')
     plt.xticks(bins, ['Spring', 'Summer', 'Autumn', 'Winter'])
     plt.legend()
-    plt.show()
+    plt.savefig('results/p27.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Monthly distribution
 
@@ -264,7 +350,13 @@ def analyse_date_pattern(df):
     ax2.tick_params(axis='y', labelcolor=color)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    plt.show()
+    plt.savefig('results/p28.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.cla()
+        plt.close()
 
     # Weekly distribution
     bins = list(range(1, 8, 1))
@@ -293,7 +385,13 @@ def analyse_date_pattern(df):
     ax2.tick_params(axis='y', labelcolor=color)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    plt.show()
+    plt.savefig('results/p29.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.cla()
+        plt.close()
 
     # Hourly distribution
     bins = list(range(24))
@@ -321,7 +419,13 @@ def analyse_date_pattern(df):
     ax2.tick_params(axis='y', labelcolor=color)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    plt.show()
+    plt.savefig('results/p30.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.cla()
+        plt.close()
 
     # Weekday x Hour distribution
 
@@ -339,7 +443,12 @@ def analyse_date_pattern(df):
     for i in range(1, 8, 1):
         plt.plot(bins, tmp[tmp['Start_Weekday'] == i]['counts'], linestyle='-', marker='o', label=weekdays[i - 1])
     plt.legend()
-    plt.show()
+    plt.savefig('results/p31.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Holiday & Workingday relationship
 
@@ -358,10 +467,14 @@ def analyse_date_pattern(df):
     for i in [True, False]:
         plt.plot(bins, tmp[tmp['Start_Holiday'] == i]['counts'], linestyle='-', marker='o', label="Holiday (Mon-Fri)" if i else "Workingday")
     plt.legend()
-    plt.show()
+    plt.savefig('results/p32.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
-
-def analyse_geo_pattern(df):
+def analyse_geo_pattern(df, title, show):
     lat, lng = df["Start_Latitude"].mean(), df["Start_Longitude"].mean()
     m = generate_dual_map([lat, lng], 14)
 
@@ -406,11 +519,12 @@ def analyse_geo_pattern(df):
             fill_color=colormap(drop_offs.iloc[i]['Count'])
         ).add_to(m.m2)
 
-    m.save("map.html")
-    webbrowser.open("file://" + os.path.realpath("map.html"))
+    m.save("results/" + title + ".html")
+    if show:
+        webbrowser.open("file://" + os.path.realpath("results" + title + ".html"))
 
 
-def plot_stations(df, title="map"):
+def plot_stations(df, title, show):
     print(len(df.index), "stations plotting...")
 
     lat, lng = df["Latitude"].mean(), df["Longitude"].mean()
@@ -426,11 +540,12 @@ def plot_stations(df, title="map"):
             popup=str(row["Station_ID"]),
         ).add_to(m)
 
-    m.save(title + ".html")
-    webbrowser.open("file://" + os.path.realpath(title + ".html"))
+    m.save("results/" + title + ".html")
+    if show:
+        webbrowser.open("file://" + os.path.realpath("results" + title + ".html"))
 
 
-def plot_diff_stations(df, df2, title="map"):
+def plot_diff_stations(df, df2, title, show):
     print(len(df.index), "stations plotting...")
 
     lat, lng = df["Latitude"].mean(), df["Longitude"].mean()
@@ -459,11 +574,12 @@ def plot_diff_stations(df, df2, title="map"):
             popup=str(sid)
         ).add_to(m)
 
-    m.save(title + ".html")
-    webbrowser.open("file://" + os.path.realpath(title + ".html"))
+    m.save("results/" + title + ".html")
+    if show:
+        webbrowser.open("file://" + os.path.realpath("results/" + title + ".html"))
 
 
-def show_station_change(raw_trip_data_path, station_data, trip_data):
+def show_station_change(raw_trip_data_path, station_data, trip_data, show):
     location_raw_data = utils.read_raw_location_data(raw_trip_data_path)
     location_raw_data.rename(
         columns={'Start_Station_ID': 'Station_ID', "Start_Latitude": "Latitude", "Start_Longitude": "Longitude"},
@@ -474,13 +590,13 @@ def show_station_change(raw_trip_data_path, station_data, trip_data):
     location_raw_data['Station_ID'] = location_raw_data['Station_ID'].astype(np.int16)
     location_raw_data.drop_duplicates(inplace=True)
     location_raw_data.reset_index(inplace=True, drop=True)
-    plot_stations(location_raw_data)
-    plot_diff_stations(location_raw_data, station_data)
+    plot_stations(location_raw_data, "map3", show)
+    plot_diff_stations(location_raw_data, station_data, "map4", show)
     location_data = utils.get_station_list(trip_data)
-    plot_stations(location_data)
+    plot_stations(location_data, "map5", show)
 
 
-def plot_unbalance_network(df):
+def plot_unbalance_network(df, filename, show):
     day_count = (pd.to_datetime(df["Start_Time"]).max() - pd.to_datetime(df["Start_Time"]).min()) / np.timedelta64(1,
                                                                                                                    'D')
     stations = utils.get_start_station_dict(df)
@@ -571,7 +687,12 @@ def plot_unbalance_network(df):
 
     ax.set_axis_off()
     fig.tight_layout()
-    plt.show()
+    plt.savefig("results/" + filename, bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
 
 def generate_base_map(location=[40.693943, -73.985880], zoom_start=12, tiles="Cartodb Positron"):
@@ -584,7 +705,7 @@ def generate_dual_map(location=[40.693943, -73.985880], zoom_start=12, tiles="Ca
     return base_map
 
 
-def analyse_demographic_pattern(raw_data_path):
+def analyse_demographic_pattern(raw_data_path, show):
     df = utils.read_raw_demographic_data(raw_data_path)
     df.loc[:, 'Trip_Duration'] = ((df.loc[:, 'Trip_Duration'] / 60).apply(np.ceil)).astype(np.int32)
 
@@ -598,7 +719,12 @@ def analyse_demographic_pattern(raw_data_path):
     plt.pie(df.groupby("Gender").size(), labels=['Masculine', 'Female'], autopct='%1.1f%%',
             pctdistance=0.6, labeldistance=1.05, radius=1)
     plt.title('Gender distribution')
-    plt.show()
+    plt.savefig('results/p17.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Age & Trip duration relation
     tmp = df.groupby(['Gender', "Age"])["Trip_Duration"].mean().reset_index(name='counts')
@@ -610,7 +736,12 @@ def analyse_demographic_pattern(raw_data_path):
         plt.plot(tmp[tmp['Gender'] == i + 1]['Age'], tmp[tmp['Gender'] == i + 1]['counts'], linestyle='-', marker='o',
                  label=label)
     plt.legend()
-    plt.show()
+    plt.savefig('results/p18.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Schedule & Gender
     df["Hour"] = df["Start_Time"].dt.hour
@@ -629,7 +760,12 @@ def analyse_demographic_pattern(raw_data_path):
         plt.plot(tmp[tmp['Gender'] == i + 1]['Hour'], tmp[tmp['Gender'] == i + 1]['counts'], linestyle='-', marker='o',
                  label=label)
     plt.legend()
-    plt.show()
+    plt.savefig('results/p19.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     # Schedule & Age
     bins = list(range(24))
@@ -644,16 +780,26 @@ def analyse_demographic_pattern(raw_data_path):
     for i in tmp["Age"].unique():
         plt.plot(tmp[tmp['Age'] == i]['Hour'], tmp[tmp['Age'] == i]['counts'], linestyle='-', marker='o', label=i)
     plt.legend()
-    plt.show()
+    plt.savefig('results/p20.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
 
-def analyse_weather_trip(df):
+def analyse_weather_trip(df, show):
     temp = df.groupby("Temperature").agg({"Count":"mean"})
     plt.title("Hourly Trip Count by Temperature")
     plt.xlabel("Celsius")
     plt.ylabel("Average Hourly Trip Count")
     plt.plot(temp.index, temp["Count"])
-    plt.show()
+    plt.savefig('results/p11.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     mt = temp.idxmax()
     print(df[df["Temperature"] == mt.tolist()[0]])
@@ -663,7 +809,12 @@ def analyse_weather_trip(df):
     plt.xlabel("Mile")
     plt.ylabel("Average Hourly Trip Count")
     plt.plot(vis.index, vis["Count"])
-    plt.show()
+    plt.savefig('results/p12.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     hum = df.groupby("Humidity").agg({"Count":"mean"})
     plt.title("Hourly Trip Count by Humidity")
@@ -671,7 +822,12 @@ def analyse_weather_trip(df):
     plt.ylabel("Average Hourly Trip Count")
     plt.plot(hum.index, hum["Count"])
     #plt.xlim((0,100))
-    plt.show()
+    plt.savefig('results/p13.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     #mt = hum.sort_values("Count", ascending=False)
     #print(mt)
@@ -682,7 +838,12 @@ def analyse_weather_trip(df):
     plt.xlabel("KPH")
     plt.ylabel("Average Hourly Trip Count")
     plt.plot(wind.index, wind["Count"])
-    plt.show()
+    plt.savefig('results/p14.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     wind = df.groupby("Wind", as_index=False).agg({"Count":"mean"})
     wind = wind.groupby(pd.cut(wind["Wind"], np.arange(0, wind["Wind"].max()+1, 1))).sum()
@@ -690,7 +851,12 @@ def analyse_weather_trip(df):
     plt.xlabel("KPH")
     plt.ylabel("Average Hourly Trip Count")
     plt.plot([x.left for x in wind.index], wind["Count"])
-    plt.show()
+    plt.savefig('results/p15.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     plt.figure(figsize=(10, 7))
     cond = df.groupby("Condition")
@@ -706,4 +872,9 @@ def analyse_weather_trip(df):
         b.set_facecolor(c)
 
     plt.xticks(np.arange(len(list(cond.groups.keys())))+1, list(cond.groups.keys()), rotation=45)
-    plt.show()
+    plt.savefig('results/p16.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()

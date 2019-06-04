@@ -15,7 +15,7 @@ def main():
 
     parser.add_argument("-ot", type=int, help="Outlier threshold")
 
-    parser.add_argument("-s", action="store_true", help="print statistical report")
+    parser.add_argument("-s", action="store_true", help="plot statistical report")
 
     args = parser.parse_args()
 
@@ -24,6 +24,7 @@ def main():
     trip_data_path = args.ct
     raw_weather_data_path = args.rw
     raw_trip_data_path = args.rt
+    show = args.s
 
     pd.set_option('display.precision', 4)
     pd.set_option('display.max_columns', 500)
@@ -61,44 +62,50 @@ def main():
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)
 
-    if args.s:
-        # Statistical analysis
-        print("{0:*^80}".format(" Statistic Analysis "))
 
-        print("{0:-^80}".format(" Weather Analysis "))
-        statistics.analyse_weather(weather_data, 2017)
+    # Statistical analysis
+    print("{0:*^80}".format(" Statistic Analysis "))
 
-        pick_ups = trip_data[['Start_Time']].copy()
-        pick_ups.rename(columns={"Start_Time": "Timestamp"}, inplace=True)
-        start = pick_ups["Timestamp"].min().replace(hour=0, minute=0, second=0)
-        end = pick_ups["Timestamp"].max().replace(hour=23, minute=59)
+    print("{0:-^80}".format(" Weather Analysis "))
+    statistics.analyse_weather(weather_data, 2017, show)
 
-        index = pd.date_range(start=start, end=end, freq='30Min', normalize=True)
+    pick_ups = trip_data[['Start_Time']].copy()
+    pick_ups.rename(columns={"Start_Time": "Timestamp"}, inplace=True)
+    start = pick_ups["Timestamp"].min().replace(hour=0, minute=0, second=0)
+    end = pick_ups["Timestamp"].max().replace(hour=23, minute=59)
 
-        pick_ups = utils.aggregate_by_time_slot(pick_ups, 30, index)
-        pick_ups = utils.fill_weather_data(pick_ups, weather_data)
+    index = pd.date_range(start=start, end=end, freq='30Min', normalize=True)
 
-        statistics.analyse_weather_trip(pick_ups)
+    pick_ups = utils.aggregate_by_time_slot(pick_ups, 30, index)
+    pick_ups = utils.fill_weather_data(pick_ups, weather_data)
 
-        print("{0:-^80}".format(" Demographic Analysis "))
-        statistics.analyse_demographic_pattern(raw_trip_data_path)
+    statistics.analyse_weather_trip(pick_ups, show)
 
-        print("{0:-^80}".format(" Trip Analysis "))
-        statistics.analyse_trip_duration(trip_data)
+    print("{0:-^80}".format(" Demographic Analysis "))
+    statistics.analyse_demographic_pattern(raw_trip_data_path, show)
 
-        print("{0:-^80}".format(" Time Analysis "))
-        statistics.analyse_date_pattern(trip_data)
+    print("{0:-^80}".format(" Trip Analysis "))
+    statistics.analyse_trip_duration(trip_data, None, show)
 
-        print("{0:-^80}".format(" Geographic Analysis "))
-        statistics.plot_stations(station_data)
-        statistics.show_station_change(raw_trip_data_path, station_data, trip_data)
-        statistics.analyse_geo_pattern(trip_data)
-        statistics.analyse_geo_pattern(trip_data[(trip_data['Start_Hour'] >= 7) & (trip_data['Start_Hour'] <= 9)])
-        statistics.analyse_geo_pattern(trip_data[(trip_data['Start_Hour'] >= 17) & (trip_data['Start_Hour'] <= 19)])
+    print("{0:-^80}".format(" Time Analysis "))
+    statistics.analyse_date_pattern(trip_data, show)
 
-        statistics.plot_unbalance_network(trip_data)
-        statistics.plot_unbalance_network(trip_data[(trip_data['Start_Hour'] >= 7) & (trip_data['Start_Hour'] <= 9)])
-        statistics.plot_unbalance_network(trip_data[(trip_data['Start_Hour'] >= 17) & (trip_data['Start_Hour'] <= 19)])
+    print("{0:-^80}".format(" Geographic Analysis "))
+    statistics.plot_stations(station_data, "map2", show)
+    statistics.show_station_change(raw_trip_data_path, station_data, trip_data, show)
+    statistics.analyse_geo_pattern(trip_data, "map6", show)
+    statistics.analyse_geo_pattern(
+        trip_data[(trip_data['Start_Weekday'] < 6) & (trip_data['Start_Hour'] >= 7) & (trip_data['Start_Hour'] <= 9)], "map7", show)
+    statistics.analyse_geo_pattern(
+        trip_data[(trip_data['Start_Weekday'] < 6) & (trip_data['Start_Hour'] >= 17) & (trip_data['Start_Hour'] <= 19)], "map8", show)
+
+    statistics.plot_unbalance_network(trip_data, "p33.pdf", show)
+    statistics.plot_unbalance_network(
+        trip_data[(trip_data['Start_Weekday'] < 6) & (trip_data['Start_Hour'] >= 7) & (trip_data['Start_Hour'] <= 9)],
+        "p34.pdf", show)
+    statistics.plot_unbalance_network(
+        trip_data[(trip_data['Start_Weekday'] < 6) & (trip_data['Start_Hour'] >= 17) & (trip_data['Start_Hour'] <= 19)],
+        "p35.pdf", show)
 
 
 if __name__ == '__main__':

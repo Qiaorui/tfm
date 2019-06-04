@@ -54,8 +54,9 @@ class ARIMA(BaseModel):
     def __init__(self):
         super().__init__()
         print("Creating ARIMA model")
+        self.model = {}
 
-    """
+    """ Old version
     def test(self, x, y, s, sids):
         y = pd.DataFrame(y)
         y['Station_ID'] = x['Station_ID']
@@ -209,6 +210,7 @@ class ARIMA(BaseModel):
                     if len(search_results) > 4:
                         break
             search_results = sorted(search_results, key=lambda x: x[2])
+
             station_parameters[sid] = search_results[0][:3]
             self.model[sid] = search_results[0][3]
 

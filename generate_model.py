@@ -367,6 +367,7 @@ def main():
 
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
 
+    """
     mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -374,13 +375,13 @@ def main():
     mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
+    """
 
     days_to_evaluate = [30, 14, 7, 1]
-
     mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -408,7 +409,7 @@ def main():
     mae, rmse, lstm5 = judge.evaluate_lstm_5(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     # Evaluate the prediction
     #print("{0:*^80}".format(" Evaluation "))
     #for n in days_to_evaluate:
@@ -441,22 +442,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-def counts(data, column):
-    full_list = []
-    datr = data[column].tolist()
-    total_words = " ".join(datr).split(' ')
-    # per rows
-    for i in range(len(datr)):
-        #first per row get the words
-        word_list = re.sub("[^\w]", " ",  datr[i]).split()
-        #cycle per word
-        total_row = []
-        for word in word_list:
-            count = []
-            count = total_words.count(word)
-            val = (word, count)
-            total_row.append(val)
-        full_list.append(total_row)
-    return full_list

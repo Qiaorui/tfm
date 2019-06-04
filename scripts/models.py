@@ -55,6 +55,7 @@ class ARIMA(BaseModel):
         super().__init__()
         print("Creating ARIMA model")
 
+    """
     def test(self, x, y, s, sids):
         y = pd.DataFrame(y)
         y['Station_ID'] = x['Station_ID']
@@ -136,6 +137,88 @@ class ARIMA(BaseModel):
             print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, aic))
 
         return search_results[0][0], search_results[0][1]
+    """
+
+    def test(self, x, y, s, sids):
+        y = pd.DataFrame(y)
+        y['Station_ID'] = x['Station_ID']
+        groups = y.groupby(["Station_ID"])
+
+        # ADF stationary test
+        adf_results = []
+        for Station_ID, df in groups:
+            res = adfuller(df['Count'].tolist())
+            adf_results.append((Station_ID, res[0], res[1]))
+
+        #for adf in adf_results:
+        #    print('Station ', adf[0], ' ADF Statistic:', adf[1], 'p-value:', adf[2])
+
+        non_stationary = [(sid, adf, p) for sid, adf, p in adf_results if p > 0.01]
+        if not non_stationary:
+            print("\nAll stations followed stationary time series")
+        else:
+            print("\nSome stations may be non-stationary")
+            for adf in non_stationary:
+                print('Station ', adf[0], ' ADF Statistic:', adf[1], 'p-value:', adf[2])
+
+        # Autocorrelation
+        station = groups.get_group(sids[0])
+        plot_acf(station['Count'], lags=np.arange(100))
+        plt.show()
+        # Partial Autocorrelation
+        plot_pacf(station['Count'], lags=np.arange(100))
+        plt.show()
+
+        # Grid Search
+        p = range(3)
+        q = range(3)
+        d = range(2)
+        options = list(itertools.product(p, d, q, p, d, q, [s]))
+        options.reverse()
+
+        station_parameters = {}
+        for sid, df in tqdm(groups, leave=False, total=len(groups), unit="group", desc="Finding best parameter"):
+            df = groups.get_group(sid)
+            df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
+
+            diff_days = (df.index.max() - df.index.min()) // np.timedelta64(1, 'D')
+            freq = df.index.freqstr
+
+            gc.collect()
+            search_results = []
+            for p, d, q, P, D, Q, S in options:
+                param = (p, d, q)
+                param_seasonal = (P, D, Q, S)
+
+                file_name = "SARIMA_{}_{}_{}_{}{}{}_{}{}{}x{}.pkl".format(diff_days, freq, sid, p, d, q, P, D, Q, S)
+                exists = os.path.exists("model/" + file_name)
+                results = None
+                try:
+                    if exists:
+                        results = SARIMAXResults.load("model/" + file_name)
+                    else:
+                        mod = sm.tsa.statespace.SARIMAX(df.drop("Station_ID", axis=1),
+                                                        order=param,
+                                                        seasonal_order=param_seasonal)
+                        results = mod.fit(disp=0)
+                        # results.save("model/" + file_name)
+                except Exception as e:
+                    continue
+                if not np.isnan(results.aic):
+                    search_results.append((param, param_seasonal, results.aic, results))
+                    if len(search_results) > 4:
+                        break
+            search_results = sorted(search_results, key=lambda x: x[2])
+            station_parameters[sid] = search_results[0][:3]
+            self.model[sid] = search_results[0][3]
+
+        sum_aic = 0
+        print("\nSelected Station Results :")
+        for sid, (param, param_seasonal, aic) in station_parameters.items():
+            sum_aic += aic
+            print('Station {} :  SARIMA{}x{} - AIC:{}'.format(sid, param, param_seasonal, aic))
+
+        print("\n Average AIC: ", sum_aic//len(sids))
 
     def fit(self, x, y, param, param_seasonal):
         self.model = {}
@@ -160,7 +243,7 @@ class ARIMA(BaseModel):
                 print(str(e))
                 sum_aic = np.nan
                 break
-        print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, sum_aic / len(groups)))
+        print('SARIMA{}x{} - AIC:{}'.format(param, param_seasonal, sum_aic / len(groups)))
 
     def predict(self, x):
         y = []

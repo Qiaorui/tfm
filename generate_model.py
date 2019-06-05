@@ -18,7 +18,7 @@ import warnings
 warnings.simplefilter("ignore")
 
 
-def pca(df, tv, seasonality):
+def pca(df, tv, seasonality, show):
 
     y = df[tv]
     x = df.drop(tv, axis=1)
@@ -26,11 +26,21 @@ def pca(df, tv, seasonality):
     N = 1000
     plt.plot(y.tail(N).index, y.tail(N))
     plt.gcf().autofmt_xdate()
-    plt.show()
+    plt.savefig('results/p1.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     decomposition = sm.tsa.seasonal_decompose(y.tail(N), model='additive', freq=seasonality)
     fig = decomposition.plot()
-    plt.show()
+    plt.savefig('results/p2.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     plt.figure(figsize=(8, 8))
     ax1 = plt.subplot(6, 1, 1)
@@ -68,13 +78,23 @@ def pca(df, tv, seasonality):
 
     plt.subplots_adjust(hspace = .001)
     plt.tight_layout()
-    plt.show()
+    plt.savefig('results/p3.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.cla()
+        plt.close()
 
     # Using Pearson Correlation
     plt.figure(figsize=(12, 10))
     cor = df.corr()
     sns.heatmap(cor, annot=True, cmap=plt.cm.RdBu)
-    plt.show()
+    plt.savefig('results/p4.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     pca = PCA(svd_solver='full')
     fit = pca.fit(x)
@@ -83,7 +103,12 @@ def pca(df, tv, seasonality):
     plt.semilogy(fit.explained_variance_ratio_, '--o', label="Explained Variance Ration")
     plt.semilogy(fit.explained_variance_ratio_.cumsum(), '--o', label="Cumulative Explained Variance Ratio")
     plt.legend()
-    plt.show()
+    plt.savefig('results/p5.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
 
 def prepare_data(df, weather_data, time_slot):
@@ -182,7 +207,7 @@ def lstrip_data(data, th):
 
 
 def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=None, lr=None, mlp=None,
-                                   lstm1=None, lstm2=None, lstm3=None, lstm4=None, lstm5=None, n_pre=2, n_post=2):
+                                   lstm1=None, lstm2=None, lstm3=None, lstm4=None, lstm5=None, n_pre=2, n_post=2, show=False):
     y = df['Count']
     x = df.drop('Count', axis=1)
     x_test = x.loc[th_day : th_day + pd.DateOffset(n_days)]
@@ -286,7 +311,13 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
         plt.plot(base_df[col], label=col)
     plt.gcf().autofmt_xdate()
     plt.legend()
-    plt.show()
+    filename = utils.get_next_filename("p")
+    plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
 
 def main():
@@ -295,17 +326,20 @@ def main():
     parser.add_argument("-ct", default="cleaned_data/JC_trip_data.csv", help="input cleaned trip data path")
     parser.add_argument("-ot", type=int, help="Outlier threshold")
     parser.add_argument("-ts", type=int, default=30, help="Time slot for the aggregation, units in minute")
-    #parser.add_argument("-tp", type=float, default=0.2, help="Test size percentage for split the data")
     parser.add_argument("-start", default="2017-01-01", help="Input start date")
-    parser.add_argument("-v", "--verbose", action="store_true", help="increase output verbosity")
+    parser.add_argument("-th", default="2018-12-01", help="Threshold datetime to split train and test dataset")
+
+    parser.add_argument("-s", action="store_true", help="plot statistical report")
 
     args = parser.parse_args()
 
     weather_data_path = args.cw
     trip_data_path = args.ct
     time_slot = args.ts
-    #test_pct = args.tp
+    #end = pd.to_datetime(args.end).normalize()
+    th_day = pd.to_datetime(args.th).normalize()
     start = pd.to_datetime(args.start).normalize()
+    show = args.s
     seasonality = 1440//time_slot if 1440//time_slot > 1 else 7
 
     pd.set_option('display.precision', 3)
@@ -340,10 +374,6 @@ def main():
     pick_ups.rename(columns={"Start_Station_ID": "Station_ID", "Start_Time": "Timestamp"}, inplace=True)
     #drop_offs.rename(columns={"Stop_Station_ID": "Station_ID", "Stop_Time": "Timestamp"}, inplace=True)
 
-    #th_day = pick_ups['Timestamp'].max().value - (pick_ups['Timestamp'].max().value - pick_ups['Timestamp'].min().value) * test_pct
-    #th_day = pd.to_datetime(th_day).normalize()
-    th_day = pd.to_datetime("2018-12-01").normalize()
-
     data = prepare_data(pick_ups, weather_data, time_slot)
 
     # Left Strip the data in case some station are new and hasn't historical data
@@ -356,7 +386,7 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    #pca(pca_data.drop('Station_ID', axis=1), 'Count', seasonality)
+    pca(pca_data.drop('Station_ID', axis=1), 'Count', seasonality, show)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
@@ -367,7 +397,6 @@ def main():
 
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
 
-    """
     mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -376,46 +405,46 @@ def main():
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
-
     days_to_evaluate = [30, 14, 7, 1]
-    mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index)
+    mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
-    mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station)
+    mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
     #data.drop(["Weekend", "Condition_Good"], axis=1, inplace=True)
-    """
+
     days_to_evaluate = [30, 14, 7]
-    mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
+    mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
-    mae, rmse, lstm2 = judge.evaluate_lstm_2(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
+    mae, rmse, lstm2 = judge.evaluate_lstm_2(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
-    mae, rmse, lstm3 = judge.evaluate_lstm_3(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
+    mae, rmse, lstm3 = judge.evaluate_lstm_3(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
     days_to_evaluate = [30, 14, 7, 1]
-    mae, rmse, lstm4 = judge.evaluate_lstm_4(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
+    mae, rmse, lstm4 = judge.evaluate_lstm_4(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
-    mae, rmse, lstm5 = judge.evaluate_lstm_5(data, th_day, days_to_evaluate, n_pre=seasonality, n_post=seasonality)
+    mae, rmse, lstm5 = judge.evaluate_lstm_5(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
+
 
     # Evaluate the prediction
-    #print("{0:*^80}".format(" Evaluation "))
-    #for n in days_to_evaluate:
-    #    plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=arima, ssa=ssa, lr=lr, mlp=mlp,
-    #                                   lstm1=lstm1, lstm2=lstm2, lstm3=lstm3, lstm4=lstm4, lstm5=lstm5, n_pre=seasonality,
-    #                                   n_post=seasonality)
+    print("{0:*^80}".format(" Evaluation "))
+    for n in days_to_evaluate:
+        plot_sample_station_prediction(pca_data, th_day, n, ha=ha, arima=arima, ssa=ssa, lr=lr, mlp=mlp,
+                                       lstm1=lstm1, lstm2=lstm2, lstm3=lstm3, lstm4=lstm4, lstm5=lstm5, n_pre=seasonality,
+                                       n_post=seasonality, show=show)
 
     mae_df.sort_index(inplace=True)
     rmse_df.sort_index(inplace=True)
@@ -430,14 +459,26 @@ def main():
     plt.ylabel("MAE")
     plt.xticks(days_to_evaluate, xs_label)
     plt.legend()
-    plt.show()
+    filename = utils.get_next_filename("p")
+    plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     for col in rmse_df:
         plt.plot(rmse_df[col].dropna(), linestyle='-', marker='o', label=col)
     plt.ylabel("RMSE")
     plt.xticks(days_to_evaluate, xs_label)
     plt.legend()
-    plt.show()
+    filename = utils.get_next_filename("p")
+    plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
 
 if __name__ == '__main__':

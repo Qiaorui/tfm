@@ -87,7 +87,7 @@ def evaluate_ha(data, th_day, n_days):
     return mae_df, rmse_df, ha
 
 
-def evaluate_ssa(data, th_day, n_days, seasonality, busiest_station):
+def evaluate_ssa(data, th_day, n_days, seasonality, busiest_station, show):
     x_train = data[data.index < th_day]
     y_train = x_train['Count']
     x_train.drop('Count', axis=1, inplace=True)
@@ -97,7 +97,7 @@ def evaluate_ssa(data, th_day, n_days, seasonality, busiest_station):
     x_test.drop('Count', axis=1, inplace=True)
 
     ssa = models.SSA()
-    ssa_param = ssa.test(x_train, y_train, seasonality, busiest_station)
+    ssa_param = ssa.test(x_train, y_train, seasonality, busiest_station, show)
     ssa.fit(x_train, y_train, ssa_param)
 
     mae_dict = {}
@@ -117,7 +117,7 @@ def evaluate_ssa(data, th_day, n_days, seasonality, busiest_station):
     return mae_df, rmse_df, ssa
 
 
-def evaluate_arima(data, th_day, n_days, seasonality, sids):
+def evaluate_arima(data, th_day, n_days, seasonality, sids, show):
     x_train = data[data.index < th_day]
     y_train = x_train['Count']
     x_train.drop('Count', axis=1, inplace=True)
@@ -127,7 +127,7 @@ def evaluate_arima(data, th_day, n_days, seasonality, sids):
     x_test.drop('Count', axis=1, inplace=True)
 
     arima = models.ARIMA()
-    arima.test(x_train, y_train, seasonality, sids)
+    arima.test(x_train, y_train, seasonality, sids, show)
     #arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, seasonality))
 
     mae_dict = {}
@@ -209,8 +209,8 @@ def evaluate_mlp(data, th_day, n_days):
 non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
 #non_sequential_columns = ['Station_ID', 'Holiday']
 
-def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
 
+def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2, show=False):
 
     x_sec = pd.DataFrame()
     x_non_sec = pd.DataFrame()
@@ -249,7 +249,7 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
     y_test = y[y.index >= th_day]
 
     lstm = models.LSTM(n_pre, n_post)
-    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=1)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=1, show=show)
 
     mae_dict = {}
     rmse_dict = {}
@@ -269,7 +269,7 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2):
     return mae_df, rmse_df, lstm
 
 
-def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
+def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2, show=False):
 
     x_sec = pd.DataFrame()
     x_non_sec = pd.DataFrame()
@@ -308,7 +308,7 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
     y_test = y[y.index >= th_day]
 
     lstm = models.LSTM(n_pre, n_post)
-    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=2)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=2, show=show)
 
     mae_dict = {}
     rmse_dict = {}
@@ -328,7 +328,7 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2):
     return mae_df, rmse_df, lstm
 
 
-def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2):
+def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2, show=False):
 
     x_sec = pd.DataFrame()
     x_future_sec = pd.DataFrame()
@@ -373,7 +373,7 @@ def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2):
     x_future_sec_test = x_future_sec[x_future_sec.index >= th_day]
 
     lstm = models.LSTM(n_pre, n_post)
-    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, 3, x_future_sec_train, x_future_sec_test)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, 3, x_future_sec_train, x_future_sec_test, show=show)
 
     mae_dict = {}
     rmse_dict = {}
@@ -394,7 +394,7 @@ def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2):
     return mae_df, rmse_df, lstm
 
 
-def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
+def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2, show=False):
 
     x_sec = pd.DataFrame()
     x_non_sec = pd.DataFrame()
@@ -433,7 +433,7 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
     y_test = y[y.index >= th_day]
 
     lstm = models.LSTM(n_pre, n_post)
-    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=1)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type=1, show=show)
 
     mae_dict = {}
     rmse_dict = {}
@@ -472,7 +472,7 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2):
     return mae_df, rmse_df, lstm
 
 
-def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2):
+def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2, show=False):
 
     x_sec = pd.DataFrame()
     x_future_sec = pd.DataFrame()
@@ -517,7 +517,7 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2):
     x_future_sec_test = x_future_sec[x_future_sec.index >= th_day]
 
     lstm = models.LSTM(n_pre, n_post)
-    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, 3, x_future_sec_train, x_future_sec_test)
+    lstm.fit(x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, 3, x_future_sec_train, x_future_sec_test, show=show)
 
     mae_dict = {}
     rmse_dict = {}

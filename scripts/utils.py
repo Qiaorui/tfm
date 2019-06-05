@@ -9,6 +9,8 @@ import numpy as np
 import urllib.request
 import json
 import certifi
+import glob
+import re
 
 BASE_URL = "https://s3.amazonaws.com/tripdata/"
 BASE_PATTERN_NYC = "{}-citibike-tripdata.csv.zip"
@@ -333,3 +335,10 @@ def closest(v, data):
         v["Distance"] = distance(res["Latitude"], res["Longitude"], v['Latitude'], v['Longitude'])
     v["Closest_Station_ID"] = res["Station_ID"]
     return v
+
+
+def get_next_filename(prefix):
+    all_files = glob.glob("results/" + prefix + "[0-9]*.pdf")
+    all_numbers = [int(re.search(r'\d+', name).group()) for name in all_files]
+
+    return prefix + str(max(all_numbers)+1) if all_numbers else prefix + "1"

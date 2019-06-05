@@ -1,4 +1,5 @@
 from .mySSA import mySSA
+from . import utils
 import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -140,7 +141,7 @@ class ARIMA(BaseModel):
         return search_results[0][0], search_results[0][1]
     """
 
-    def test(self, x, y, s, sids):
+    def test(self, x, y, s, sids, show):
         y = pd.DataFrame(y)
         y['Station_ID'] = x['Station_ID']
         groups = y.groupby(["Station_ID"])
@@ -165,10 +166,22 @@ class ARIMA(BaseModel):
         # Autocorrelation
         station = groups.get_group(sids[0])
         plot_acf(station['Count'], lags=np.arange(100))
-        plt.show()
+        filename = utils.get_next_filename("p")
+        plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+        if show:
+            plt.show()
+        else:
+            plt.clf()
+            plt.close()
         # Partial Autocorrelation
         plot_pacf(station['Count'], lags=np.arange(100))
-        plt.show()
+        filename = utils.get_next_filename("p")
+        plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+        if show:
+            plt.show()
+        else:
+            plt.clf()
+            plt.close()
 
         # Grid Search
         p = range(3)
@@ -271,7 +284,7 @@ class SSA(BaseModel):
         super().__init__()
         print("Creating SSA model")
 
-    def test(self, x, y, s, sid):
+    def test(self, x, y, s, sid, show):
         y = pd.DataFrame(y)
         y['Station_ID'] = x['Station_ID']
         groups = y.groupby(["Station_ID"])
@@ -295,7 +308,13 @@ class SSA(BaseModel):
         plt.xlabel("Singular i")
         plt.xticks(range(len(mean_contrib)), range(1, len(mean_contrib)+1))
         plt.title("contribution of Singular")
-        plt.show()
+        filename = utils.get_next_filename("p")
+        plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+        if show:
+            plt.show()
+        else:
+            plt.clf()
+            plt.close()
 
         cumulative = np.cumsum(mean_contrib)
         plt.figure(figsize=(11, 4))
@@ -304,7 +323,13 @@ class SSA(BaseModel):
         plt.xticks(range(len(mean_contrib)), range(1, len(mean_contrib)+1))
         plt.axhline(y=0.8, color='r', linestyle='-')
         plt.title("Cumulative Contribution of Singular")
-        plt.show()
+        filename = utils.get_next_filename("p")
+        plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+        if show:
+            plt.show()
+        else:
+            plt.clf()
+            plt.close()
 
         #signal_size = next(x[0] for x in enumerate(cumulative) if x[1] > 0.8) + 1
         signal_size = 5
@@ -318,13 +343,25 @@ class SSA(BaseModel):
         for i in range(signal_size):
             plt.figure(figsize=(11,2))
             ssa.view_reconstruction(ssa.Xs[i], names=i, symmetric_plots=i != 0)
-            plt.show()
+            filename = utils.get_next_filename("p")
+            plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+            if show:
+                plt.show()
+            else:
+                plt.clf()
+                plt.close()
 
         ts_copy10 = ssa.ts.copy()
         reconstructed10 = ssa.view_reconstruction(*[ssa.Xs[i] for i in list(range(signal_size))], names=list(range(signal_size)), return_df=True, plot=False)
         ts_copy10['Reconstruction'] = reconstructed10.Reconstruction.values
         ts_copy10.plot(title='Original vs. Reconstructed Time Series')
-        plt.show()
+        filename = utils.get_next_filename("p")
+        plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+        if show:
+            plt.show()
+        else:
+            plt.clf()
+            plt.close()
 
         return signal_size
 
@@ -560,7 +597,7 @@ class LSTM(BaseModel):
         # Create keras model
         return keras.Model(inputs=[encoder_inputs, decoder_inputs, non_sequential_input_layer], outputs=output_layer)
 
-    def fit(self, x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type, x_future_sec_train=None, x_future_sec_test=None):
+    def fit(self, x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type, x_future_sec_train=None, x_future_sec_test=None, show=False):
         if 'Station_ID' in x_non_sec_train.columns:
             dum = pd.get_dummies(x_non_sec_train['Station_ID'], prefix="Station")
             self.data = dum.columns.values
@@ -612,7 +649,14 @@ class LSTM(BaseModel):
         plt.ylabel('Loss')
         plt.xlabel('Epoch')
         plt.legend(['Train', 'Test'], loc='upper left')
-        plt.show()
+
+        filename = utils.get_next_filename("p")
+        plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+        if show:
+            plt.show()
+        else:
+            plt.clf()
+            plt.close()
 
     def predict(self, x_sec, x_non_sec, x_future_sec=None):
         if 'Station_ID' in x_non_sec.columns:

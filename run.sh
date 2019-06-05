@@ -47,8 +47,8 @@ start_model () {
                 do
                     echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]}"
                     python3 generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} > ./results/log.txt
-                    mkdir "JC_${ts}_${START_LIST[$j]}-${TH_LIST[$i]}"
-                    mv ./results/* "JC_${ts}_${START_LIST[$j]}-${TH_LIST[$i]}"
+                    mkdir "JC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
+                    mv ./results/* "JC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                 done
             done
         done
@@ -64,8 +64,8 @@ start_model () {
                 do
                     echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]}"
                     python3 generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/NYC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} > ./results/log.txt
-                    mkdir "JC_${ts}_${START_LIST[$j]}-${TH_LIST[$i]}"
-                    mv ./results/* "JC_${ts}_${START_LIST[$j]}-${TH_LIST[$i]}"
+                    mkdir "NYC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
+                    mv ./results/* "NYC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                 done
             done
         done

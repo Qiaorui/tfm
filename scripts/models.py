@@ -12,13 +12,8 @@ import sklearn.linear_model
 import sklearn.neural_network
 import sklearn.model_selection
 import keras
-from scipy import stats
-from sklearn.preprocessing import MinMaxScaler
-
-from time import time
-from tensorflow.python.keras.callbacks import TensorBoard
-import tensorflow as tf
-
+#from scipy import stats
+#from sklearn.preprocessing import MinMaxScaler
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.statespace.sarimax import SARIMAXResults

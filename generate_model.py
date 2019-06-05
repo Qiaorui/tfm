@@ -4,7 +4,6 @@ from scripts import judge
 import pandas as pd
 import gc
 import argparse
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -332,7 +331,6 @@ def main():
     parser.add_argument("-s", action="store_true", help="plot statistical report")
 
     args = parser.parse_args()
-
     weather_data_path = args.cw
     trip_data_path = args.ct
     time_slot = args.ts
@@ -367,7 +365,6 @@ def main():
     print("Breaking trip data to pick-up data and drop-off data")
     pick_ups = trip_data[['Start_Station_ID', 'Start_Time']].copy()
     #drop_offs = trip_data[['End_Station_ID', 'Stop_Time']].copy()
-
     del trip_data
     gc.collect()
 

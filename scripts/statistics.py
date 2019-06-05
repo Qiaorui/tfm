@@ -13,6 +13,8 @@ import webbrowser
 import networkx as nx
 import os
 from pandas.plotting import register_matplotlib_converters
+import warnings
+warnings.simplefilter("ignore")
 
 register_matplotlib_converters()
 

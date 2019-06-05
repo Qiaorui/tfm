@@ -1,3 +1,9 @@
+import warnings
+warnings.filterwarnings("ignore")
+import os
+import sys
+stderr = sys.stderr
+sys.stderr = open(os.devnull, 'w')
 from scripts import preprocess
 from scripts import utils
 from scripts import judge
@@ -13,8 +19,7 @@ import statsmodels.api as sm
 from sklearn.preprocessing import MinMaxScaler
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
-import warnings
-warnings.simplefilter("ignore")
+sys.stderr = stderr
 
 
 def pca(df, tv, seasonality, show):

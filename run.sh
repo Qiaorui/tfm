@@ -100,7 +100,7 @@ if [[ $2 = "all" ]]; then
     NYC_FLAG=1
 fi
 
-
+mkdir -p results
 if [[ $ANALYZE_FLAG = 1 ]]; then
     start_analyze
 fi

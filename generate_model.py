@@ -7,6 +7,7 @@ sys.stderr = open(os.devnull, 'w')
 from scripts import preprocess
 from scripts import utils
 from scripts import judge
+sys.stderr = stderr
 import pandas as pd
 import gc
 import argparse
@@ -19,7 +20,7 @@ import statsmodels.api as sm
 from sklearn.preprocessing import MinMaxScaler
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
-sys.stderr = stderr
+
 
 
 def pca(df, tv, seasonality, show):

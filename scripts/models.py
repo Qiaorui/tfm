@@ -215,7 +215,7 @@ class ARIMA(BaseModel):
                     continue
                 if not np.isnan(results.aic):
                     search_results.append((param, param_seasonal, results.aic, results))
-                    if len(search_results) > 4:
+                    if len(search_results) > 10:
                         break
             search_results = sorted(search_results, key=lambda x: x[2])
 

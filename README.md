@@ -43,18 +43,18 @@ optional arguments:
 ```
 
 ```
-usage: prepare.py [-h] [-rw RW] [-cw CW] [-rt RT] [-ct CT] [-cs CS] [-ot OT]
-                  [-s]
+usage: generate_model.py [-h] [-cw CW] [-ct CT] [-ot OT] [-ts TS]
+                         [-start START] [-th TH] [-s]
 
 optional arguments:
-  -h, --help  show this help message and exit
-  -rw RW      input raw weather data path
-  -cw CW      input cleaned weather data path
-  -rt RT      input raw trip data path
-  -ct CT      input cleaned trip data path
-  -cs CS      input cleaned trip data path
-  -ot OT      Outlier threshold
-  -s          plot statistical report
+  -h, --help    show this help message and exit
+  -cw CW        input cleaned weather data path
+  -ct CT        input cleaned trip data path
+  -ot OT        Outlier threshold
+  -ts TS        Time slot for the aggregation, units in minute
+  -start START  Input start date
+  -th TH        Threshold datetime to split train and test dataset
+  -s            plot statistical report
 ```
 > Note: if any error happens please check prerequisites first.
 

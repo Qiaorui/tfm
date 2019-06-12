@@ -19,7 +19,7 @@ start_analyze () {
         # JC analysis
         echo "----Start analyzing JC"
         python3 prepare.py -ot ${OUTLIER_THRESHOLD} -rt "raw_data/JC*tripdata.csv" -ct "cleaned_data/JC_trip_data.csv" > ./results/log.txt
-        mkdir analysis_JC
+        mkdir -p analysis_JC
         mv ./results/* analysis_JC
     fi
 
@@ -27,7 +27,7 @@ start_analyze () {
         # NYC analysis
         echo "----Start analyzing NYC"
         python3 prepare.py -ot ${OUTLIER_THRESHOLD} -rt "raw_data/201*tripdata.csv" -ct "cleaned_data/NYC_trip_data.csv" > ./results/log.txt
-        mkdir analysis_NYC
+        mkdir -p analysis_NYC
         mv ./results/* analysis_NYC
     fi
 
@@ -47,7 +47,7 @@ start_model () {
                 do
                     echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]}"
                     python3 generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} > ./results/log.txt
-                    mkdir "JC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
+                    mkdir -p "JC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                     mv ./results/* "JC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                 done
             done
@@ -64,7 +64,7 @@ start_model () {
                 do
                     echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]}"
                     python3 generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/NYC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} > ./results/log.txt
-                    mkdir "NYC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
+                    mkdir -p "NYC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                     mv ./results/* "NYC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                 done
             done

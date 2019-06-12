@@ -92,6 +92,8 @@ def unzip(zip_path):
 
 def read_raw_trip_data(path):
     all_files = glob.glob(path)
+    if len(all_files) < 3:
+        return None
     frame_list = []
     for f in tqdm(all_files, leave=False, unit="file", desc="Loading data"):
         df = pd.read_csv(f,

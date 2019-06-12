@@ -8,11 +8,9 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 
 def preprocess_trips(raw_path, dest_path, stations):
     df = utils.read_raw_trip_data(raw_path)
-
-    print("Raw size:", df.info(memory_usage='deep'))
-
     if df is None:
         return False
+    print("Raw size:", df.info(memory_usage='deep'))
 
     print(df.describe())
     print(df.isnull().sum())

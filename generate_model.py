@@ -22,7 +22,6 @@ from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
 
-
 def pca(df, tv, seasonality, show):
 
     y = df[tv]
@@ -440,7 +439,6 @@ def main():
     mae, rmse, lstm5 = judge.evaluate_lstm_5(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
 
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))

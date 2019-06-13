@@ -12,6 +12,8 @@ import sklearn.linear_model
 import sklearn.neural_network
 import sklearn.model_selection
 import keras
+import joblib
+import multiprocessing
 #from scipy import stats
 #from sklearn.preprocessing import MinMaxScaler
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
@@ -46,95 +48,43 @@ class HA(BaseModel):
         return y
 
 
+def search_best_arima_model(sid, df, options):
+    df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
+    diff_days = (df.index.max() - df.index.min()) // np.timedelta64(1, 'D')
+    freq = df.index.freqstr
+    search_results = []
+    for p, d, q, P, D, Q, S in options:
+        param = (p, d, q)
+        param_seasonal = (P, D, Q, S)
+
+        file_name = "SARIMA_{}_{}_{}_{}{}{}_{}{}{}x{}.pkl".format(diff_days, freq, sid, p, d, q, P, D, Q, S)
+        exists = os.path.exists("model/" + file_name)
+        results = None
+        try:
+            if exists:
+                results = SARIMAXResults.load("model/" + file_name)
+            else:
+                mod = sm.tsa.statespace.SARIMAX(df.drop("Station_ID", axis=1),
+                                                order=param,
+                                                seasonal_order=param_seasonal)
+                results = mod.fit(disp=0)
+                # results.save("model/" + file_name)
+        except Exception as e:
+            continue
+        if not np.isnan(results.aic):
+            search_results.append((param, param_seasonal, results.aic, results))
+            if len(search_results) > 5:
+                break
+    search_results = sorted(search_results, key=lambda x: x[2])
+
+    return sid, search_results[0][0], search_results[0][1], search_results[0][2], search_results[0][3]
+
+
 class ARIMA(BaseModel):
     def __init__(self):
         super().__init__()
         print("Creating ARIMA model")
         self.model = {}
-
-    """ Old version
-    def test(self, x, y, s, sids):
-        y = pd.DataFrame(y)
-        y['Station_ID'] = x['Station_ID']
-        groups = y.groupby(["Station_ID"])
-
-        # ADF stationary test
-        adf_results = []
-        for Station_ID, df in tqdm(groups, leave=False, total=len(groups), unit="group", desc="ADF test"):
-            res = adfuller(df['Count'].tolist())
-            adf_results.append((Station_ID, res[0], res[1]))
-
-        for adf in adf_results:
-            print('Station ', adf[0], ' ADF Statistic:', adf[1], 'p-value:', adf[2])
-
-        non_stationary = [(sid, adf, p) for sid, adf, p in adf_results if p > 0.01]
-        if not non_stationary:
-            print("\nAll stations followed stationary time series")
-        else:
-            print("\nSome stations may be non-stationary")
-            for adf in non_stationary:
-                print('Station ', adf[0], ' ADF Statistic:', adf[1], 'p-value:', adf[2])
-
-        # Autocorrelation
-        station = groups.get_group(sids[0])
-        plot_acf(station['Count'], lags=np.arange(100))
-        plt.show()
-        # Partial Autocorrelation
-        plot_pacf(station['Count'], lags=np.arange(100))
-        plt.show()
-
-        # Grid Search
-        p = range(3)
-        q = range(3)
-        d = range(2)
-        options = list(itertools.product(p, d, q, p, d, q, [s]))
-        options.reverse()
-
-        search_results = []
-        for p, d, q, P, D, Q, S in tqdm(options, leave=False, total=len(options), unit="option", desc="ARIMA order"):
-            sum_aic = 0
-            param = (p, d, q)
-            param_seasonal = (P, D, Q, S)
-
-            gc.collect()
-            for sid in sids:
-                df = groups.get_group(sid)
-                df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
-
-                diff_days = (df.index.max() - df.index.min())//np.timedelta64(1,'D')
-                freq = df.index.freqstr
-
-                file_name = "SARIMA_{}_{}_{}_{}{}{}_{}{}{}x{}.pkl".format(diff_days, freq, sid, p,d,q,P,D,Q,S)
-                exists = os.path.exists("model/" + file_name)
-                try:
-                    results = None
-                    if exists:
-                        results = SARIMAXResults.load("model/" + file_name)
-                    else:
-                        mod = sm.tsa.statespace.SARIMAX(df.drop("Station_ID", axis=1),
-                                                    order=param,
-                                                    seasonal_order=param_seasonal)
-                        results = mod.fit(disp=0)
-                        #results.save("model/" + file_name)
-                    if np.isnan(results.aic):
-                        sum_aic = np.nan
-                        break
-                    sum_aic += results.aic
-                except Exception as e:
-                    print(str(e))
-                    sum_aic = np.nan
-                    break
-            if not np.isnan(sum_aic):
-                search_results.append((param, param_seasonal, sum_aic/len(sids)))
-                if len(search_results) > 2:
-                    break
-        search_results = sorted(search_results, key=lambda x: x[2])
-        print("\nTop search results :")
-        for param, param_seasonal, aic in search_results:
-            print('ARIMA{}x{} - AIC:{}'.format(param, param_seasonal, aic))
-
-        return search_results[0][0], search_results[0][1]
-    """
 
     def test(self, x, y, s, sids, show):
         y = pd.DataFrame(y)
@@ -185,47 +135,15 @@ class ARIMA(BaseModel):
         options = list(itertools.product(p, d, q, p, d, q, [s]))
         options.reverse()
 
-        station_parameters = {}
-        for sid, df in tqdm(groups, leave=False, total=len(groups), unit="group", desc="Finding best parameter"):
-            df = groups.get_group(sid)
-            df.index = pd.DatetimeIndex(df.index.values, freq=df.index.inferred_freq)
-
-            diff_days = (df.index.max() - df.index.min()) // np.timedelta64(1, 'D')
-            freq = df.index.freqstr
-
-            gc.collect()
-            search_results = []
-            for p, d, q, P, D, Q, S in options:
-                param = (p, d, q)
-                param_seasonal = (P, D, Q, S)
-
-                file_name = "SARIMA_{}_{}_{}_{}{}{}_{}{}{}x{}.pkl".format(diff_days, freq, sid, p, d, q, P, D, Q, S)
-                exists = os.path.exists("model/" + file_name)
-                results = None
-                try:
-                    if exists:
-                        results = SARIMAXResults.load("model/" + file_name)
-                    else:
-                        mod = sm.tsa.statespace.SARIMAX(df.drop("Station_ID", axis=1),
-                                                        order=param,
-                                                        seasonal_order=param_seasonal)
-                        results = mod.fit(disp=0)
-                        # results.save("model/" + file_name)
-                except Exception as e:
-                    continue
-                if not np.isnan(results.aic):
-                    search_results.append((param, param_seasonal, results.aic, results))
-                    if len(search_results) > 10:
-                        break
-            search_results = sorted(search_results, key=lambda x: x[2])
-
-            station_parameters[sid] = search_results[0][:3]
-            self.model[sid] = search_results[0][3]
+        executor = joblib.Parallel(n_jobs=multiprocessing.cpu_count(), backend="multiprocessing")
+        tasks = (joblib.delayed(search_best_arima_model)(sid, df, options) for sid, df in groups)
+        station_parameters = executor(tasks)
 
         sum_aic = 0
         print("\nSelected Station Results :")
-        for sid, (param, param_seasonal, aic) in station_parameters.items():
+        for sid, param, param_seasonal, aic, model in station_parameters:
             sum_aic += aic
+            self.model[sid] = model
             print('Station {} :  SARIMA{}x{} - AIC:{}'.format(sid, param, param_seasonal, aic))
 
         print("\n Average AIC: ", sum_aic//len(sids))

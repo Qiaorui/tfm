@@ -452,7 +452,7 @@ class MLP(BaseModel):
             'activation': ['tanh', 'relu']
         }
         mlp = sklearn.neural_network.MLPRegressor(max_iter=500)
-        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, scoring='neg_mean_squared_error', cv=3)
+        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, n_jobs=-1, scoring='neg_mean_squared_error', cv=3)
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)
         means = ms.cv_results_['mean_test_score']

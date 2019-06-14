@@ -135,7 +135,7 @@ class ARIMA(BaseModel):
         options = list(itertools.product(p, d, q, p, d, q, [s]))
         options.reverse()
 
-        executor = joblib.Parallel(n_jobs=multiprocessing.cpu_count(), backend="multiprocessing")
+        executor = joblib.Parallel(n_jobs=multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, backend="multiprocessing")
         tasks = (joblib.delayed(search_best_arima_model)(sid, df, options) for sid, df in groups)
         station_parameters = executor(tasks)
 

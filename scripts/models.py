@@ -77,6 +77,8 @@ def search_best_arima_model(sid, df, options):
                 break
     search_results = sorted(search_results, key=lambda x: x[2])
 
+    print('Station {} :  SARIMA{}x{} - AIC:{}'.format(sid, search_results[0][0], search_results[0][1], search_results[0][2]))
+
     return sid, search_results[0][0], search_results[0][1], search_results[0][2], search_results[0][3]
 
 
@@ -135,9 +137,10 @@ class ARIMA(BaseModel):
         options = list(itertools.product(p, d, q, p, d, q, [s]))
         options.reverse()
 
-        executor = joblib.Parallel(n_jobs=multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, backend="multiprocessing")
-        tasks = (joblib.delayed(search_best_arima_model)(sid, df, options) for sid, df in groups)
-        station_parameters = executor(tasks)
+        #executor = joblib.Parallel(n_jobs=multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, backend="multiprocessing")
+        #tasks = (joblib.delayed(search_best_arima_model)(sid, df, options) for sid, df in groups)
+        #station_parameters = executor(tasks)
+        station_parameters = [search_best_arima_model(sid, df, options) for sid, df in groups]
 
         sum_aic = 0
         print("\nSelected Station Results :")
@@ -389,7 +392,7 @@ class MLP(BaseModel):
         n = x.shape[1] # Number of features, number of neurons in input layer
         o = 1 # Number of neurons in output layer
 
-        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(n*2//3, n//3, n+o), solver='sgd', activation='tanh', verbose=True)
+        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(n*2//3, n//3, n+o), solver='sgd', activation='tanh', max_iter=500, verbose=True)
         self.model.fit(x, y)
 
     def predict(self, x):

@@ -372,7 +372,7 @@ class MLP(BaseModel):
             'solver': ['sgd', 'adam'],
             'activation': ['tanh', 'relu']
         }
-        mlp = sklearn.neural_network.MLPRegressor(max_iter=500)
+        mlp = sklearn.neural_network.MLPRegressor(max_iter=1000)
         ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, n_jobs=multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, scoring='neg_mean_squared_error', cv=3)
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)
@@ -392,7 +392,7 @@ class MLP(BaseModel):
         n = x.shape[1] # Number of features, number of neurons in input layer
         o = 1 # Number of neurons in output layer
 
-        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(n*2//3, n//3, n+o), solver='sgd', activation='tanh', max_iter=500, verbose=True)
+        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(n*2//3, n//3, n+o), solver='sgd', activation='tanh', max_iter=1000, verbose=True)
         self.model.fit(x, y)
 
     def predict(self, x):

@@ -73,7 +73,7 @@ def search_best_arima_model(sid, df, options):
             continue
         if not np.isnan(results.aic):
             search_results.append((param, param_seasonal, results.aic, results))
-            if len(search_results) > 10:
+            if len(search_results) > 5:
                 break
     search_results = sorted(search_results, key=lambda x: x[2])
 
@@ -546,13 +546,14 @@ class LSTM(BaseModel):
 
         self.model = model
 
+        es = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, mode='min', restore_best_weights=True)
         # Train the model
         history = None
         if type == 3:
             history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train, batch_size=batch_size,
-                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=10, verbose=0)
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=100, verbose=0, callbacks=[es])
         else:
-            history = model.fit([x_sec_train, x_non_sec_train], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=10, verbose=0)
+            history = model.fit([x_sec_train, x_non_sec_train], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=100, verbose=0, callbacks=[es])
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

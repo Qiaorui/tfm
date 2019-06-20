@@ -73,11 +73,9 @@ def search_best_arima_model(sid, df, options):
             continue
         if not np.isnan(results.aic):
             search_results.append((param, param_seasonal, results.aic, results))
-            if len(search_results) > 5:
+            if len(search_results) > 10:
                 break
     search_results = sorted(search_results, key=lambda x: x[2])
-
-    print('Station {} :  SARIMA{}x{} - AIC:{}'.format(sid, search_results[0][0], search_results[0][1], search_results[0][2]))
 
     return sid, search_results[0][0], search_results[0][1], search_results[0][2], search_results[0][3]
 
@@ -133,7 +131,7 @@ class ARIMA(BaseModel):
         # Grid Search
         p = range(3)
         q = range(3)
-        d = range(2)
+        d = [1, 0]
         options = list(itertools.product(p, d, q, p, d, q, [s]))
         options.reverse()
 
@@ -360,7 +358,7 @@ class MLP(BaseModel):
         #y = np.array(y.values)
         #y = self.normalizer.fit_transform(y.reshape(-1, 1)).reshape(1,-1)[0]
 
-        n = x.shape[1] # Number of features, number of neurons in input layer
+        n = min(x.shape[1], 99) # Number of features, number of neurons in input layer, limited to 100 neurons
         o = 1 # Number of neurons in output layer
         max_layer_number = 3 # Max 3 layers, 39 combinations
 
@@ -372,7 +370,7 @@ class MLP(BaseModel):
             'solver': ['sgd', 'adam'],
             'activation': ['tanh', 'relu']
         }
-        mlp = sklearn.neural_network.MLPRegressor(max_iter=1000)
+        mlp = sklearn.neural_network.MLPRegressor(max_iter=1000, learning_rate="constant", learning_rate_init=0.1)#, solver='sgd', activation="relu")
         ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, verbose=2, n_jobs=multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, scoring='neg_mean_squared_error', cv=3)
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)
@@ -392,7 +390,7 @@ class MLP(BaseModel):
         n = x.shape[1] # Number of features, number of neurons in input layer
         o = 1 # Number of neurons in output layer
 
-        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(n*2//3, n//3, n+o), solver='sgd', activation='tanh', max_iter=1000, verbose=True)
+        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(n*2//3, n*2//3), solver='sgd', activation='relu', max_iter=1000, verbose=True, learning_rate="constant", learning_rate_init=0.01)
         self.model.fit(x, y)
 
     def predict(self, x):

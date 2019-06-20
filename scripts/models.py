@@ -360,17 +360,17 @@ class MLP(BaseModel):
 
         n = min(x.shape[1], 99) # Number of features, number of neurons in input layer, limited to 100 neurons
         o = 1 # Number of neurons in output layer
-        max_layer_number = 3 # Max 3 layers, 39 combinations
+        max_layer_number = 2 # Max 3 layers, 39 combinations
 
         layers = []
         for i in range(2, max_layer_number + 1):
             layers.extend(list(itertools.product([n // 3, n *2// 3, n + o], repeat=i)))
         parameter_space = {
             'hidden_layer_sizes': layers,
-            'solver': ['sgd', 'adam'],
-            'activation': ['tanh', 'relu']
+            #'solver': ['sgd', 'adam'],
+            #'activation': ['tanh', 'relu']
         }
-        mlp = sklearn.neural_network.MLPRegressor(max_iter=1000, learning_rate="constant", learning_rate_init=0.1)#, solver='sgd', activation="relu")
+        mlp = sklearn.neural_network.MLPRegressor(max_iter=1000, learning_rate="constant", learning_rate_init=0.1, solver='sgd', activation="relu")
         ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, verbose=2, n_jobs=multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, scoring='neg_mean_squared_error', cv=3)
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)

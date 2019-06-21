@@ -131,7 +131,7 @@ class ARIMA(BaseModel):
         # Grid Search
         p = range(3)
         q = range(3)
-        d = [1, 0]
+        d = range(2)
         options = list(itertools.product(p, d, q, p, d, q, [s]))
         options.reverse()
 

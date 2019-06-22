@@ -13,6 +13,7 @@ import sklearn.neural_network
 import sklearn.model_selection
 import keras
 import joblib
+import math
 import multiprocessing
 #from scipy import stats
 #from sklearn.preprocessing import MinMaxScaler
@@ -73,7 +74,7 @@ def search_best_arima_model(sid, df, options):
             continue
         if not np.isnan(results.aic):
             search_results.append((param, param_seasonal, results.aic, results))
-            if len(search_results) > 5:
+            if len(search_results) > 10:
                 break
     search_results = sorted(search_results, key=lambda x: x[2])
 
@@ -344,6 +345,14 @@ class LR(BaseModel):
         return y
 
 
+def my_scorer(y_true, y_pred):
+    print(y_pred)
+    if np.isnan(y_pred).any():
+        return 65500
+    rmse = math.sqrt(sklearn.metrics.mean_squared_error(y_true, y_pred))
+    return rmse
+
+
 class MLP(BaseModel):
     def __init__(self):
         super().__init__()
@@ -370,8 +379,10 @@ class MLP(BaseModel):
             #'solver': ['sgd', 'adam'],
             #'activation': ['tanh', 'relu']
         }
+
+        scorer = sklearn.metrics.make_scorer(my_scorer, greater_is_better=False)
         mlp = sklearn.neural_network.MLPRegressor(max_iter=1000, learning_rate="constant", learning_rate_init=0.1, solver='sgd', activation="relu")
-        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, verbose=2, scoring='neg_mean_squared_error', cv=3)#n_jobs=min(multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, len(layers)),
+        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, verbose=2, scoring=scorer, cv=3, n_jobs=min(multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, len(layers)))
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)
         means = ms.cv_results_['mean_test_score']

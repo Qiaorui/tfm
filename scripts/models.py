@@ -74,7 +74,7 @@ def search_best_arima_model(sid, df, options):
             continue
         if not np.isnan(results.aic):
             search_results.append((param, param_seasonal, results.aic, results))
-            if len(search_results) > 10:
+            if len(search_results) > 5:
                 break
     search_results = sorted(search_results, key=lambda x: x[2])
 
@@ -377,11 +377,11 @@ class MLP(BaseModel):
         parameter_space = {
             'hidden_layer_sizes': layers,
             #'solver': ['sgd', 'adam'],
-            #'activation': ['tanh', 'relu']
+            'activation': ['tanh', 'relu']
         }
 
         scorer = sklearn.metrics.make_scorer(my_scorer, greater_is_better=False)
-        mlp = sklearn.neural_network.MLPRegressor(max_iter=1000, learning_rate="constant", learning_rate_init=0.1, solver='sgd', activation="relu")
+        mlp = sklearn.neural_network.MLPRegressor(max_iter=1000, learning_rate="constant", learning_rate_init=0.1, solver='sgd')
         ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, verbose=2, scoring=scorer, cv=3, n_jobs=min(multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, len(layers)))
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)

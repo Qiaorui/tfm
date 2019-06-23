@@ -379,9 +379,8 @@ class MLP(BaseModel):
             #'solver': ['sgd', 'adam'],
             'activation': ['tanh', 'relu']
         }
-
         scorer = sklearn.metrics.make_scorer(my_scorer, greater_is_better=False)
-        mlp = sklearn.neural_network.MLPRegressor(max_iter=1000, learning_rate="constant", learning_rate_init=0.1, solver='sgd')
+        mlp = sklearn.neural_network.MLPRegressor(max_iter=1000, learning_rate="constant", learning_rate_init=0.01, solver='sgd')
         ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, verbose=2, scoring=scorer, cv=3, n_jobs=min(multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, len(layers)))
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)

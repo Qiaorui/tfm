@@ -381,7 +381,7 @@ class MLP(BaseModel):
         }
         scorer = sklearn.metrics.make_scorer(my_scorer, greater_is_better=False)
         mlp = sklearn.neural_network.MLPRegressor(max_iter=1000, learning_rate="constant", learning_rate_init=0.01, solver='sgd')
-        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, verbose=2, scoring=scorer, cv=3, n_jobs=min(multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, len(layers)))
+        ms = sklearn.model_selection.GridSearchCV(mlp, parameter_space, verbose=2, scoring=scorer, cv=3, n_jobs=min(multiprocessing.cpu_count()-multiprocessing.cpu_count()//2, len(layers)*3))
         ms.fit(x, y)
         print("Best parameters found:\n", ms.best_params_)
         means = ms.cv_results_['mean_test_score']

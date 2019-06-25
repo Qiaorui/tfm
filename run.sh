@@ -43,7 +43,7 @@ start_model () {
         do
             for ((i=0; i<${#TH_LIST[@]}; i++));
             do
-                for ((j=i+2; j<${#START_LIST[@]}; j++));
+                for ((j=3*i; j<${#START_LIST[@]} + ((i-1)*3); j++));
                 do
                     echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]}"
                     python3 -u generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} | tee ./results/log.txt
@@ -60,7 +60,7 @@ start_model () {
         do
             for ((i=0; i<${#TH_LIST[@]}; i++));
             do
-                for ((j=i+2; j<${#START_LIST[@]}; j++));
+                for ((j=3*i; j<${#START_LIST[@]} + ((i-1)*3); j++));
                 do
                     echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]}"
                     python3 -u generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/NYC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} | tee ./results/log.txt

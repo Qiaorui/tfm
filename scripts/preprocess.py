@@ -159,12 +159,12 @@ def get_station_info(df, sid):
 
 def aggregate_stations(stations):
     df = stations.set_index("Station_ID", drop=False, verify_integrity=True)
-    threashold = 0.13 # unit in km
+    threshold = 0.13 # unit in km
 
     while True:
         closeness = df.apply(lambda x: utils.closest(x, data=df[df['Station_ID']!=x['Station_ID']].to_dict('records')), axis=1, result_type="expand")
         remove_list = []
-        for _, row in closeness[(closeness["Distance"] <= threashold) & (closeness['Station_ID'] < closeness['Closest_Station_ID'])].iterrows():
+        for _, row in closeness[(closeness["Distance"] <= threshold) & (closeness['Station_ID'] < closeness['Closest_Station_ID'])].iterrows():
             if row['Closest_Station_ID'] in remove_list or row['Station_ID'] in remove_list:
                 continue
             docks, lat, lng, sname = df.loc[row['Closest_Station_ID'], ['Docks', 'Latitude', 'Longitude', 'Station_Name']]

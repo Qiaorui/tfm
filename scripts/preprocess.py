@@ -155,3 +155,25 @@ def complete_station(df, stations):
 
 def get_station_info(df, sid):
     return df.loc[sid, ["Station_ID", "Latitude", "Longitude"]].tolist()
+
+
+def aggregate_stations(stations):
+    df = stations.set_index("Station_ID", drop=False, verify_integrity=True)
+    threashold = 0.12 # unit in km
+
+    while True:
+        closeness = df.apply(lambda x: utils.closest(x, data=df[df['Station_ID']!=x['Station_ID']].to_dict('records')), axis=1, result_type="expand")
+        remove_list = []
+        for _, row in closeness[(closeness["Distance"] <= threashold) & (closeness['Station_ID'] < closeness['Closest_Station_ID'])].iterrows():
+            if row['Closest_Station_ID'] in remove_list or row['Station_ID'] in remove_list:
+                continue
+            docks, lat, lng, sname = df.loc[row['Closest_Station_ID'], ['Docks', 'Latitude', 'Longitude', 'Station_Name']]
+            df.loc[row["Station_ID"], ['Docks', 'Latitude', 'Longitude', 'Station_Name']] = [row['Docks'] + docks, np.mean([lat, row['Latitude']]), np.mean([lng, row['Longitude']]), row['Station_Name'] + " and " + sname]
+            remove_list.append(row['Closest_Station_ID'])
+
+        if len(remove_list) == 0:
+            break
+        print("Aggregating following station:", remove_list)
+        df = df[~df['Station_ID'].isin(remove_list)]
+
+    return df.reset_index(drop=True)

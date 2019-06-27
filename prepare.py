@@ -46,6 +46,7 @@ def main():
         utils.download_station_data(location_data_path)
         station_data = utils.read_station_data(location_data_path)
         assert station_data is not None
+    station_data = preprocess.aggregate_stations(station_data)
 
     trip_data = utils.read_cleaned_trip_data(trip_data_path)
     if trip_data is None:

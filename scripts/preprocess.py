@@ -159,7 +159,7 @@ def get_station_info(df, sid):
 
 def aggregate_stations(stations):
     df = stations.set_index("Station_ID", drop=False, verify_integrity=True)
-    threashold = 0.12 # unit in km
+    threashold = 0.13 # unit in km
 
     while True:
         closeness = df.apply(lambda x: utils.closest(x, data=df[df['Station_ID']!=x['Station_ID']].to_dict('records')), axis=1, result_type="expand")

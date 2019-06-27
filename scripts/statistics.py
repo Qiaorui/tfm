@@ -523,7 +523,7 @@ def analyse_geo_pattern(df, title, show):
 
     m.save("results/" + title + ".html")
     if show:
-        webbrowser.open("file://" + os.path.realpath("results" + title + ".html"))
+        webbrowser.open("file://" + os.path.realpath("results/" + title + ".html"))
 
 
 def plot_stations(df, title, show):
@@ -544,7 +544,7 @@ def plot_stations(df, title, show):
 
     m.save("results/" + title + ".html")
     if show:
-        webbrowser.open("file://" + os.path.realpath("results" + title + ".html"))
+        webbrowser.open("file://" + os.path.realpath("results/" + title + ".html"))
 
 
 def plot_diff_stations(df, df2, title, show):

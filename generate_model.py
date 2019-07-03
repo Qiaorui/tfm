@@ -124,15 +124,24 @@ def prepare_data(df, weather_data, time_slot):
 
     station_groups = df.groupby("Station_ID")
     for sid, sdf in station_groups:
+        lat, lng = sdf.iloc[-1]['Latitude'], sdf.iloc[-1]['Longitude']
         sdf = utils.aggregate_by_time_slot(sdf, time_slot, index)
         sdf = utils.fill_weather_data(sdf, weather_data)
         sdf["Station_ID"] = sid
+
+        # More station features
+        sdf['Latitude'] = lat
+        sdf['Longitude'] = lng
+        sdf['Mean_Count'] = sdf['Count'].mean()
+        sdf['AM_Ratio'] = sdf[(sdf.index.dayofweek < 6) & (sdf.index.hour >= 7) & (sdf.index.hour <= 9)]['Count'].mean()
+        sdf['PM_Ratio'] = sdf[(sdf.index.dayofweek < 6) & (sdf.index.hour >= 17) & (sdf.index.hour <= 19)]['Count'].mean()
+
         data = data.append(sdf)
 
     # Normalize the data
     scaler = MinMaxScaler()
-    data[['Temperature', 'Wind', 'Humidity', 'Visibility']] = scaler.fit_transform(
-        data[['Temperature', 'Wind', 'Humidity', 'Visibility']])
+    data[['Temperature', 'Wind', 'Humidity', 'Visibility', 'Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio']] = scaler.fit_transform(
+        data[['Temperature', 'Wind', 'Humidity', 'Visibility', 'Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio']])
 
     cloudy_conds = ["Clear", "Partly Cloudy", "Scattered Clouds", "Mostly Cloudy", "Haze", "Overcast"]
     data.loc[-data.Condition.isin(cloudy_conds), 'Condition'] = 0
@@ -368,15 +377,18 @@ def main():
     trip_data = trip_data[trip_data.End_Station_ID.isin(start_stations_ids)]
 
     print("Breaking trip data to pick-up data and drop-off data")
-    pick_ups = trip_data[['Start_Station_ID', 'Start_Time']].copy()
+    pick_ups = trip_data[['Start_Station_ID', 'Start_Time', 'Start_Latitude', 'Start_Longitude']].copy()
     #drop_offs = trip_data[['End_Station_ID', 'Stop_Time']].copy()
     del trip_data
     gc.collect()
 
-    pick_ups.rename(columns={"Start_Station_ID": "Station_ID", "Start_Time": "Timestamp"}, inplace=True)
+    pick_ups.rename(columns={"Start_Station_ID": "Station_ID", "Start_Time": "Timestamp", 'Start_Latitude': 'Latitude',
+                             'Start_Longitude': 'Longitude'}, inplace=True)
     #drop_offs.rename(columns={"Stop_Station_ID": "Station_ID", "Stop_Time": "Timestamp"}, inplace=True)
 
     data = prepare_data(pick_ups, weather_data, time_slot)
+    data = data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
+    print(data.describe())
 
     # Left Strip the data in case some station are new and hasn't historical data
     data = lstrip_data(data, 7)
@@ -388,7 +400,7 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    pca(pca_data.drop('Station_ID', axis=1), 'Count', seasonality, show)
+    pca(pca_data.drop(['Station_ID', 'Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1), 'Count', seasonality, show)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))

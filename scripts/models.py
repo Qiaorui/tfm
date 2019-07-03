@@ -68,11 +68,14 @@ def search_best_arima_model(sid, df, options):
                 mod = sm.tsa.statespace.SARIMAX(df.drop("Station_ID", axis=1),
                                                 order=param,
                                                 seasonal_order=param_seasonal)
+                print('Fitting Station {} :  SARIMA{}x{}'.format(sid, param, param_seasonal))
                 results = mod.fit(disp=0)
                 # results.save("model/" + file_name)
         except Exception as e:
+            print(e)
             continue
         if not np.isnan(results.aic):
+            print('Station {} :  SARIMA{}x{} - AIC:{}'.format(sid, param, param_seasonal, results.aic))
             search_results.append((param, param_seasonal, results.aic, results))
             if len(search_results) > 5:
                 break

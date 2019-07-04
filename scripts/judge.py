@@ -148,6 +148,7 @@ def evaluate_arima(data, th_day, n_days, seasonality, sids, show):
 
 
 def evaluate_lr(data, th_day, n_days):
+    data = data.drop('Station_ID', axis=1)
     x_train = data[data.index < th_day]
     y_train = x_train['Count']
     x_train.drop('Count', axis=1, inplace=True)
@@ -177,6 +178,7 @@ def evaluate_lr(data, th_day, n_days):
 
 
 def evaluate_mlp(data, th_day, n_days):
+    data = data.drop('Station_ID', axis=1)
     x_train = data[data.index < th_day]
     y_train = x_train['Count']
     x_train.drop('Count', axis=1, inplace=True)
@@ -206,12 +208,11 @@ def evaluate_mlp(data, th_day, n_days):
     return mae_df, rmse_df, mlp
 
 
-non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
+non_sequential_columns = ['Condition_Good', 'Holiday', 'Weekend', 'Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio']
 #non_sequential_columns = ['Station_ID', 'Holiday']
 
 
 def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2, show=False):
-
     x_sec = pd.DataFrame()
     x_non_sec = pd.DataFrame()
     y = pd.DataFrame()

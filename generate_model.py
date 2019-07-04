@@ -239,16 +239,16 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
         ssa_sample = ssa.predict(x_test, 5)
         base_df['SSA'] = ssa_sample
     if lr is not None:
-        lr_sample = lr.predict(x_test)
+        lr_sample = lr.predict(x_test.drop('Station_ID', axis=1))
         base_df['LR'] = lr_sample
     if mlp is not None:
-        mlp_sample = mlp.predict(x_test)
+        mlp_sample = mlp.predict(x_test.drop('Station_ID', axis=1))
         base_df['MLP'] = mlp_sample
 
     sample.drop(sample.tail(1).index, inplace=True)
     base_df.drop(base_df.tail(1).index, inplace=True)
 
-    non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
+    non_sequential_columns = judge.non_sequential_columns
     x_non_sec_df = df[non_sequential_columns].loc[th_day: th_day + pd.DateOffset(n_days - 1)]
     x_non_sec_df = x_non_sec_df[(x_non_sec_df.index.hour == 0) & (x_non_sec_df.index.minute == 0)]
     if lstm1 is not None:
@@ -400,12 +400,12 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    pca_data = pca_data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
+    #pca_data = pca_data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
     pca(pca_data.drop(['Station_ID'], axis=1), 'Count', seasonality, show)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
-    data = data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
+    #data = data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
     ha, ssa, arima, lr, mlp, lstm1, lstm2, lstm3, lstm4, lstm5 = None, None, None, None, None, None, None, None, None, None
 
     days_to_evaluate = [30, 14, 7]

@@ -324,10 +324,6 @@ class LR(BaseModel):
         #self.normalizer = MinMaxScaler()
 
     def fit(self, x, y):
-        if 'Station_ID' in x.columns:
-            dum = pd.get_dummies(x['Station_ID'], prefix="Station")
-            self.data = dum.columns.values
-            x = np.hstack([x.drop('Station_ID', axis=1), dum])
         #y = np.array(y.values)
         #y = self.normalizer.fit_transform(y.reshape(-1, 1)).reshape(1,-1)[0]
         self.model = sklearn.linear_model.LinearRegression()
@@ -335,13 +331,6 @@ class LR(BaseModel):
         print("R squared:", self.model.score(x, y))
 
     def predict(self, x):
-        if 'Station_ID' in x.columns:
-            dum = pd.get_dummies(x['Station_ID'], prefix="Station")
-            if len(dum.columns.values) == 1:
-                sid_column = dum.columns.values[0]
-                dum = pd.DataFrame(np.zeros((len(x.index), len(self.data)), dtype=np.int8), columns=self.data)
-                dum.loc[:, sid_column] = 1
-            x = np.hstack([x.drop('Station_ID', axis=1), dum])
         y = self.model.predict(x)
         #y = self.normalizer.inverse_transform(y.reshape(-1, 1))
         #return y.reshape(1, -1)[0]
@@ -363,10 +352,6 @@ class MLP(BaseModel):
         #self.normalizer = MinMaxScaler()
 
     def test(self, x, y):
-        if 'Station_ID' in x.columns:
-            dum = pd.get_dummies(x['Station_ID'], prefix="Station")
-            self.data = dum.columns.values
-            x = np.hstack([x.drop('Station_ID', axis=1), dum])
         #y = np.array(y.values)
         #y = self.normalizer.fit_transform(y.reshape(-1, 1)).reshape(1,-1)[0]
 
@@ -380,7 +365,7 @@ class MLP(BaseModel):
         parameter_space = {
             'hidden_layer_sizes': layers,
             #'solver': ['sgd', 'adam'],
-            'activation': ['tanh', 'relu']
+            #'activation': ['tanh', 'relu']
         }
         scorer = sklearn.metrics.make_scorer(my_scorer, greater_is_better=False)
         mlp = sklearn.neural_network.MLPRegressor(max_iter=1000, learning_rate="constant", learning_rate_init=0.01, solver='sgd')
@@ -394,10 +379,6 @@ class MLP(BaseModel):
         self.model = ms
 
     def fit(self, x, y):
-        if 'Station_ID' in x.columns:
-            dum = pd.get_dummies(x['Station_ID'], prefix="Station")
-            self.data = dum.columns.values
-            x = np.hstack([x.drop('Station_ID', axis=1), dum])
         #y = np.array(y.values)
         #y = self.normalizer.fit_transform(y.reshape(-1, 1)).reshape(1,-1)[0]
         n = x.shape[1] # Number of features, number of neurons in input layer
@@ -407,13 +388,6 @@ class MLP(BaseModel):
         self.model.fit(x, y)
 
     def predict(self, x):
-        if 'Station_ID' in x.columns:
-            dum = pd.get_dummies(x['Station_ID'], prefix="Station")
-            if len(dum.columns.values) == 1:
-                sid_column = dum.columns.values[0]
-                dum = pd.DataFrame(np.zeros((len(x.index), len(self.data)), dtype=np.int8), columns=self.data)
-                dum.loc[:, sid_column] = 1
-            x = np.hstack([x.drop('Station_ID', axis=1), dum])
         y = self.model.predict(x)
         #y = self.normalizer.inverse_transform(y.reshape(-1, 1))
         #return y.reshape(1, -1)[0]
@@ -523,13 +497,6 @@ class LSTM(BaseModel):
         return keras.Model(inputs=[encoder_inputs, decoder_inputs, non_sequential_input_layer], outputs=output_layer)
 
     def fit(self, x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type, x_future_sec_train=None, x_future_sec_test=None, show=False):
-        if 'Station_ID' in x_non_sec_train.columns:
-            dum = pd.get_dummies(x_non_sec_train['Station_ID'], prefix="Station")
-            self.data = dum.columns.values
-            x_non_sec_train = np.hstack([x_non_sec_train.drop('Station_ID', axis=1), dum])
-            dum = pd.get_dummies(x_non_sec_test['Station_ID'], prefix="Station")
-            x_non_sec_test = np.hstack([x_non_sec_test.drop('Station_ID', axis=1), dum])
-
         assert x_sec_train.shape[1] % self.n_pre == 0
         x_sec_train = x_sec_train.values.reshape(x_sec_train.shape[0], self.n_pre, x_sec_train.shape[1] // self.n_pre)
         x_sec_test = x_sec_test.values.reshape(x_sec_test.shape[0], self.n_pre, x_sec_test.shape[1]// self.n_pre)
@@ -585,13 +552,6 @@ class LSTM(BaseModel):
             plt.close()
 
     def predict(self, x_sec, x_non_sec, x_future_sec=None):
-        if 'Station_ID' in x_non_sec.columns:
-            dum = pd.get_dummies(x_non_sec['Station_ID'], prefix="Station")
-            if len(dum.columns.values) == 1:
-                sid_column = dum.columns.values[0]
-                dum = pd.DataFrame(np.zeros((len(x_non_sec.index), len(self.data)), dtype=np.int8), columns=self.data)
-                dum.loc[:, sid_column] = 1
-            x_non_sec = np.hstack([x_non_sec.drop('Station_ID', axis=1), dum])
         x_sec = x_sec.values.reshape(x_sec.shape[0], self.n_pre, x_sec.shape[1] // self.n_pre)
         y = None
         if x_future_sec is None:

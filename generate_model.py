@@ -387,7 +387,7 @@ def main():
     #drop_offs.rename(columns={"Stop_Station_ID": "Station_ID", "Stop_Time": "Timestamp"}, inplace=True)
 
     data = prepare_data(pick_ups, weather_data, time_slot)
-    data = data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
+
     print(data.describe())
 
     # Left Strip the data in case some station are new and hasn't historical data
@@ -400,17 +400,17 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    pca(pca_data.drop(['Station_ID', 'Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1), 'Count', seasonality, show)
+    pca_data = pca_data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
+    pca(pca_data.drop(['Station_ID'], axis=1), 'Count', seasonality, show)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
-
+    data = data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
     ha, ssa, arima, lr, mlp, lstm1, lstm2, lstm3, lstm4, lstm5 = None, None, None, None, None, None, None, None, None, None
 
     days_to_evaluate = [30, 14, 7]
 
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
-
     mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')

@@ -361,6 +361,7 @@ class MLP(BaseModel):
         super().__init__()
         print("Creating MLP model")
         #self.normalizer = MinMaxScaler()
+        self.wrapper = {}
 
     def test(self, x, y):
         if 'Station_ID' in x.columns:
@@ -393,28 +394,72 @@ class MLP(BaseModel):
             print("{:.2f} (+/- {:.2f}) for {}".format(mean, std, params))
         self.model = ms
 
-    def fit(self, x, y):
-        if 'Station_ID' in x.columns:
-            dum = pd.get_dummies(x['Station_ID'], prefix="Station")
-            self.data = dum.columns.values
-            x = np.hstack([x.drop('Station_ID', axis=1), dum])
-        #y = np.array(y.values)
-        #y = self.normalizer.fit_transform(y.reshape(-1, 1)).reshape(1,-1)[0]
-        n = x.shape[1] # Number of features, number of neurons in input layer
-        o = 1 # Number of neurons in output layer
+    def fit(self, x_train, y_train, x_test, y_test, show):
+        n = x_train.shape[1]-1
+        station_size = x_train['Station_ID'].nunique()
+        embedding_size = 5
 
-        self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(n*2//3, n*2//3), solver='sgd', activation='relu', max_iter=1000, verbose=True, learning_rate="constant", learning_rate_init=0.01)
-        self.model.fit(x, y)
+        stations = list(x_train['Station_ID'].unique())
+        for i, s in enumerate(stations):
+            self.wrapper[s] = i
+        for k, v in self.wrapper.items():
+            x_train.loc[x_train['Station_ID'] == k, 'Station_ID'] = v
+            x_test.loc[x_test['Station_ID'] == k, 'Station_ID'] = v
+
+
+        station_input = keras.layers.Input(shape=(1,))
+        features_input = keras.layers.Input(shape=(n,))
+
+        # the first branch operates on the first input
+        emb = keras.layers.Embedding(input_dim=station_size, output_dim=embedding_size, input_length=1)(station_input)
+        emb = keras.layers.Flatten()(emb)
+        emb = keras.layers.Dense(embedding_size*2, activation="relu")(emb)
+        emb = keras.Model(inputs=station_input, outputs=emb)
+
+        # combine the output of the two branches
+        combined = keras.layers.merge.concatenate([emb.output, features_input])
+
+        # apply a FC layer and then a regression prediction on the
+        # combined outputs
+        z = keras.layers.Dense(n-1, activation="relu")(combined)
+        z = keras.layers.Dense(n-1, activation="relu")(z)
+        z = keras.layers.Dense(1, activation="linear")(z)
+
+        # our model will accept the inputs of the two branches and
+        # then output a single value
+        model = keras.Model(inputs=[emb.input, features_input], outputs=z)
+
+        model.compile(loss = "mse", optimizer = "adam")
+        print(model.summary())
+
+        es = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, mode='min', restore_best_weights=True)
+        # Train the model
+        history = model.fit([x_train['Station_ID'], x_train.drop('Station_ID', axis=1)], y_train,
+                                validation_data=([x_test['Station_ID'], x_test.drop('Station_ID', axis=1)], y_test), epochs=100, verbose=0,
+                                callbacks=[es])
+        self.model = model
+        # Plot training & validation loss values
+        plt.plot(history.history['loss'])
+        plt.plot(history.history['val_loss'])
+        plt.title('Model loss')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Test'], loc='upper left')
+
+        filename = utils.get_next_filename("p")
+        plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
+        if show:
+            plt.show()
+        else:
+            plt.clf()
+            plt.close()
 
     def predict(self, x):
-        if 'Station_ID' in x.columns:
-            dum = pd.get_dummies(x['Station_ID'], prefix="Station")
-            if len(dum.columns.values) == 1:
-                sid_column = dum.columns.values[0]
-                dum = pd.DataFrame(np.zeros((len(x.index), len(self.data)), dtype=np.int8), columns=self.data)
-                dum.loc[:, sid_column] = 1
-            x = np.hstack([x.drop('Station_ID', axis=1), dum])
-        y = self.model.predict(x)
+        for k, v in self.wrapper.items():
+            x.loc[x['Station_ID'] == k, 'Station_ID'] = v
+
+
+        y = self.model.predict([x['Station_ID'], x.drop('Station_ID', axis=1)])
         #y = self.normalizer.inverse_transform(y.reshape(-1, 1))
         #return y.reshape(1, -1)[0]
         y = [0 if i < 0 else i for i in y]

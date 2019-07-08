@@ -401,7 +401,7 @@ def main():
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
     pca_data = pca_data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
-    pca(pca_data.drop(['Station_ID'], axis=1), 'Count', seasonality, show)
+    #pca(pca_data.drop(['Station_ID'], axis=1), 'Count', seasonality, show)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
@@ -415,10 +415,10 @@ def main():
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
-    mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
+    mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     days_to_evaluate = [30, 14, 7, 1]
     mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index, show)
     mae_df = mae_df.join(mae, how='outer')
@@ -451,7 +451,7 @@ def main():
     mae, rmse, lstm5 = judge.evaluate_lstm_5(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
     for n in days_to_evaluate:

@@ -427,7 +427,7 @@ def main():
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     #data.drop(["Weekend", "Condition_Good"], axis=1, inplace=True)
 
     days_to_evaluate = [30, 14, 7]
@@ -451,7 +451,7 @@ def main():
     mae, rmse, lstm5 = judge.evaluate_lstm_5(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     # Evaluate the prediction
     print("{0:*^80}".format(" Evaluation "))
     for n in days_to_evaluate:

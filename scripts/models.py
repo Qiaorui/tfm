@@ -356,6 +356,19 @@ def my_scorer(y_true, y_pred):
     return rmse
 
 
+def create_embedding_layer(station_size):
+    embedding_size = 5
+    station_input = keras.layers.Input(shape=(1,))
+
+    # the first branch operates on the first input
+    emb = keras.layers.Embedding(input_dim=station_size, output_dim=embedding_size, input_length=1)(station_input)
+    emb = keras.layers.Flatten()(emb)
+    #emb = keras.layers.Dense(embedding_size * 2, activation="relu")(emb)
+    emb = keras.Model(inputs=station_input, outputs=emb)
+
+    return emb
+
+
 class MLP(BaseModel):
     def __init__(self):
         super().__init__()
@@ -397,7 +410,6 @@ class MLP(BaseModel):
     def fit(self, x_train, y_train, x_test, y_test, show):
         n = x_train.shape[1]-1
         station_size = x_train['Station_ID'].nunique()
-        embedding_size = 5
 
         stations = list(x_train['Station_ID'].unique())
         for i, s in enumerate(stations):
@@ -406,23 +418,17 @@ class MLP(BaseModel):
             x_train.loc[x_train['Station_ID'] == k, 'Station_ID'] = v
             x_test.loc[x_test['Station_ID'] == k, 'Station_ID'] = v
 
-
-        station_input = keras.layers.Input(shape=(1,))
         features_input = keras.layers.Input(shape=(n,))
 
-        # the first branch operates on the first input
-        emb = keras.layers.Embedding(input_dim=station_size, output_dim=embedding_size, input_length=1)(station_input)
-        emb = keras.layers.Flatten()(emb)
-        emb = keras.layers.Dense(embedding_size*2, activation="relu")(emb)
-        emb = keras.Model(inputs=station_input, outputs=emb)
+        emb = create_embedding_layer(station_size)
 
         # combine the output of the two branches
         combined = keras.layers.merge.concatenate([emb.output, features_input])
 
         # apply a FC layer and then a regression prediction on the
         # combined outputs
-        z = keras.layers.Dense(n-1, activation="relu")(combined)
-        z = keras.layers.Dense(n-1, activation="relu")(z)
+        z = keras.layers.Dense(n, activation="relu")(combined)
+        z = keras.layers.Dense(n, activation="relu")(z)
         z = keras.layers.Dense(1, activation="linear")(z)
 
         # our model will accept the inputs of the two branches and
@@ -473,6 +479,7 @@ class LSTM(BaseModel):
         print("Creating LSTM model")
         self.n_pre = n_pre
         self.n_post = n_post
+        self.wrapper = {}
 
     """
           o o o
@@ -481,7 +488,7 @@ class LSTM(BaseModel):
     ↑ ↑ ↑
     o o o
     """
-    def create_model_1(self, n_pre, n_feature, n_post, n_non_sec, hidden_dim=128):
+    def create_model_1(self, n_pre, n_feature, n_post, n_non_sec, station_size, hidden_dim=128):
         sequential_input_layer = keras.layers.Input(shape=(n_pre, n_feature))
 
         lstm_1_layer = keras.layers.LSTM(hidden_dim, dropout=dropout)(sequential_input_layer)
@@ -492,15 +499,16 @@ class LSTM(BaseModel):
         flatten_layer = keras.layers.Flatten()(activation_layer)
 
         non_sequential_input_layer = keras.layers.Input(shape=(n_non_sec,))
+        emb_layer = create_embedding_layer(station_size)
 
         # Merging the second LSTM layer and non-sequential input layer
-        merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
-        #dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer, emb_layer.output])
+        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
         #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(merged)
+        output_layer = keras.layers.Dense(n_post)(dense_1_layer)
 
         # Create keras model
-        return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer], outputs=output_layer)
+        return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer, emb_layer.input], outputs=output_layer)
 
     """
     o o o
@@ -509,7 +517,7 @@ class LSTM(BaseModel):
     ↑ ↑ ↑
     o o o
     """
-    def create_model_2(self, n_pre, n_feature, n_post, n_non_sec, hidden_dim=128):
+    def create_model_2(self, n_pre, n_feature, n_post, n_non_sec, station_size, hidden_dim=128):
         sequential_input_layer = keras.layers.Input(shape=(n_pre, n_feature))
 
         lstm_1_layer = keras.layers.LSTM(hidden_dim, return_sequences=True, dropout=dropout)(sequential_input_layer)
@@ -518,15 +526,16 @@ class LSTM(BaseModel):
         flatten_layer = keras.layers.Flatten()(activation_layer)
 
         non_sequential_input_layer = keras.layers.Input(shape=(n_non_sec,))
+        emb_layer = create_embedding_layer(station_size)
 
         # Merging the second LSTM layer and non-sequential input layer
-        merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
-        #dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer, emb_layer.output])
+        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
         #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(merged)
+        output_layer = keras.layers.Dense(n_post)(dense_1_layer)
 
         # Create keras model
-        return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer], outputs=output_layer)
+        return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer, emb_layer.input], outputs=output_layer)
 
     """
           o o o
@@ -535,7 +544,7 @@ class LSTM(BaseModel):
     ↑ ↑ ↑ ↑ ↑ ↑
     o o o x x x
     """
-    def create_model_3(self, n_pre, n_pre_feature, n_post, n_non_sec, n_post_feature, hidden_dim=128):
+    def create_model_3(self, n_pre, n_pre_feature, n_post, n_non_sec, station_size, n_post_feature, hidden_dim=128):
 
         # Define an input sequence and process it.
         encoder_inputs = keras.layers.Input(shape=(n_pre, n_pre_feature))
@@ -557,23 +566,26 @@ class LSTM(BaseModel):
         flatten_layer = keras.layers.Flatten()(decoder_outputs)
 
         non_sequential_input_layer = keras.layers.Input(shape=(n_non_sec,))
+        emb_layer = create_embedding_layer(station_size)
 
         # Merging the second LSTM layer and non-sequential input layer
-        merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
-        #dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer, emb_layer.output])
+        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
         #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(merged)
+        output_layer = keras.layers.Dense(n_post)(dense_1_layer)
 
         # Create keras model
-        return keras.Model(inputs=[encoder_inputs, decoder_inputs, non_sequential_input_layer], outputs=output_layer)
+        return keras.Model(inputs=[encoder_inputs, decoder_inputs, non_sequential_input_layer, emb_layer.input], outputs=output_layer)
 
     def fit(self, x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type, x_future_sec_train=None, x_future_sec_test=None, show=False):
-        if 'Station_ID' in x_non_sec_train.columns:
-            dum = pd.get_dummies(x_non_sec_train['Station_ID'], prefix="Station")
-            self.data = dum.columns.values
-            x_non_sec_train = np.hstack([x_non_sec_train.drop('Station_ID', axis=1), dum])
-            dum = pd.get_dummies(x_non_sec_test['Station_ID'], prefix="Station")
-            x_non_sec_test = np.hstack([x_non_sec_test.drop('Station_ID', axis=1), dum])
+        station_size = x_non_sec_train['Station_ID'].nunique()
+
+        stations = list(x_non_sec_train['Station_ID'].unique())
+        for i, s in enumerate(stations):
+            self.wrapper[s] = i
+        for k, v in self.wrapper.items():
+            x_non_sec_train.loc[x_non_sec_train['Station_ID'] == k, 'Station_ID'] = v
+            x_non_sec_test.loc[x_non_sec_test['Station_ID'] == k, 'Station_ID'] = v
 
         assert x_sec_train.shape[1] % self.n_pre == 0
         x_sec_train = x_sec_train.values.reshape(x_sec_train.shape[0], self.n_pre, x_sec_train.shape[1] // self.n_pre)
@@ -582,19 +594,19 @@ class LSTM(BaseModel):
             x_future_sec_test = x_future_sec_test.values.reshape(x_future_sec_test.shape[0], self.n_post, x_future_sec_test.shape[1]//self.n_post)
             x_future_sec_train = x_future_sec_train.values.reshape(x_future_sec_train.shape[0], self.n_post, x_future_sec_train.shape[1]//self.n_post)
 
-        dim = (x_sec_train.shape[2] + x_non_sec_train.shape[1]) * 2// 3 # 42
+        dim = (x_sec_train.shape[2] + x_non_sec_train.shape[1]) # 42
 
         batch_size = None
 
         model = None
         if type == 1:
-            model = self.create_model_1(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1], dim)
+            model = self.create_model_1(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1]-1, station_size, dim)
         if type == 2:
-            model = self.create_model_2(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1], dim)
+            model = self.create_model_2(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1]-1, station_size, dim)
         if type == 3:
             assert x_future_sec_train is not None
             assert x_future_sec_test is not None
-            model = self.create_model_3(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1], x_future_sec_train.shape[2], dim)
+            model = self.create_model_3(self.n_pre, x_sec_train.shape[2], self.n_post, x_non_sec_train.shape[1]-1, station_size, x_future_sec_train.shape[2], dim)
 
         # Print the model summary
         print(model.summary())
@@ -608,10 +620,10 @@ class LSTM(BaseModel):
         # Train the model
         history = None
         if type == 3:
-            history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train], y_train, batch_size=batch_size,
-                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test], y_test), epochs=100, verbose=0, callbacks=[es])
+            history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train.drop('Station_ID', axis=1), x_non_sec_train['Station_ID']], y_train, batch_size=batch_size,
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test.drop('Station_ID', axis=1), x_non_sec_test['Station_ID']], y_test), epochs=100, verbose=0, callbacks=[es])
         else:
-            history = model.fit([x_sec_train, x_non_sec_train], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test], y_test), epochs=100, verbose=0, callbacks=[es])
+            history = model.fit([x_sec_train, x_non_sec_train.drop('Station_ID', axis=1), x_non_sec_train['Station_ID']], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test.drop('Station_ID', axis=1), x_non_sec_test['Station_ID']], y_test), epochs=100, verbose=0, callbacks=[es])
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])
@@ -630,19 +642,15 @@ class LSTM(BaseModel):
             plt.close()
 
     def predict(self, x_sec, x_non_sec, x_future_sec=None):
-        if 'Station_ID' in x_non_sec.columns:
-            dum = pd.get_dummies(x_non_sec['Station_ID'], prefix="Station")
-            if len(dum.columns.values) == 1:
-                sid_column = dum.columns.values[0]
-                dum = pd.DataFrame(np.zeros((len(x_non_sec.index), len(self.data)), dtype=np.int8), columns=self.data)
-                dum.loc[:, sid_column] = 1
-            x_non_sec = np.hstack([x_non_sec.drop('Station_ID', axis=1), dum])
+        for k, v in self.wrapper.items():
+            x_non_sec.loc[x_non_sec['Station_ID'] == k, 'Station_ID'] = v
+
         x_sec = x_sec.values.reshape(x_sec.shape[0], self.n_pre, x_sec.shape[1] // self.n_pre)
         y = None
         if x_future_sec is None:
-            y = self.model.predict([x_sec, x_non_sec])
+            y = self.model.predict([x_sec, x_non_sec.drop('Station_ID', axis=1), x_non_sec['Station_ID']])
         else:
             x_future_sec = x_future_sec.values.reshape(x_future_sec.shape[0], self.n_post, x_future_sec.shape[1] // self.n_post)
-            y = self.model.predict([x_sec, x_future_sec, x_non_sec])
+            y = self.model.predict([x_sec, x_future_sec, x_non_sec.drop('Station_ID', axis=1), x_non_sec['Station_ID']])
 
         return np.array(list(map(lambda yy: [0 if i < 0 else i for i in yy], y)))

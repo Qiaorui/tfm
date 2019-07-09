@@ -450,9 +450,9 @@ class LSTM(BaseModel):
 
         # Merging the second LSTM layer and non-sequential input layer
         merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
-        #dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        dense_1_layer = keras.layers.Dense(hidden_dim, activation='tanh')(merged)
         #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(merged)
+        output_layer = keras.layers.Dense(n_post, activation='relu')(dense_1_layer)
 
         # Create keras model
         return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer], outputs=output_layer)
@@ -476,9 +476,9 @@ class LSTM(BaseModel):
 
         # Merging the second LSTM layer and non-sequential input layer
         merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
-        #dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        dense_1_layer = keras.layers.Dense(hidden_dim, activation='tanh')(merged)
         #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(merged)
+        output_layer = keras.layers.Dense(n_post, activation='relu')(dense_1_layer)
 
         # Create keras model
         return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer], outputs=output_layer)
@@ -515,9 +515,9 @@ class LSTM(BaseModel):
 
         # Merging the second LSTM layer and non-sequential input layer
         merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer])
-        #dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        dense_1_layer = keras.layers.Dense(hidden_dim,  activation='tanh')(merged)
         #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(merged)
+        output_layer = keras.layers.Dense(n_post, activation='relu')(dense_1_layer)
 
         # Create keras model
         return keras.Model(inputs=[encoder_inputs, decoder_inputs, non_sequential_input_layer], outputs=output_layer)

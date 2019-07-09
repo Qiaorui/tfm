@@ -418,7 +418,7 @@ def main():
     mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     days_to_evaluate = [30, 14, 7, 1]
     mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index, show)
     mae_df = mae_df.join(mae, how='outer')
@@ -427,7 +427,7 @@ def main():
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     #data.drop(["Weekend", "Condition_Good"], axis=1, inplace=True)
 
     days_to_evaluate = [30, 14, 7]

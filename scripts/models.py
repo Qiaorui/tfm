@@ -412,6 +412,7 @@ class MLP(BaseModel):
         station_size = x_train['Station_ID'].nunique()
 
         stations = list(x_train['Station_ID'].unique())
+        stations.sort()
         for i, s in enumerate(stations):
             self.wrapper[s] = i
         for k, v in self.wrapper.items():
@@ -427,9 +428,9 @@ class MLP(BaseModel):
 
         # apply a FC layer and then a regression prediction on the
         # combined outputs
-        z = keras.layers.Dense(n, activation="relu")(combined)
-        z = keras.layers.Dense(n, activation="relu")(z)
-        z = keras.layers.Dense(1, activation="linear")(z)
+        z = keras.layers.Dense(n, activation="tanh")(combined)
+        z = keras.layers.Dense(n, activation="tanh")(z)
+        z = keras.layers.Dense(1, activation="relu")(z)
 
         # our model will accept the inputs of the two branches and
         # then output a single value
@@ -503,9 +504,9 @@ class LSTM(BaseModel):
 
         # Merging the second LSTM layer and non-sequential input layer
         merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer, emb_layer.output])
-        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        dense_1_layer = keras.layers.Dense(hidden_dim, activation="tanh")(merged)
         #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(dense_1_layer)
+        output_layer = keras.layers.Dense(n_post, activation="relu")(dense_1_layer)
 
         # Create keras model
         return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer, emb_layer.input], outputs=output_layer)
@@ -530,9 +531,9 @@ class LSTM(BaseModel):
 
         # Merging the second LSTM layer and non-sequential input layer
         merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer, emb_layer.output])
-        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        dense_1_layer = keras.layers.Dense(hidden_dim, activation="tanh")(merged)
         #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(dense_1_layer)
+        output_layer = keras.layers.Dense(n_post, activation="relu")(dense_1_layer)
 
         # Create keras model
         return keras.Model(inputs=[sequential_input_layer, non_sequential_input_layer, emb_layer.input], outputs=output_layer)
@@ -570,9 +571,9 @@ class LSTM(BaseModel):
 
         # Merging the second LSTM layer and non-sequential input layer
         merged = keras.layers.merge.concatenate([flatten_layer, non_sequential_input_layer, emb_layer.output])
-        dense_1_layer = keras.layers.Dense(hidden_dim)(merged)
+        dense_1_layer = keras.layers.Dense(hidden_dim, activation="tanh")(merged)
         #dense_2_layer = keras.layers.Dense(hidden_dim)(dense_1_layer)
-        output_layer = keras.layers.Dense(n_post)(dense_1_layer)
+        output_layer = keras.layers.Dense(n_post, activation="relu")(dense_1_layer)
 
         # Create keras model
         return keras.Model(inputs=[encoder_inputs, decoder_inputs, non_sequential_input_layer, emb_layer.input], outputs=output_layer)
@@ -581,6 +582,7 @@ class LSTM(BaseModel):
         station_size = x_non_sec_train['Station_ID'].nunique()
 
         stations = list(x_non_sec_train['Station_ID'].unique())
+        stations.sort()
         for i, s in enumerate(stations):
             self.wrapper[s] = i
         for k, v in self.wrapper.items():

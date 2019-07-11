@@ -393,7 +393,7 @@ def main():
     # Left Strip the data in case some station are new and hasn't historical data
     data = lstrip_data(data, 7)
 
-    station_freq_counts = pick_ups["Station_ID"].value_counts()
+    station_freq_counts = pick_ups["Station_ID"].value_counts() // ((th_day - start)/np.timedelta64(1,'D') + 30)
     busiest_station = station_freq_counts.idxmax()
     idle_station = station_freq_counts.idxmin()
     median_station = station_freq_counts.index[len(station_freq_counts)//2]
@@ -401,7 +401,7 @@ def main():
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
     pca_data = pca_data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
-    #pca(pca_data.drop(['Station_ID'], axis=1), 'Count', seasonality, show)
+    pca(pca_data.drop(['Station_ID'], axis=1), 'Count', seasonality, show)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))

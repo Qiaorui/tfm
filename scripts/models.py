@@ -442,7 +442,7 @@ class MLP(BaseModel):
         es = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, mode='min', restore_best_weights=True)
         # Train the model
         history = model.fit([x_train['Station_ID'], x_train.drop('Station_ID', axis=1)], y_train,
-                                validation_data=([x_test['Station_ID'], x_test.drop('Station_ID', axis=1)], y_test), epochs=100, verbose=0,
+                                validation_data=([x_test['Station_ID'], x_test.drop('Station_ID', axis=1)], y_test), epochs=1000, verbose=0,
                                 callbacks=[es])
         self.model = model
         # Plot training & validation loss values
@@ -623,9 +623,9 @@ class LSTM(BaseModel):
         history = None
         if type == 3:
             history = model.fit([x_sec_train, x_future_sec_train, x_non_sec_train.drop('Station_ID', axis=1), x_non_sec_train['Station_ID']], y_train, batch_size=batch_size,
-                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test.drop('Station_ID', axis=1), x_non_sec_test['Station_ID']], y_test), epochs=100, verbose=0, callbacks=[es])
+                                validation_data=([x_sec_test, x_future_sec_test, x_non_sec_test.drop('Station_ID', axis=1), x_non_sec_test['Station_ID']], y_test), epochs=1000, verbose=0, callbacks=[es])
         else:
-            history = model.fit([x_sec_train, x_non_sec_train.drop('Station_ID', axis=1), x_non_sec_train['Station_ID']], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test.drop('Station_ID', axis=1), x_non_sec_test['Station_ID']], y_test), epochs=100, verbose=0, callbacks=[es])
+            history = model.fit([x_sec_train, x_non_sec_train.drop('Station_ID', axis=1), x_non_sec_train['Station_ID']], y_train, batch_size=batch_size, validation_data=([x_sec_test, x_non_sec_test.drop('Station_ID', axis=1), x_non_sec_test['Station_ID']], y_test), epochs=1000, verbose=0, callbacks=[es])
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

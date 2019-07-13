@@ -428,8 +428,8 @@ class MLP(BaseModel):
 
         # apply a FC layer and then a regression prediction on the
         # combined outputs
-        z = keras.layers.Dense(n, activation="tanh")(combined)
-        z = keras.layers.Dense(n, activation="tanh")(z)
+        z = keras.layers.Dense(64, activation="tanh")(combined)
+        z = keras.layers.Dense(64, activation="tanh")(z)
         z = keras.layers.Dense(1, activation="relu")(z)
 
         # our model will accept the inputs of the two branches and

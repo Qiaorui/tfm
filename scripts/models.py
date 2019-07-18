@@ -39,12 +39,12 @@ class HA(BaseModel):
 
     def fit(self, x, y):
         x['Count'] = y
-        self.model = x.groupby(["Station_ID", "Weekday_Cos", "Time_Fragment_Cos"])['Count'].mean()
+        self.model = x.groupby(["Station_ID", "Weekday", "Time_Fragment"])['Count'].mean()
 
     def predict(self, x):
         y = []
         for idx, row in tqdm(x.iterrows(), leave=False, total=len(x.index), unit="row", desc="Predicting"):
-            value = self.model.loc[(row["Station_ID"], row["Weekday_Cos"], row["Time_Fragment_Cos"])]
+            value = self.model.loc[(row["Station_ID"], row["Weekday"], row["Time_Fragment"])]
             y.append(value)
         return y
 
@@ -428,15 +428,15 @@ class MLP(BaseModel):
 
         # apply a FC layer and then a regression prediction on the
         # combined outputs
-        z = keras.layers.Dense(64, activation="tanh")(combined)
-        z = keras.layers.Dense(64, activation="tanh")(z)
+        z = keras.layers.Dense(n, activation="tanh")(combined)
+        z = keras.layers.Dense(n, activation="tanh")(z)
         z = keras.layers.Dense(1, activation="relu")(z)
 
         # our model will accept the inputs of the two branches and
         # then output a single value
         model = keras.Model(inputs=[emb.input, features_input], outputs=z)
 
-        model.compile(loss = "mse", optimizer = "adam")
+        model.compile(loss = "mean_squared_error", optimizer = "adam")
         print(model.summary())
 
         es = keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, mode='min', restore_best_weights=True)
@@ -614,7 +614,7 @@ class LSTM(BaseModel):
         print(model.summary())
 
         #tensorboard = TensorBoard(log_dir='logs/{}'.format(time()))
-        model.compile(optimizer='adam', loss='mse')
+        model.compile(optimizer='adam', loss='mean_squared_error')
 
         self.model = model
 

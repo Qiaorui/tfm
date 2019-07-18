@@ -118,9 +118,9 @@ def pca(df, tv, seasonality, show):
 def prepare_data(df, weather_data, time_slot):
     data = pd.DataFrame()
 
-    start = df["Timestamp"].min().replace(hour=0, minute=0, second=0)
+    start = df["Timestamp"].min().replace(hour=0, minute=0, second=0, microsecond=0)
     end = df["Timestamp"].max().replace(hour=23, minute=59)
-    index = pd.date_range(start=start, end=end, freq=str(time_slot) + 'Min', normalize=True)
+    index = pd.date_range(start=start, end=end, freq=str(time_slot) + 'Min')
 
     station_groups = df.groupby("Station_ID")
     for sid, sdf in station_groups:
@@ -162,17 +162,14 @@ def prepare_data(df, weather_data, time_slot):
     data['Weekend'] = 0
     data.loc[data['Weekday'] > 4, 'Weekend'] = 1
 
-    data.loc[data['Weekday'] == 5, 'Weekday'] += 1
-    data.loc[data['Weekday'] == 6, 'Weekday'] += 2
-
-    data['Weekday_Cos'] = np.cos(2*np.pi/10 * (data['Weekday']-2))
-    data['Weekday_Sin'] = np.sin(2*np.pi/10 * (data['Weekday']-2))
+    data['Weekday_Cos'] = np.cos(2 * np.pi / 7 * data['Weekday'])
+    data['Weekday_Sin'] = np.sin(2 * np.pi / 7 * data['Weekday'])
     data['Month_Cos'] = np.cos(2*np.pi/12 * (data['Month']))
     data['Month_Sin'] = np.sin(2 * np.pi / 12 * (data['Month']))
-    data['Time_Fragment_Cos'] = np.cos(2*np.pi/(data['Time_Fragment'].max()+1) * (data['Time_Fragment']))
-    data['Time_Fragment_Sin'] = np.sin(2 * np.pi / (data['Time_Fragment'].max() + 1) * (data['Time_Fragment']))
+    data['Time_Fragment_Cos'] = np.cos(2 * np.pi / (data['Time_Fragment'].max() + 1) * data['Time_Fragment'])
+    data['Time_Fragment_Sin'] = np.sin(2 * np.pi / (data['Time_Fragment'].max() + 1) * data['Time_Fragment'])
 
-    data.drop(['Weekday', 'Month', 'Time_Fragment'], axis='columns', inplace=True)
+    data.drop(['Month'], axis='columns', inplace=True)
 
     data['Holiday'] = data['Holiday'].astype(np.int8)
     data['Condition_Good'] = data['Condition_Good'].astype(np.int8)
@@ -221,17 +218,20 @@ def lstrip_data(data, th):
 
 def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=None, lr=None, mlp=None,
                                    lstm1=None, lstm2=None, lstm3=None, lstm4=None, lstm5=None, n_pre=2, n_post=2, show=False):
+    print("Visualising the prediction for", n_days, "days")
+    last_day = df.index[df.index < (th_day + pd.DateOffset(n_days))].max()
     y = df['Count']
     x = df.drop('Count', axis=1)
-    x_test = x.loc[th_day : th_day + pd.DateOffset(n_days)]
+    x_test = x.loc[th_day : last_day]
 
-    sample = y.loc[th_day - pd.DateOffset(n_days):th_day + pd.DateOffset(n_days)]
+    sample = y.loc[th_day - pd.DateOffset(n_days):last_day]
     base_df = pd.DataFrame(index=sample.index)
     base_df = base_df[base_df.index >= th_day]
 
     if ha is not None:
         ha_sample = ha.predict(x_test)
         base_df['HA'] = ha_sample
+    x_test = x_test.drop(['Weekday', 'Time_Fragment'], axis=1)
     if arima is not None:
         arima_sample = arima.predict(x_test)
         base_df['ARIMA'] = arima_sample
@@ -245,8 +245,7 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
         mlp_sample = mlp.predict(x_test.drop('Station_ID', axis=1))
         base_df['MLP'] = mlp_sample
 
-    sample.drop(sample.tail(1).index, inplace=True)
-    base_df.drop(base_df.tail(1).index, inplace=True)
+    df = df.drop(['Weekday', 'Time_Fragment'], axis=1)
 
     non_sequential_columns = judge.non_sequential_columns
     x_non_sec_df = df[non_sequential_columns].loc[th_day: th_day + pd.DateOffset(n_days - 1)]
@@ -365,8 +364,6 @@ def main():
 
     assert 24*60 % time_slot == 0
 
-    trip_data = trip_data[trip_data['Start_Time'] >= start]
-
     if args.ot is not None:
         print("Removing outlier with threshold", args.ot)
         preprocess.remove_trip_outlier(trip_data, args.ot)
@@ -386,12 +383,11 @@ def main():
                              'Start_Longitude': 'Longitude'}, inplace=True)
     #drop_offs.rename(columns={"Stop_Station_ID": "Station_ID", "Stop_Time": "Timestamp"}, inplace=True)
 
+    # Left Strip the data in case some station are new and hasn't historical data
+    pick_ups = utils.slice_data_by_time(pick_ups, 'Timestamp', start, th_day + pd.DateOffset(30), 3)
     data = prepare_data(pick_ups, weather_data, time_slot)
 
     print(data.describe())
-
-    # Left Strip the data in case some station are new and hasn't historical data
-    data = lstrip_data(data, 7)
 
     station_freq_counts = pick_ups["Station_ID"].value_counts()
     busiest_station = station_freq_counts.idxmax()
@@ -400,17 +396,17 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    #pca_data = pca_data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
     pca(pca_data.drop(['Station_ID'], axis=1), 'Count', seasonality, show)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
-    #data = data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
     ha, ssa, arima, lr, mlp, lstm1, lstm2, lstm3, lstm4, lstm5 = None, None, None, None, None, None, None, None, None, None
 
     days_to_evaluate = [30, 14, 7]
 
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
+    data = data.drop(['Weekday', 'Time_Fragment'], axis=1)
+
     mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')

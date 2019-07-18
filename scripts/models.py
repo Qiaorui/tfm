@@ -39,12 +39,12 @@ class HA(BaseModel):
 
     def fit(self, x, y):
         x['Count'] = y
-        self.model = x.groupby(["Station_ID", "Weekday_Cos", "Time_Fragment_Cos"])['Count'].mean()
+        self.model = x.groupby(["Station_ID", "Weekday", "Time_Fragment"])['Count'].mean()
 
     def predict(self, x):
         y = []
         for idx, row in tqdm(x.iterrows(), leave=False, total=len(x.index), unit="row", desc="Predicting"):
-            value = self.model.loc[(row["Station_ID"], row["Weekday_Cos"], row["Time_Fragment_Cos"])]
+            value = self.model.loc[(row["Station_ID"], row["Weekday"], row["Time_Fragment"])]
             y.append(value)
         return y
 
@@ -522,7 +522,7 @@ class LSTM(BaseModel):
         print(model.summary())
 
         #tensorboard = TensorBoard(log_dir='logs/{}'.format(time()))
-        model.compile(optimizer='adam', loss='mse')
+        model.compile(loss = "mean_squared_error", optimizer = "adam")
 
         self.model = model
 

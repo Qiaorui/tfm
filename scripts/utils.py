@@ -343,3 +343,21 @@ def get_next_filename(prefix):
     all_numbers = [int(re.search(r'\d+', name).group()) for name in all_files]
 
     return prefix + str(max(all_numbers)+1) if all_numbers else prefix + "1"
+
+
+def slice_data_by_time(data, key, start, end, max_zero_day):
+    data = data[(data[key] >= start) & (data[key] < end)]
+
+    groups = data.groupby('Station_ID')
+    to_remove = []
+    for sid, df in groups:
+        first = df.Timestamp.min()
+        last = df.Timestamp.max()
+        if (first - start) // np.timedelta64(1,'D') > max_zero_day or (end - last) // np.timedelta64(1,'D') > max_zero_day:
+            to_remove.append(sid)
+
+    print("We have from", start, "to", end)
+    print("remove:", to_remove)
+    data = data[~(data["Station_ID"].isin(to_remove))]
+
+    return data

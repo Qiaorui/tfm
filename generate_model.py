@@ -130,11 +130,12 @@ def prepare_data(df, weather_data, time_slot):
         sdf["Station_ID"] = sid
 
         # More station features
-        sdf['Latitude'] = lat
-        sdf['Longitude'] = lng
-        sdf['Mean_Count'] = sdf['Count'].mean()
-        sdf['AM_Ratio'] = sdf[(sdf.index.dayofweek < 6) & (sdf.index.hour >= 7) & (sdf.index.hour <= 9)]['Count'].mean()
-        sdf['PM_Ratio'] = sdf[(sdf.index.dayofweek < 6) & (sdf.index.hour >= 17) & (sdf.index.hour <= 19)]['Count'].mean()
+        if utils.ENCODER == "statistics":
+            sdf['Latitude'] = lat
+            sdf['Longitude'] = lng
+            sdf['Mean_Count'] = sdf['Count'].mean()
+            sdf['AM_Ratio'] = sdf[(sdf.index.dayofweek < 6) & (sdf.index.hour >= 7) & (sdf.index.hour <= 9)]['Count'].mean()
+            sdf['PM_Ratio'] = sdf[(sdf.index.dayofweek < 6) & (sdf.index.hour >= 17) & (sdf.index.hour <= 19)]['Count'].mean()
 
         data = data.append(sdf)
 
@@ -162,11 +163,11 @@ def prepare_data(df, weather_data, time_slot):
     data['Weekend'] = 0
     data.loc[data['Weekday'] > 4, 'Weekend'] = 1
 
-    data['Weekday_Cos'] = np.cos(2*np.pi/7 * data['Weekday'])
-    data['Weekday_Sin'] = np.sin(2*np.pi/7 * data['Weekday'])
+    data['Weekday_Cos'] = np.cos(2 * np.pi / 7 * data['Weekday'])
+    data['Weekday_Sin'] = np.sin(2 * np.pi / 7 * data['Weekday'])
     data['Month_Cos'] = np.cos(2*np.pi/12 * (data['Month']))
     data['Month_Sin'] = np.sin(2 * np.pi / 12 * (data['Month']))
-    data['Time_Fragment_Cos'] = np.cos(2*np.pi/(data['Time_Fragment'].max()+1) * data['Time_Fragment'])
+    data['Time_Fragment_Cos'] = np.cos(2 * np.pi / (data['Time_Fragment'].max() + 1) * data['Time_Fragment'])
     data['Time_Fragment_Sin'] = np.sin(2 * np.pi / (data['Time_Fragment'].max() + 1) * data['Time_Fragment'])
 
     data.drop(['Month'], axis='columns', inplace=True)
@@ -222,15 +223,21 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
         ssa_sample = ssa.predict(x_test, 5)
         base_df['SSA'] = ssa_sample
     if lr is not None:
-        lr_sample = lr.predict(x_test)
+        if utils.ENCODER == "statistics":
+            lr_sample = lr.predict(x_test.drop('Station_ID', axis=1))
+        else:
+            lr_sample = lr.predict(x_test)
         base_df['LR'] = lr_sample
     if mlp is not None:
-        mlp_sample = mlp.predict(x_test)
+        if utils.ENCODER == "statistics":
+            mlp_sample = mlp.predict(x_test.drop('Station_ID', axis=1))
+        else:
+            mlp_sample = mlp.predict(x_test)
         base_df['MLP'] = mlp_sample
 
     df = df.drop(['Weekday', 'Time_Fragment'], axis=1)
 
-    non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
+    non_sequential_columns = judge.non_sequential_columns
     x_non_sec_df = df[non_sequential_columns].loc[th_day: th_day + pd.DateOffset(n_days - 1)]
     x_non_sec_df = x_non_sec_df[(x_non_sec_df.index.hour == 0) & (x_non_sec_df.index.minute == 0)]
     if lstm1 is not None:
@@ -323,6 +330,7 @@ def main():
     parser.add_argument("-ts", type=int, default=30, help="Time slot for the aggregation, units in minute")
     parser.add_argument("-start", default="2017-01-01", help="Input start date")
     parser.add_argument("-th", default="2018-12-01", help="Threshold datetime to split train and test dataset")
+    parser.add_argument("-e", default="dummy", help="Choose encoding strategy to encode station ID" )
 
     parser.add_argument("-s", action="store_true", help="plot statistical report")
 
@@ -330,11 +338,14 @@ def main():
     weather_data_path = args.cw
     trip_data_path = args.ct
     time_slot = args.ts
-    #end = pd.to_datetime(args.end).normalize()
+    utils.ENCODER = args.e
     th_day = pd.to_datetime(args.th).normalize()
     start = pd.to_datetime(args.start).normalize()
     show = args.s
     seasonality = 1440//time_slot if 1440//time_slot > 1 else 7
+
+    if utils.ENCODER == "statistics":
+        judge.non_sequential_columns = ['Condition_Good', 'Holiday', 'Weekend', 'Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio']
 
     pd.set_option('display.precision', 3)
     pd.set_option('display.max_columns', 500)
@@ -380,18 +391,17 @@ def main():
     print("{0:*^80}".format(" PCA "))
     # PCA
     pca_data = data.loc[data["Station_ID"]==busiest_station]
-    pca_data = pca_data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
     pca(pca_data.drop(['Station_ID'], axis=1), 'Count', seasonality, show)
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
-    data = data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
     ha, ssa, arima, lr, mlp, lstm1, lstm2, lstm3, lstm4, lstm5 = None, None, None, None, None, None, None, None, None, None
 
     days_to_evaluate = [30, 14, 7]
 
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
     data = data.drop(['Weekday', 'Time_Fragment'], axis=1)
+
     mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -399,7 +409,7 @@ def main():
     mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     days_to_evaluate = [30, 14, 7, 1]
     mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index, show)
     mae_df = mae_df.join(mae, how='outer')
@@ -408,7 +418,7 @@ def main():
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     #data.drop(["Weekend", "Condition_Good"], axis=1, inplace=True)
 
     days_to_evaluate = [30, 14, 7]

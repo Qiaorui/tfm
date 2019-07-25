@@ -10,6 +10,7 @@ import json
 import certifi
 import glob
 import re
+from sklearn.preprocessing import MinMaxScaler
 
 BASE_URL = "https://s3.amazonaws.com/tripdata/"
 BASE_PATTERN_NYC = "{}-citibike-tripdata.csv.zip"
@@ -18,6 +19,7 @@ STATION_URL = "https://feeds.citibikenyc.com/stations/stations.json"
 
 DATE_RANGE = [y * 100 + m + 1 for y in range(2017, 2019) for m in range(12)]
 #DATE_RANGE += [201901, 201902]
+scaler = MinMaxScaler()
 
 
 def download_station_data(dest_path):

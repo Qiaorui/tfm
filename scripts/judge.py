@@ -1,5 +1,7 @@
 from scripts import models
+from scripts import utils
 import pandas as pd
+import numpy as np
 import math
 import sklearn.metrics
 
@@ -196,7 +198,11 @@ def evaluate_mlp(data, th_day, n_days, show=False):
         x_test = x_test.loc[x_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
         y = mlp.predict(x_test)
-        mae, rmse = score(y_test.tolist(), y)
+        #y = utils.scaler.inverse_transform(y)
+        #y = y.reshape(1,-1)[0]
+        #tmp_y_test = utils.scaler.inverse_transform(y_test.values.reshape(-1,1)).reshape(1,-1)[0]
+        #mae, rmse = score(tmp_y_test, y)
+        mae, rmse = score(y_test.values.flatten(), y)
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 
@@ -259,7 +265,10 @@ def evaluate_lstm_1(data, th_day, n_days, n_pre=2, n_post=2, show=False):
         x_non_sec_test = x_non_sec_test.loc[x_non_sec_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
         y = lstm.predict(x_sec_test, x_non_sec_test)
-        mae, rmse = score(y_test.values.flatten(), y.flatten())
+        #y = utils.scaler.inverse_transform(y.reshape(-1,1)).reshape(1, -1)[0]
+        #tmp_y_test = utils.scaler.inverse_transform(y_test.values.reshape(-1, 1)).reshape(1, -1)[0]
+        #mae, rmse = score(tmp_y_test, y)
+        mae, rmse = score(y_test.values.flatten(), y)
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 
@@ -318,7 +327,12 @@ def evaluate_lstm_2(data, th_day, n_days, n_pre=2, n_post=2, show=False):
         x_non_sec_test = x_non_sec_test.loc[x_non_sec_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
         y = lstm.predict(x_sec_test, x_non_sec_test)
-        mae, rmse = score(y_test.values.flatten(), y.flatten())
+        #y = utils.scaler.inverse_transform(y.reshape(-1,1)).reshape(1, -1)[0]
+
+        #tmp_y_test = utils.scaler.inverse_transform(y_test.values.reshape(-1, 1)).reshape(1, -1)[0]
+        #mae, rmse = score(tmp_y_test, y)
+
+        mae, rmse = score(y_test.values.flatten(), y)
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 
@@ -384,7 +398,10 @@ def evaluate_lstm_3(data, th_day, n_days, n_pre=2, n_post=2, show=False):
         x_future_sec_test = x_future_sec_test.loc[x_future_sec_test.index < (th_day + pd.DateOffset(n))]
         y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
         y = lstm.predict(x_sec_test, x_non_sec_test, x_future_sec_test)
-        mae, rmse = score(y_test.values.flatten(), y.flatten())
+        #y = utils.scaler.inverse_transform(y.reshape(-1,1)).reshape(1, -1)[0]
+        #tmp_y_test = utils.scaler.inverse_transform(y_test.values.reshape(-1, 1)).reshape(1, -1)[0]
+        #mae, rmse = score(tmp_y_test, y)
+        mae, rmse = score(y_test.values.flatten(), y)
         mae_dict[n] = mae
         rmse_dict[n] = rmse
 
@@ -450,7 +467,6 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2, show=False):
 
         if n == 1:
             y = lstm.predict(tmp_x_sec_test, tmp_x_non_sec_test)
-            y = y.flatten()
         else:
             y = []
             for i in range(len(tmp_x_sec_test.index)):
@@ -460,8 +476,10 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2, show=False):
                     for idx, j in enumerate(y[-n_pre:]):
                         x_sec_row['Count-' + str(n_pre-idx)] = j
                 y_row = lstm.predict(x_sec_row, x_non_sec_row)
-                y.extend(y_row.flatten())
-
+                y.extend(y_row)
+        #y = utils.scaler.inverse_transform(np.array(y).reshape(-1,1)).reshape(1, -1)[0]
+        #tmp_y_test = utils.scaler.inverse_transform(tmp_y_test.values.reshape(-1, 1)).reshape(1, -1)[0]
+        #mae, rmse = score(tmp_y_test, y)
         mae, rmse = score(tmp_y_test.values.flatten(), y)
         mae_dict[n] = mae
         rmse_dict[n] = rmse
@@ -536,7 +554,6 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2, show=False):
 
         if n == 1:
             y = lstm.predict(tmp_x_sec_test, tmp_x_non_sec_test, tmp_x_future_sec_test)
-            y = y.flatten()
         else:
             y = []
             for i in range(len(tmp_x_sec_test.index)):
@@ -547,7 +564,12 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2, show=False):
                     for idx, j in enumerate(y[-n_pre:]):
                         x_sec_row['Count-' + str(n_pre-idx)] = j
                 y_row = lstm.predict(x_sec_row, x_non_sec_row, x_future_sec_row)
-                y.extend(y_row.flatten())
+                y.extend(y_row)
+        #y = utils.scaler.inverse_transform(y).reshape(1, -1)
+
+        #y = utils.scaler.inverse_transform(np.array(y).reshape(-1,1)).reshape(1, -1)[0]
+        #tmp_y_test = utils.scaler.inverse_transform(tmp_y_test.values.reshape(-1, 1)).reshape(1, -1)[0]
+        #mae, rmse = score(tmp_y_test, y)
 
         mae, rmse = score(tmp_y_test.values.flatten(), y)
         mae_dict[n] = mae

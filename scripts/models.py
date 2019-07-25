@@ -16,7 +16,7 @@ import joblib
 import math
 import multiprocessing
 #from scipy import stats
-#from sklearn.preprocessing import MinMaxScaler
+
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.statespace.sarimax import SARIMAXResults
@@ -373,7 +373,6 @@ class MLP(BaseModel):
     def __init__(self):
         super().__init__()
         print("Creating MLP model")
-        #self.normalizer = MinMaxScaler()
         self.wrapper = {}
 
     def test(self, x, y):
@@ -382,7 +381,7 @@ class MLP(BaseModel):
             self.data = dum.columns.values
             x = np.hstack([x.drop('Station_ID', axis=1), dum])
         #y = np.array(y.values)
-        #y = self.normalizer.fit_transform(y.reshape(-1, 1)).reshape(1,-1)[0]
+        #y = self.normalizer.fit(y.reshape(-1, 1)).reshape(1,-1)[0]
 
         n = min(x.shape[1], 99) # Number of features, number of neurons in input layer, limited to 100 neurons
         o = 1 # Number of neurons in output layer
@@ -408,6 +407,9 @@ class MLP(BaseModel):
         self.model = ms
 
     def fit(self, x_train, y_train, x_test, y_test, show):
+        #y_train = utils.scaler.transform(y_train.values.reshape(-1,1)).reshape(1,-1)[0]
+        #y_test = utils.scaler.transform(y_test.values.reshape(-1, 1)).reshape(1, -1)[0]
+
         n = x_train.shape[1]-1
         station_size = x_train['Station_ID'].nunique()
 
@@ -465,10 +467,9 @@ class MLP(BaseModel):
         for k, v in self.wrapper.items():
             x.loc[x['Station_ID'] == k, 'Station_ID'] = v
 
-
         y = self.model.predict([x['Station_ID'], x.drop('Station_ID', axis=1)])
-        #y = self.normalizer.inverse_transform(y.reshape(-1, 1))
-        #return y.reshape(1, -1)[0]
+        #y = utils.scaler.inverse_transform(y.reshape(-1, 1)).reshape(1, -1)[0]
+
         y = [0 if i < 0 else i for i in y]
         return y
 
@@ -579,8 +580,10 @@ class LSTM(BaseModel):
         return keras.Model(inputs=[encoder_inputs, decoder_inputs, non_sequential_input_layer, emb_layer.input], outputs=output_layer)
 
     def fit(self, x_sec_train, x_non_sec_train, y_train, x_sec_test, x_non_sec_test, y_test, type, x_future_sec_train=None, x_future_sec_test=None, show=False):
-        station_size = x_non_sec_train['Station_ID'].nunique()
+        #y_train = utils.scaler.transform(y_train.values.reshape(-1,1)).reshape(1,-1)[0]
+        #y_test = utils.scaler.transform(y_test.values.reshape(-1, 1)).reshape(1, -1)[0]
 
+        station_size = x_non_sec_train['Station_ID'].nunique()
         stations = list(x_non_sec_train['Station_ID'].unique())
         stations.sort()
         for i, s in enumerate(stations):
@@ -655,4 +658,8 @@ class LSTM(BaseModel):
             x_future_sec = x_future_sec.values.reshape(x_future_sec.shape[0], self.n_post, x_future_sec.shape[1] // self.n_post)
             y = self.model.predict([x_sec, x_future_sec, x_non_sec.drop('Station_ID', axis=1), x_non_sec['Station_ID']])
 
-        return np.array(list(map(lambda yy: [0 if i < 0 else i for i in yy], y)))
+        y = np.array(list(map(lambda yy: [0 if i < 0 else i for i in yy], y)))
+        y = y.flatten()
+        #y = utils.scaler.inverse_transform(y.reshape(-1, 1)).reshape(1, -1)[0]
+
+        return y

@@ -148,7 +148,6 @@ def evaluate_arima(data, th_day, n_days, seasonality, sids, show):
 
 
 def evaluate_lr(data, th_day, n_days):
-    data = data.drop('Station_ID', axis=1)
     x_train = data[data.index < th_day]
     y_train = x_train['Count']
     x_train.drop('Count', axis=1, inplace=True)
@@ -178,7 +177,6 @@ def evaluate_lr(data, th_day, n_days):
 
 
 def evaluate_mlp(data, th_day, n_days):
-    data = data.drop('Station_ID', axis=1)
     x_train = data[data.index < th_day]
     y_train = x_train['Count']
     x_train.drop('Count', axis=1, inplace=True)
@@ -188,8 +186,8 @@ def evaluate_mlp(data, th_day, n_days):
     x_test.drop('Count', axis=1, inplace=True)
 
     mlp = models.MLP()
-    mlp.test(x_train, y_train)
-    #mlp.fit(x_train, y_train)
+    #mlp.test(x_train, y_train)
+    mlp.fit(x_train, y_train)
 
     mae_dict = {}
     rmse_dict = {}

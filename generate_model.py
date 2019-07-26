@@ -141,8 +141,12 @@ def prepare_data(df, weather_data, time_slot):
 
     # Normalize the data
     scaler = MinMaxScaler()
-    data[['Temperature', 'Wind', 'Humidity', 'Visibility', 'Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio']] = scaler.fit_transform(
-        data[['Temperature', 'Wind', 'Humidity', 'Visibility', 'Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio']])
+    if utils.ENCODER == "statistics":
+        normalize_features = ['Temperature', 'Wind', 'Humidity', 'Visibility', 'Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio']
+    else:
+        normalize_features = ['Temperature', 'Wind', 'Humidity', 'Visibility']
+
+    data[normalize_features] = scaler.fit_transform(data[normalize_features])
 
     cloudy_conds = ["Clear", "Partly Cloudy", "Scattered Clouds", "Mostly Cloudy", "Haze", "Overcast"]
     data.loc[-data.Condition.isin(cloudy_conds), 'Condition'] = 0
@@ -402,14 +406,20 @@ def main():
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
     data = data.drop(['Weekday', 'Time_Fragment'], axis=1)
 
-    mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
+    if utils.ENCODER == "statistics":
+        mae, rmse, lr = judge.evaluate_lr(data.drop('Station_ID', axis=1), th_day, days_to_evaluate)
+    else:
+        mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
-    mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
+    if utils.ENCODER == "statistics":
+        mae, rmse, mlp = judge.evaluate_mlp(data.drop('Station_ID', axis=1), th_day, days_to_evaluate)
+    else:
+        mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     days_to_evaluate = [30, 14, 7, 1]
     mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index, show)
     mae_df = mae_df.join(mae, how='outer')
@@ -418,7 +428,7 @@ def main():
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     #data.drop(["Weekend", "Condition_Good"], axis=1, inplace=True)
 
     days_to_evaluate = [30, 14, 7]

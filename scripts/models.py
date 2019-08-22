@@ -436,8 +436,8 @@ class MLP(BaseModel):
 
             # apply a FC layer and then a regression prediction on the
             # combined outputs
-            z = keras.layers.Dense(n, activation="tanh")(combined)
-            z = keras.layers.Dense(n, activation="tanh")(z)
+            z = keras.layers.Dense(n*2//3, activation="relu")(combined)
+            z = keras.layers.Dense(n*2//3, activation="relu")(z)
             z = keras.layers.Dense(1, activation="relu")(z)
 
             # our model will accept the inputs of the two branches and
@@ -699,7 +699,8 @@ class LSTM(BaseModel):
                 data_to_fit = [x_sec_train, x_non_sec_train]
                 data_to_validate = ([x_sec_test, x_non_sec_test], y_test)
 
-        history = model.fit(data_to_fit, y_train, batch_size=batch_size, validation_data=data_to_validate, epochs=100, verbose=0, callbacks=[es])
+        #history = model.fit(data_to_fit, y_train, batch_size=batch_size, validation_data=data_to_validate, epochs=100, verbose=0, callbacks=[es])
+        history = model.fit(data_to_fit, y_train, batch_size=batch_size, validation_split=0.3, shuffle=True, epochs=100, verbose=0, callbacks=[es])
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

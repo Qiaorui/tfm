@@ -241,6 +241,9 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
 
     df = df.drop(['Weekday', 'Time_Fragment'], axis=1)
 
+    if utils.scaler is not None:
+        df[['Count']] = utils.scaler.transform(df[['Count']])
+
     non_sequential_columns = judge.non_sequential_columns
     x_non_sec_df = df[non_sequential_columns].loc[th_day: th_day + pd.DateOffset(n_days - 1)]
     x_non_sec_df = x_non_sec_df[(x_non_sec_df.index.hour == 0) & (x_non_sec_df.index.minute == 0)]
@@ -251,7 +254,10 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
         x_sec_df = x_sec_df[(x_sec_df.index.hour == 0) & (x_sec_df.index.minute == 0)]
 
         lstm1_sample = lstm1.predict(x_sec_df, x_non_sec_df)
-        base_df['LSTM_1'] = lstm1_sample.flatten()
+
+        if utils.scaler is not None:
+            lstm1_sample = utils.scaler.inverse_transform(np.array(lstm1_sample).reshape(-1, 1))
+        base_df['LSTM_1'] = lstm1_sample
 
     if lstm2 is not None:
         x_sec_df, ydf, _ = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
@@ -260,7 +266,11 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
         x_sec_df = x_sec_df[(x_sec_df.index.hour == 0) & (x_sec_df.index.minute == 0)]
 
         lstm2_sample = lstm2.predict(x_sec_df, x_non_sec_df)
-        base_df['LSTM_2'] = lstm2_sample.flatten()
+
+        if utils.scaler is not None:
+            lstm2_sample = utils.scaler.inverse_transform(np.array(lstm2_sample).reshape(-1, 1))
+        base_df['LSTM_2'] = lstm2_sample
+
     if lstm3 is not None:
         x_sec_df, ydf, x_future_sec_df = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
                                                   target_as_feature=False, use_future=True, use_past=True)
@@ -271,7 +281,11 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
         x_future_sec_df = x_future_sec_df[(x_future_sec_df.index.hour == 0) & (x_future_sec_df.index.minute == 0)]
 
         lstm3_sample = lstm3.predict(x_sec_df, x_non_sec_df, x_future_sec_df)
-        base_df['LSTM_3'] = lstm3_sample.flatten()
+
+        if utils.scaler is not None:
+            lstm3_sample = utils.scaler.inverse_transform(np.array(lstm3_sample).reshape(-1, 1))
+        base_df['LSTM_3'] = lstm3_sample
+
     if lstm4 is not None:
         x_sec_df, ydf, _ = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
                                                   target_as_feature=True, use_future=False, use_past=True)
@@ -283,12 +297,15 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
             x_sec_row = x_sec_df.iloc[[i]]
             x_non_sec_row = x_non_sec_df.iloc[[i]]
             if lstm4_sample:
-                for idx, j in enumerate(y[-n_pre:]):
+                for idx, j in enumerate(lstm4_sample[-n_pre:]):
                     x_sec_row['Count-' + str(n_pre-idx)] = j
             y_row = lstm4.predict(x_sec_row, x_non_sec_row)
-            lstm4_sample.extend(y_row.flatten())
+            lstm4_sample.extend(y_row)
 
+        if utils.scaler is not None:
+            lstm4_sample = utils.scaler.inverse_transform(np.array(lstm4_sample).reshape(-1, 1))
         base_df['LSTM_4'] = lstm4_sample
+
     if lstm5 is not None:
         x_sec_df, ydf, x_future_sec_df = judge.convert_to_sequence(df.drop(columns=non_sequential_columns), ['Count'], n_pre, n_post,
                                                   target_as_feature=True, use_future=True, use_past=True)
@@ -304,11 +321,13 @@ def plot_sample_station_prediction(df, th_day, n_days, ha=None, arima=None, ssa=
             x_non_sec_row = x_non_sec_df.iloc[[i]]
             x_sec_future_row = x_future_sec_df.iloc[[i]]
             if lstm5_sample:
-                for idx, j in enumerate(y[-n_pre:]):
+                for idx, j in enumerate(lstm5_sample[-n_pre:]):
                     x_sec_row['Count-' + str(n_pre-idx)] = j
             y_row = lstm5.predict(x_sec_row, x_non_sec_row, x_sec_future_row)
-            lstm5_sample.extend(y_row.flatten())
+            lstm5_sample.extend(y_row)
 
+        if utils.scaler is not None:
+            lstm5_sample = utils.scaler.inverse_transform(np.array(lstm5_sample).reshape(-1, 1))
         base_df['LSTM_5'] = lstm5_sample
 
     plt.figure(figsize=(15, 7))
@@ -335,7 +354,7 @@ def main():
     parser.add_argument("-start", default="2017-01-01", help="Input start date")
     parser.add_argument("-th", default="2018-12-01", help="Threshold datetime to split train and test dataset")
     parser.add_argument("-e", default="dummy", help="Choose encoding strategy to encode station ID" )
-
+    parser.add_argument("-n", action="store_true", help="normalize the target variable")
     parser.add_argument("-s", action="store_true", help="plot statistical report")
 
     args = parser.parse_args()
@@ -343,6 +362,7 @@ def main():
     trip_data_path = args.ct
     time_slot = args.ts
     utils.ENCODER = args.e
+    normalise = args.n
     th_day = pd.to_datetime(args.th).normalize()
     start = pd.to_datetime(args.start).normalize()
     show = args.s
@@ -399,24 +419,25 @@ def main():
 
     # Training modules, train data by different techniques
     print("{0:*^80}".format(" Training "))
+    # Fit the normalisation range
+    if normalise:
+        utils.scaler.fit(np.array(data['Count']).reshape(-1, 1))
+        print(utils.scaler)
+    else:
+        utils.scaler = None
+
+    #data = data.drop(['Latitude', 'Longitude', 'Mean_Count', 'AM_Ratio', 'PM_Ratio'], axis=1)
     ha, ssa, arima, lr, mlp, lstm1, lstm2, lstm3, lstm4, lstm5 = None, None, None, None, None, None, None, None, None, None
 
     days_to_evaluate = [30, 14, 7]
 
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
     data = data.drop(['Weekday', 'Time_Fragment'], axis=1)
-
+    """
     if utils.ENCODER == "statistics":
         mae, rmse, lr = judge.evaluate_lr(data.drop('Station_ID', axis=1), th_day, days_to_evaluate)
     else:
         mae, rmse, lr = judge.evaluate_lr(data, th_day, days_to_evaluate)
-    mae_df = mae_df.join(mae, how='outer')
-    rmse_df = rmse_df.join(rmse, how='outer')
-
-    if utils.ENCODER == "statistics":
-        mae, rmse, mlp = judge.evaluate_mlp(data.drop('Station_ID', axis=1), th_day, days_to_evaluate)
-    else:
-        mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
@@ -428,14 +449,22 @@ def main():
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
-    #data.drop(["Weekend", "Condition_Good"], axis=1, inplace=True)
+    """
+    if utils.scaler is not None:
+        data[['Count']] = utils.scaler.transform(data[['Count']])
 
     days_to_evaluate = [30, 14, 7]
+    if utils.ENCODER == "statistics":
+        mae, rmse, mlp = judge.evaluate_mlp(data.drop('Station_ID', axis=1), th_day, days_to_evaluate)
+    else:
+        mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate, show)
+    mae_df = mae_df.join(mae, how='outer')
+    rmse_df = rmse_df.join(rmse, how='outer')
+    """
     mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-
+    """
     mae, rmse, lstm2 = judge.evaluate_lstm_2(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')

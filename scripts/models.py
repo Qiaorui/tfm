@@ -21,7 +21,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAXResults
 
 pd.options.mode.chained_assignment = None
 
-dropout = 0.
+dropout = 0.1
 
 
 class BaseModel:
@@ -75,7 +75,7 @@ def search_best_arima_model(sid, df, options):
         if not np.isnan(results.aic):
             print('Station {} :  SARIMA{}x{} - AIC:{}'.format(sid, param, param_seasonal, results.aic))
             search_results.append((param, param_seasonal, results.aic, results))
-            if len(search_results) > 5:
+            if len(search_results) > 3:
                 break
     search_results = sorted(search_results, key=lambda x: x[2])
 
@@ -354,8 +354,10 @@ def my_scorer(y_true, y_pred):
     return rmse
 
 
+embedding_size = 5
+
+
 def create_embedding_layer(station_size):
-    embedding_size = 5
     station_input = keras.layers.Input(shape=(1,))
 
     # the first branch operates on the first input
@@ -410,7 +412,7 @@ class MLP(BaseModel):
             n = x_train.shape[1] # Number of features, number of neurons in input layer
             o = 1 # Number of neurons in output layer
 
-            self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(n*2//3, n*2//3), solver='sgd', activation='relu', max_iter=1000, verbose=True, learning_rate="adaptive", learning_rate_init=0.01)
+            self.model = sklearn.neural_network.MLPRegressor(hidden_layer_sizes=(n*2//3, n*2//3), solver='sgd', activation='relu', max_iter=200, verbose=True, learning_rate="adaptive", learning_rate_init=0.01)
             self.model.fit(x_train, y_train)
         elif utils.ENCODER == "embedding":
             # y_train = utils.scaler.transform(y_train.values.reshape(-1,1)).reshape(1,-1)[0]
@@ -511,9 +513,9 @@ class LSTM(BaseModel):
     def create_model_1(self, n_pre, n_feature, n_post, n_non_sec, station_size=None, hidden_dim=128):
         sequential_input_layer = keras.layers.Input(shape=(n_pre, n_feature))
 
-        lstm_1_layer = keras.layers.LSTM(hidden_dim, dropout=dropout)(sequential_input_layer)
+        lstm_1_layer = keras.layers.LSTM(embedding_size, dropout=dropout)(sequential_input_layer)
         repeat_layer = keras.layers.RepeatVector(self.n_post)(lstm_1_layer)
-        lstm_2_layer = keras.layers.LSTM(hidden_dim, return_sequences=True, dropout=dropout)(repeat_layer)
+        lstm_2_layer = keras.layers.LSTM(embedding_size, return_sequences=True, dropout=dropout)(repeat_layer)
         time_dense_layer = keras.layers.TimeDistributed(keras.layers.Dense(1))(lstm_2_layer)
         activation_layer = keras.layers.Activation('linear')(time_dense_layer)
         flatten_layer = keras.layers.Flatten()(activation_layer)
@@ -549,7 +551,7 @@ class LSTM(BaseModel):
     def create_model_2(self, n_pre, n_feature, n_post, n_non_sec, station_size=None, hidden_dim=128):
         sequential_input_layer = keras.layers.Input(shape=(n_pre, n_feature))
 
-        lstm_1_layer = keras.layers.LSTM(hidden_dim, return_sequences=True, dropout=dropout)(sequential_input_layer)
+        lstm_1_layer = keras.layers.LSTM(embedding_size, return_sequences=True, dropout=dropout)(sequential_input_layer)
         time_dense_layer = keras.layers.TimeDistributed(keras.layers.Dense(1))(lstm_1_layer)
         activation_layer = keras.layers.Activation('linear')(time_dense_layer)
         flatten_layer = keras.layers.Flatten()(activation_layer)
@@ -586,7 +588,7 @@ class LSTM(BaseModel):
 
         # Define an input sequence and process it.
         encoder_inputs = keras.layers.Input(shape=(n_pre, n_pre_feature))
-        encoder = keras.layers.LSTM(hidden_dim, return_state=True, dropout=dropout)
+        encoder = keras.layers.LSTM(embedding_size, return_state=True, dropout=dropout)
         encoder_outputs, state_h, state_c = encoder(encoder_inputs)
         # We discard `encoder_outputs` and only keep the states.
         encoder_states = [state_h, state_c]
@@ -596,7 +598,7 @@ class LSTM(BaseModel):
         # We set up our decoder to return full output sequences,
         # and to return internal states as well. We don't use the
         # return states in the training model, but we will use them in inference.
-        decoder_lstm = keras.layers.LSTM(hidden_dim, return_sequences=True, return_state=True, dropout=dropout)
+        decoder_lstm = keras.layers.LSTM(embedding_size, return_sequences=True, return_state=True, dropout=dropout)
         decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
         decoder_dense = keras.layers.Dense(n_post_feature, activation='relu')
         decoder_outputs = decoder_dense(decoder_outputs)
@@ -653,7 +655,7 @@ class LSTM(BaseModel):
         dim = (x_sec_train.shape[2] + x_non_sec_train.shape[1])
 
         if utils.ENCODER != "embedding":
-            dim = dim * 2 //3
+            dim = dim * 2 // 3
 
         batch_size = None
         non_sec_size = x_non_sec_train.shape[1]
@@ -699,8 +701,8 @@ class LSTM(BaseModel):
                 data_to_fit = [x_sec_train, x_non_sec_train]
                 data_to_validate = ([x_sec_test, x_non_sec_test], y_test)
 
-        #history = model.fit(data_to_fit, y_train, batch_size=batch_size, validation_data=data_to_validate, epochs=100, verbose=0, callbacks=[es])
-        history = model.fit(data_to_fit, y_train, batch_size=batch_size, validation_split=0.3, shuffle=True, epochs=100, verbose=0, callbacks=[es])
+        history = model.fit(data_to_fit, y_train, batch_size=batch_size, validation_data=data_to_validate, epochs=100, verbose=0, callbacks=[es])
+        #history = model.fit(data_to_fit, y_train, batch_size=batch_size, validation_split=0.3, epochs=100, verbose=0, callbacks=[es])
 
         # Plot training & validation loss values
         plt.plot(history.history['loss'])

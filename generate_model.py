@@ -433,7 +433,7 @@ def main():
 
     mae_df, rmse_df, ha = judge.evaluate_ha(data, th_day, days_to_evaluate)
     data = data.drop(['Weekday', 'Time_Fragment'], axis=1)
-    """
+
     if utils.ENCODER == "statistics":
         mae, rmse, lr = judge.evaluate_lr(data.drop('Station_ID', axis=1), th_day, days_to_evaluate)
     else:
@@ -449,22 +449,23 @@ def main():
     mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     if utils.scaler is not None:
         data[['Count']] = utils.scaler.transform(data[['Count']])
 
     days_to_evaluate = [30, 14, 7]
+
     if utils.ENCODER == "statistics":
         mae, rmse, mlp = judge.evaluate_mlp(data.drop('Station_ID', axis=1), th_day, days_to_evaluate)
     else:
         mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     mae, rmse, lstm1 = judge.evaluate_lstm_1(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
-    """
+
     mae, rmse, lstm2 = judge.evaluate_lstm_2(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')

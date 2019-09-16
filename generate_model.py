@@ -13,6 +13,7 @@ import pandas as pd
 import gc
 import argparse
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import seaborn as sns
 import numpy as np
 from pandas.tseries.holiday import USFederalHolidayCalendar
@@ -612,7 +613,7 @@ def main():
     days_to_evaluate = [30, 14, 7]
 
     if utils.ENCODER == "statistics":
-        mae, rmse, mlp = judge.evaluate_mlp(data.drop('Station_ID', axis=1), th_day, days_to_evaluate)
+        mae, rmse, mlp = judge.evaluate_mlp(data.drop('Station_ID', axis=1), th_day, days_to_evaluate, show)
     else:
         mae, rmse, mlp = judge.evaluate_mlp(data, th_day, days_to_evaluate, show)
     mae_df = mae_df.join(mae, how='outer')
@@ -681,7 +682,6 @@ def main():
         plt.clf()
         plt.close()
 
-
     # Evaluate per each station
     data = prepare_data(pick_ups, weather_data, time_slot)
 
@@ -698,20 +698,33 @@ def main():
         mae_df = mae_df.append(mae, ignore_index=True)
         rmse_df = rmse_df.append(rmse, ignore_index=True)
 
-
     # Drop types we don't use
-    mae_df = mae_df[['HA', 'LSTM_5']]
-    rmse_df = rmse_df[['HA', 'LSTM_5']]
+    #mae_df = mae_df[['HA', 'LSTM_5']]
+    #rmse_df = rmse_df[['HA', 'LSTM_5']]
 
     mae_df = mae_df.sub(mae_df['HA'], axis=0)
     rmse_df = rmse_df.sub(rmse_df['HA'], axis=0)
+
+    mae_df['freq'] = station_freq_counts.values.tolist()
+    mae_df = mae_df.groupby('freq').mean().reset_index(drop=True)
+
+    rmse_df['freq'] = station_freq_counts.values.tolist()
+    rmse_df = rmse_df.groupby('freq').mean().reset_index(drop=True)
     print(mae_df)
     print(rmse_df)
+
+    n_ticks = 5
+    max_ticks_size = len(mae_df.index)
+    x_ticks_index = [mae_df.index.values.tolist()[x * (max_ticks_size - 1) // (n_ticks - 1)] for x in range(n_ticks)]
+    freq_index = station_freq_counts.drop_duplicates().values.tolist()
+    x_ticks_label = [freq_index[x * (max_ticks_size - 1) // (n_ticks - 1)] for x in range(n_ticks)]
 
     for col in mae_df:
         plt.plot(mae_df[col].dropna(), linestyle='-', label=col)
     plt.ylabel("MAE")
-    #plt.xticks(days_to_evaluate, xs_label)
+    plt.xlabel("Daily Frequency")
+    plt.xticks(x_ticks_index, x_ticks_label)
+
     plt.legend()
     filename = utils.get_next_filename("p")
     plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
@@ -724,7 +737,10 @@ def main():
     for col in rmse_df:
         plt.plot(rmse_df[col].dropna(), linestyle='-', label=col)
     plt.ylabel("RMSE")
-    #plt.xticks(days_to_evaluate, xs_label)
+    plt.xlabel("Daily Frequency")
+
+    plt.xticks(x_ticks_index, x_ticks_label)
+
     plt.legend()
     filename = utils.get_next_filename("p")
     plt.savefig('results/' + filename + '.pdf', bbox_inches='tight')
@@ -733,8 +749,6 @@ def main():
     else:
         plt.clf()
         plt.close()
-
-
 
 
 if __name__ == '__main__':

@@ -5,7 +5,7 @@ START_LIST=(2018-09-01 2018-06-01 2017-12-01 2018-08-01 2018-05-01 2017-11-01)
 TH_LIST=(2018-12-01 2018-11-01)
 
 
-OUTLIER_THRESHOLD=720
+OUTLIER_THRESHOLD=360
 
 ANALYZE_FLAG=0
 MODEL_FLAG=0
@@ -45,8 +45,8 @@ start_model () {
             do
                 for ((j=3*i; j<${#START_LIST[@]} + ((i-1)*3); j++));
                 do
-                    echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]}"
-                    python3 -u generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} | tee ./results/log.txt
+                    echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} -e dummy"
+                    python3 -u generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} -e dummy | tee ./results/log.txt
                     mkdir -p "JC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                     mv ./results/* "JC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                 done
@@ -62,8 +62,8 @@ start_model () {
             do
                 for ((j=3*i; j<${#START_LIST[@]} + ((i-1)*3); j++));
                 do
-                    echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]}"
-                    python3 -u generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/NYC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} | tee ./results/log.txt
+                    echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} -e dummy"
+                    python3 -u generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/NYC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} -e dummy | tee ./results/log.txt
                     mkdir -p "NYC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                     mv ./results/* "NYC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                 done

@@ -387,19 +387,24 @@ def evaluate_model_by_station(df, th_day, n_days, ha=None, arima=None, ssa=None,
         mae, rmse = judge.score(sample, lr_sample)
         mae_dict['LR'] = mae
         rmse_dict['LR'] = rmse
+
+    if utils.scaler is not None:
+        df[['Count']] = utils.scaler.transform(df[['Count']])
+
     if mlp is not None:
         if utils.ENCODER == "statistics":
             mlp_sample = mlp.predict(x_test.drop('Station_ID', axis=1))
         else:
             mlp_sample = mlp.predict(x_test)
+
+        if utils.scaler is not None:
+            mlp_sample = utils.scaler.inverse_transform(np.array(mlp_sample).reshape(-1, 1))
+
         mae, rmse = judge.score(sample, mlp_sample)
         mae_dict['MLP'] = mae
         rmse_dict['MLP'] = rmse
 
     df = df.drop(['Weekday', 'Time_Fragment'], axis=1)
-
-    if utils.scaler is not None:
-        df[['Count']] = utils.scaler.transform(df[['Count']])
 
     non_sequential_columns = judge.non_sequential_columns
     x_non_sec_df = df[non_sequential_columns].loc[th_day: th_day + pd.DateOffset(n_days - 1)]
@@ -502,7 +507,6 @@ def evaluate_model_by_station(df, th_day, n_days, ha=None, arima=None, ssa=None,
     return mae_dict, rmse_dict
 
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-cw", default="cleaned_data/weather.csv", help="input cleaned weather data path")
@@ -566,7 +570,12 @@ def main():
     print(data.describe())
 
     station_freq_counts = pick_ups["Station_ID"].value_counts() // ((th_day - start)/np.timedelta64(1,'D') + 30)
-    print(station_freq_counts)
+    plt.hist(station_freq_counts.values, bins=min(len(station_freq_counts.index)//5, 200))
+    plt.title("Daily Frequency Distribution")
+    plt.xlabel("Daily Frequency")
+    plt.ylabel("Quantity of station")
+    plt.show()
+
     busiest_station = station_freq_counts.idxmax()
     idle_station = station_freq_counts.idxmin()
     median_station = station_freq_counts.index[len(station_freq_counts)//2]
@@ -636,7 +645,6 @@ def main():
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
 
-
     mae, rmse, lstm5 = judge.evaluate_lstm_5(data, th_day, days_to_evaluate, seasonality, seasonality, show)
     mae_df = mae_df.join(mae, how='outer')
     rmse_df = rmse_df.join(rmse, how='outer')
@@ -699,8 +707,12 @@ def main():
         rmse_df = rmse_df.append(rmse, ignore_index=True)
 
     # Drop types we don't use
-    #mae_df = mae_df[['HA', 'LSTM_5']]
-    #rmse_df = rmse_df[['HA', 'LSTM_5']]
+    if 'LR' in mae_df.columns:
+        mae_df.drop('LR', axis=1, inplace=True)
+        rmse_df.drop('LR', axis=1, inplace=True)
+    if 'SSA' in mae_df.columns:
+        mae_df.drop('SSA', axis=1, inplace=True)
+        rmse_df.drop('SSA', axis=1, inplace=True)
 
     mae_df = mae_df.sub(mae_df['HA'], axis=0)
     rmse_df = rmse_df.sub(rmse_df['HA'], axis=0)

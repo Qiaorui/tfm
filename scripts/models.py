@@ -6,13 +6,11 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import itertools
 import numpy as np
-import gc
 import os
 import sklearn.linear_model
 import sklearn.neural_network
 import sklearn.model_selection
 import keras
-import joblib
 import math
 import multiprocessing
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
@@ -75,7 +73,7 @@ def search_best_arima_model(sid, df, options):
         if not np.isnan(results.aic):
             print('Station {} :  SARIMA{}x{} - AIC:{}'.format(sid, param, param_seasonal, results.aic))
             search_results.append((param, param_seasonal, results.aic, results))
-            if len(search_results) > 3:
+            if len(search_results) > 1:
                 break
     search_results = sorted(search_results, key=lambda x: x[2])
 
@@ -418,6 +416,8 @@ class MLP(BaseModel):
             # y_train = utils.scaler.transform(y_train.values.reshape(-1,1)).reshape(1,-1)[0]
             # y_test = utils.scaler.transform(y_test.values.reshape(-1, 1)).reshape(1, -1)[0]
 
+            x_test = x_test.copy()
+
             n = x_train.shape[1] - 1
             station_size = x_train['Station_ID'].nunique()
 
@@ -486,6 +486,7 @@ class MLP(BaseModel):
             y.clip(0)
             return y
         elif utils.ENCODER == "embedding":
+            x = x.copy()
             for k, v in self.wrapper.items():
                 x.loc[x['Station_ID'] == k, 'Station_ID'] = v
 
@@ -634,6 +635,9 @@ class LSTM(BaseModel):
             stations.sort()
             for i, s in enumerate(stations):
                 self.wrapper[s] = i
+
+            x_non_sec_test = x_non_sec_test.copy()
+
             for k, v in self.wrapper.items():
                 x_non_sec_train.loc[x_non_sec_train['Station_ID'] == k, 'Station_ID'] = v
                 x_non_sec_test.loc[x_non_sec_test['Station_ID'] == k, 'Station_ID'] = v
@@ -722,6 +726,7 @@ class LSTM(BaseModel):
 
     def predict(self, x_sec, x_non_sec, x_future_sec=None):
         if utils.ENCODER == "embedding":
+            x_non_sec = x_non_sec.copy()
             for k, v in self.wrapper.items():
                 x_non_sec.loc[x_non_sec['Station_ID'] == k, 'Station_ID'] = v
 

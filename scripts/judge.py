@@ -1,6 +1,7 @@
 from scripts import models
 from scripts import utils
 import pandas as pd
+from tqdm import tqdm
 import numpy as np
 import math
 import sklearn.metrics
@@ -479,7 +480,7 @@ def evaluate_lstm_4(data, th_day, n_days, n_pre=2, n_post=2, show=False):
             y = lstm.predict(tmp_x_sec_test, tmp_x_non_sec_test)
         else:
             y = np.array([])
-            for i in range(len(tmp_x_sec_test.index)):
+            for i in tqdm(range(len(tmp_x_sec_test.index))):
                 x_sec_row = tmp_x_sec_test.iloc[[i]]
                 x_non_sec_row = tmp_x_non_sec_test.iloc[[i]]
                 if y.size > 0:
@@ -571,7 +572,7 @@ def evaluate_lstm_5(data, th_day, n_days, n_pre=2, n_post=2, show=False):
             y = lstm.predict(tmp_x_sec_test, tmp_x_non_sec_test, tmp_x_future_sec_test)
         else:
             y = np.array([])
-            for i in range(len(tmp_x_sec_test.index)):
+            for i in tqdm(range(len(tmp_x_sec_test.index))):
                 x_sec_row = tmp_x_sec_test.iloc[[i]]
                 x_non_sec_row = tmp_x_non_sec_test.iloc[[i]]
                 x_future_sec_row = tmp_x_future_sec_test.iloc[[i]]

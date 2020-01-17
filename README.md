@@ -72,17 +72,16 @@ bash install.sh
 
 ```
 .
-├── README.md                           This file
-├── cleaned_data                        directory for cleaned data
-├── generate_model.py
-├── install.sh
-├── model                               directory for saved model
-├── prepare.py
-├── raw_data                            directory for raw data
-├── related_references                  directory for related references which are not so useful
+├── README.md                       
+├── cleaned_data                    Directory for cleaned data
+├── generate_model.py               Second step: Data preprocessing, Predictive Modelling, Evaluation
+├── install.sh                      Prepared one-key script for install all required python packages
+├── prepare.py                      First step: Data Collection, Data Cleaning, Data Visualisation
+├── raw_data                        Directory for raw data
+├── related_references              Directory for related references which are not so useful
 ├── requirements.txt
-├── results                             directory for temporal saved results
-├── run.sh
+├── results                         Directory for temporal saved results
+├── run.sh                          Prepared one-key script to run First and Second step
 ├── scripts
 │   ├── judge.py
 │   ├── models.py
@@ -91,9 +90,9 @@ bash install.sh
 │   ├── preprocess.py
 │   ├── statistics.py
 │   ├── utils.py
-│   └── weather_scrapper.rb
-├── test.ipynb                          notebook for the SSA dimension selection
-└── useful_references                   directory for useful references, important!
+│   └── weather_scrapper.rb         Script to scrap weahter data
+├── test.ipynb                      Notebook for the SSA dimension selection
+└── useful_references               Directory for useful references, important!
 ```
 
 ## Development Methodology

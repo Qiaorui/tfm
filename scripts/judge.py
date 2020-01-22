@@ -130,24 +130,27 @@ def evaluate_arima(data, th_day, n_days, seasonality, sids, show):
     x_test.drop('Count', axis=1, inplace=True)
 
     arima = models.ARIMA()
-    arima.test(x_train, y_train, seasonality, sids, show)
-    #arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, seasonality))
+    try:
+        arima.test(x_train, y_train, seasonality, sids, show)
+        # arima.fit(x_train, y_train, (1, 0, 1), (1, 0, 1, seasonality))
+        mae_dict = {}
+        rmse_dict = {}
 
-    mae_dict = {}
-    rmse_dict = {}
+        for n in n_days:
+            x_test = x_test.loc[x_test.index < (th_day + pd.DateOffset(n))]
+            y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
+            y = arima.predict(x_test)
+            mae, rmse = score(y_test.tolist(), y)
+            mae_dict[n] = mae
+            rmse_dict[n] = rmse
 
-    for n in n_days:
-        x_test = x_test.loc[x_test.index < (th_day + pd.DateOffset(n))]
-        y_test = y_test.loc[y_test.index < (th_day + pd.DateOffset(n))]
-        y = arima.predict(x_test)
-        mae, rmse = score(y_test.tolist(), y)
-        mae_dict[n] = mae
-        rmse_dict[n] = rmse
+        mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['SARIMA'])
+        rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['SARIMA'])
 
-    mae_df = pd.DataFrame.from_dict(mae_dict, orient='index', columns=['ARIMA'])
-    rmse_df = pd.DataFrame.from_dict(rmse_dict, orient='index', columns=['ARIMA'])
-
-    return mae_df, rmse_df, arima
+        return mae_df, rmse_df, arima
+    except Exception as e:
+        print(str(e))
+        return None, None, None
 
 
 def evaluate_lr(data, th_day, n_days):
@@ -215,7 +218,7 @@ def evaluate_mlp(data, th_day, n_days, show=False):
     return mae_df, rmse_df, mlp
 
 
-non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend']
+non_sequential_columns = ['Station_ID', 'Condition_Good', 'Holiday', 'Weekend', 'Weekday_Cos', 'Weekday_Sin', 'Month_Cos', 'Month_Sin']
 #non_sequential_columns = ['Station_ID', 'Holiday']
 
 

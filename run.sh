@@ -62,7 +62,7 @@ start_model () {
             do
                 for ((j=3*i; j<${#START_LIST[@]} + ((i-1)*3); j++));
                 do
-                    echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/JC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} -e dummy"
+                    echo "--------Start the case -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/NYC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} -e dummy"
                     python3 -u generate_model.py -ot ${OUTLIER_THRESHOLD} -ts $ts -ct "cleaned_data/NYC_trip_data.csv" -start ${START_LIST[$j]} -th ${TH_LIST[$i]} -e dummy | tee ./results/log.txt
                     mkdir -p "NYC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"
                     mv ./results/* "NYC_${ts}_${START_LIST[$j]}_${TH_LIST[$i]}"

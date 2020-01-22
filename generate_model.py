@@ -568,13 +568,17 @@ def main():
     data = prepare_data(pick_ups, weather_data, time_slot)
 
     print(data.describe())
-
     station_freq_counts = pick_ups["Station_ID"].value_counts() // ((th_day - start)/np.timedelta64(1,'D') + 30)
     plt.hist(station_freq_counts.values, bins=min(len(station_freq_counts.index)//5, 200))
     plt.title("Daily Frequency Distribution")
     plt.xlabel("Daily Frequency")
     plt.ylabel("Quantity of station")
-    plt.show()
+    plt.savefig('results/p0.pdf', bbox_inches='tight')
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     busiest_station = station_freq_counts.idxmax()
     idle_station = station_freq_counts.idxmin()
@@ -609,12 +613,14 @@ def main():
 
     days_to_evaluate = [30, 14, 7, 1]
     mae, rmse, arima = judge.evaluate_arima(data, th_day, days_to_evaluate, seasonality, station_freq_counts.index, show)
-    mae_df = mae_df.join(mae, how='outer')
-    rmse_df = rmse_df.join(rmse, how='outer')
+    if arima is not None:
+        mae_df = mae_df.join(mae, how='outer')
+        rmse_df = rmse_df.join(rmse, how='outer')
 
-    mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station, show)
-    mae_df = mae_df.join(mae, how='outer')
-    rmse_df = rmse_df.join(rmse, how='outer')
+    if arima is not None:
+        mae, rmse, ssa = judge.evaluate_ssa(data, th_day, days_to_evaluate, seasonality, busiest_station, show)
+        mae_df = mae_df.join(mae, how='outer')
+        rmse_df = rmse_df.join(rmse, how='outer')
 
     if utils.scaler is not None:
         data[['Count']] = utils.scaler.transform(data[['Count']])
